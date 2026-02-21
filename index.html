@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>International Camel Equivalents</title>
+    <link rel="stylesheet" href="/src/design/theme.css" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+      .card {
+        max-width: 42rem;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+        padding: 1.25rem;
+      }
+      .row {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+      }
+      input,
+      select,
+      button {
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font: inherit;
+      }
+      button {
+        background: #0f172a;
+        color: #fff;
+        cursor: pointer;
+      }
+      #result {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>International Camel Equivalents</h1>
+      <p>Quick calculator powered by the repository's core conversion engine.</p>
+      <div class="row">
+        <input id="amount" type="number" min="0" value="1000" aria-label="Amount" />
+        <select id="unit" aria-label="Unit">
+          <option value="USD">USD</option>
+          <option value="CAMEL">Camels</option>
+        </select>
+        <button id="calculate">Convert</button>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </main>
+
+    <script type="module">
+      import { toCamelValue, toEquivalents } from '/src/core/conversion.js';
+
+      const result = document.getElementById('result');
+      const amountInput = document.getElementById('amount');
+      const unitInput = document.getElementById('unit');
+      const button = document.getElementById('calculate');
+      const camelUsdRate = 50000;
+      let proxies = [];
+
+      async function loadProxies() {
+        const response = await fetch('/src/data/proxies.json');
+        proxies = await response.json();
+      }
+
+      function render() {
+        const amount = Number(amountInput.value);
+        const unit = unitInput.value;
+        const camelValue = toCamelValue({ amount, unit, camelUsdRate }, proxies);
+        const equivalents = toEquivalents(camelValue, proxies).slice(0, 5);
+
+        result.innerHTML = `
+          <p><strong>${amount} ${unit}</strong> equals <strong>${camelValue} camels</strong>.</p>
+          <ul>
+            ${equivalents.map((item) => `<li>${item.proxyName}: ${item.quantity}</li>`).join('')}
+          </ul>
+        `;
+      }
+
+      await loadProxies();
+      render();
+      button.addEventListener('click', render);
+    </script>
+  </body>
+</html>
