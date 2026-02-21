@@ -1,0 +1,84 @@
+:root {
+  --ccc-camel-core: #d2a679;
+  --ccc-hump-highlight: #8b4513;
+  --ccc-proxy-pandemonium: #ff4500;
+  --ccc-bid-bliss: #228b22;
+  --ccc-dowry-disaster: #ff1493;
+  --ccc-sand-dune: #f5f5dc;
+  --ccc-text-primary: #333333;
+  --ccc-text-secondary: #696969;
+  --ccc-yak-yak-yellow: #ffd700;
+  --ccc-shark-shock-blue: #00bfff;
+  --ccc-monkey-mayhem-purple: #9370db;
+  --ccc-card-radius: 16px;
+  --ccc-pill-radius: 999px;
+  --ccc-transition-standard: 240ms;
+  --ccc-camel-gradient: linear-gradient(to right, #d2a679, #ff4500);
+}
+
+[data-theme='dark'] {
+  --ccc-camel-core: #4a3728;
+  --ccc-hump-highlight: #c48a5e;
+  --ccc-sand-dune: #2f2f2f;
+  --ccc-text-primary: #ededed;
+  --ccc-text-secondary: #c8c8c8;
+}
+
+.ccc-app {
+  background: var(--ccc-sand-dune);
+  color: var(--ccc-text-primary);
+  font-family: Roboto, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+.ccc-card {
+  background: color-mix(in srgb, var(--ccc-camel-core) 18%, white);
+  border: 1px solid color-mix(in srgb, var(--ccc-hump-highlight) 35%, white);
+  border-radius: var(--ccc-card-radius);
+  padding: 16px;
+}
+
+.ccc-heading {
+  color: var(--ccc-hump-highlight);
+  font-family: Fredoka, Roboto, Arial, sans-serif;
+  text-shadow: 1px 1px 2px rgb(0 0 0 / 10%);
+}
+
+.ccc-button-primary {
+  align-items: center;
+  background: var(--ccc-proxy-pandemonium);
+  border: 0;
+  border-radius: var(--ccc-pill-radius);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 20px;
+  transition: transform var(--ccc-transition-standard) ease;
+}
+
+.ccc-button-primary:hover {
+  background: var(--ccc-camel-gradient);
+  transform: rotate(1deg) scale(1.03);
+}
+
+.ccc-input {
+  border: 1px solid var(--ccc-hump-highlight);
+  border-radius: 10px;
+  color: var(--ccc-text-primary);
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ccc-button-primary {
+    transition: none;
+  }
+
+  .ccc-button-primary:hover {
+    transform: none;
+  }
+}
