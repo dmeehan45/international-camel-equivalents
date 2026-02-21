@@ -1,0 +1,716 @@
+[
+  {
+    "id": "proxy-001",
+    "name": "Yaks",
+    "ratePerCamel": 1.25,
+    "category": "Mammals and Land Creatures",
+    "description": "Sturdy mountain bovines"
+  },
+  {
+    "id": "proxy-002",
+    "name": "Street dogs",
+    "ratePerCamel": 12.75,
+    "category": "Mammals and Land Creatures",
+    "description": "Urban canine companions"
+  },
+  {
+    "id": "proxy-003",
+    "name": "Elephants",
+    "ratePerCamel": 0.15,
+    "category": "Mammals and Land Creatures",
+    "description": "Majestic heavyweights"
+  },
+  {
+    "id": "proxy-004",
+    "name": "Giraffes",
+    "ratePerCamel": 0.42,
+    "category": "Mammals and Land Creatures",
+    "description": "Long-necked grazers"
+  },
+  {
+    "id": "proxy-005",
+    "name": "Zebras",
+    "ratePerCamel": 0.88,
+    "category": "Mammals and Land Creatures",
+    "description": "Striped speedsters"
+  },
+  {
+    "id": "proxy-006",
+    "name": "Cows",
+    "ratePerCamel": 1.5,
+    "category": "Mammals and Land Creatures",
+    "description": "Classic livestock value"
+  },
+  {
+    "id": "proxy-007",
+    "name": "Small puntable yippy dogs",
+    "ratePerCamel": 25.33,
+    "category": "Mammals and Land Creatures",
+    "description": "Tiny chaotic bark engines"
+  },
+  {
+    "id": "proxy-008",
+    "name": "Donkeys in heat",
+    "ratePerCamel": 2.67,
+    "category": "Mammals and Land Creatures",
+    "description": "Dramatic hoofed negotiators"
+  },
+  {
+    "id": "proxy-009",
+    "name": "Llamas",
+    "ratePerCamel": 1.1,
+    "category": "Mammals and Land Creatures",
+    "description": "Fluffy spit specialists"
+  },
+  {
+    "id": "proxy-010",
+    "name": "Alpacas",
+    "ratePerCamel": 1.05,
+    "category": "Mammals and Land Creatures",
+    "description": "Premium woolly cousins"
+  },
+  {
+    "id": "proxy-011",
+    "name": "Kangaroos",
+    "ratePerCamel": 1.75,
+    "category": "Mammals and Land Creatures",
+    "description": "Pouch-powered jumpers"
+  },
+  {
+    "id": "proxy-012",
+    "name": "Platypuses",
+    "ratePerCamel": 3.22,
+    "category": "Mammals and Land Creatures",
+    "description": "Duck-billed enigmas"
+  },
+  {
+    "id": "proxy-013",
+    "name": "Pandas",
+    "ratePerCamel": 0.28,
+    "category": "Mammals and Land Creatures",
+    "description": "Bamboo royalty"
+  },
+  {
+    "id": "proxy-014",
+    "name": "Koalas",
+    "ratePerCamel": 2.14,
+    "category": "Mammals and Land Creatures",
+    "description": "Sleepy eucalyptus critics"
+  },
+  {
+    "id": "proxy-015",
+    "name": "Sloths",
+    "ratePerCamel": 4.56,
+    "category": "Mammals and Land Creatures",
+    "description": "Ultra-slow charmers"
+  },
+  {
+    "id": "proxy-016",
+    "name": "Armadillos",
+    "ratePerCamel": 8.91,
+    "category": "Mammals and Land Creatures",
+    "description": "Armor-plated rollers"
+  },
+  {
+    "id": "proxy-017",
+    "name": "Hedgehogs",
+    "ratePerCamel": 15.47,
+    "category": "Mammals and Land Creatures",
+    "description": "Pocket-sized spikes"
+  },
+  {
+    "id": "proxy-018",
+    "name": "Herds of cats",
+    "ratePerCamel": 0.75,
+    "category": "Mammals and Land Creatures",
+    "description": "1 herd = 10 strategic cats"
+  },
+  {
+    "id": "proxy-019",
+    "name": "Packs of wolves",
+    "ratePerCamel": 0.62,
+    "category": "Mammals and Land Creatures",
+    "description": "Coordinated howlers"
+  },
+  {
+    "id": "proxy-020",
+    "name": "Goldfish",
+    "ratePerCamel": 50.0,
+    "category": "Aquatic and Marine Life",
+    "description": "Bowl-scale abundance"
+  },
+  {
+    "id": "proxy-021",
+    "name": "Great white sharks",
+    "ratePerCamel": 0.09,
+    "category": "Aquatic and Marine Life",
+    "description": "Apex aquatic assets"
+  },
+  {
+    "id": "proxy-022",
+    "name": "Mantis shrimp",
+    "ratePerCamel": 7.83,
+    "category": "Aquatic and Marine Life",
+    "description": "Tiny rainbow punchers"
+  },
+  {
+    "id": "proxy-023",
+    "name": "Angry octopi",
+    "ratePerCamel": 1.99,
+    "category": "Aquatic and Marine Life",
+    "description": "Eight-armed tacticians"
+  },
+  {
+    "id": "proxy-024",
+    "name": "Narwhals",
+    "ratePerCamel": 0.37,
+    "category": "Aquatic and Marine Life",
+    "description": "Unicorns of the sea"
+  },
+  {
+    "id": "proxy-025",
+    "name": "Schools of piranhas",
+    "ratePerCamel": 1.12,
+    "category": "Aquatic and Marine Life",
+    "description": "1 school = 20 bitey fish"
+  },
+  {
+    "id": "proxy-026",
+    "name": "Pods of dolphins",
+    "ratePerCamel": 0.55,
+    "category": "Aquatic and Marine Life",
+    "description": "Highly social swimmers"
+  },
+  {
+    "id": "proxy-027",
+    "name": "Giant squids",
+    "ratePerCamel": 0.21,
+    "category": "Aquatic and Marine Life",
+    "description": "Legendary deep-sea noodles"
+  },
+  {
+    "id": "proxy-028",
+    "name": "Flocks of geese",
+    "ratePerCamel": 1.45,
+    "category": "Birds and Flying Creatures",
+    "description": "1 flock = 15 honkers"
+  },
+  {
+    "id": "proxy-029",
+    "name": "Murders of crows",
+    "ratePerCamel": 2.31,
+    "category": "Birds and Flying Creatures",
+    "description": "1 murder = 12 gothic birds"
+  },
+  {
+    "id": "proxy-030",
+    "name": "Parliaments of owls",
+    "ratePerCamel": 1.68,
+    "category": "Birds and Flying Creatures",
+    "description": "1 parliament = 8 wise voters"
+  },
+  {
+    "id": "proxy-031",
+    "name": "Flamingos",
+    "ratePerCamel": 3.74,
+    "category": "Birds and Flying Creatures",
+    "description": "Pink balance masters"
+  },
+  {
+    "id": "proxy-032",
+    "name": "Bald eagles",
+    "ratePerCamel": 0.49,
+    "category": "Birds and Flying Creatures",
+    "description": "Patriotic sky sentinels"
+  },
+  {
+    "id": "proxy-033",
+    "name": "Penguins",
+    "ratePerCamel": 4.02,
+    "category": "Birds and Flying Creatures",
+    "description": "Tuxedo waddlers"
+  },
+  {
+    "id": "proxy-034",
+    "name": "Spotted leopards",
+    "ratePerCamel": 0.31,
+    "category": "Reptiles, Insects, and Invertebrates",
+    "description": "Stealthy spotted sprinters"
+  },
+  {
+    "id": "proxy-035",
+    "name": "Komodo dragons",
+    "ratePerCamel": 0.26,
+    "category": "Reptiles, Insects, and Invertebrates",
+    "description": "Island heavyweight lizards"
+  },
+  {
+    "id": "proxy-036",
+    "name": "Tarantulas",
+    "ratePerCamel": 18.65,
+    "category": "Reptiles, Insects, and Invertebrates",
+    "description": "Eight-legged anxiety units"
+  },
+  {
+    "id": "proxy-037",
+    "name": "Swarms of bees",
+    "ratePerCamel": 0.93,
+    "category": "Reptiles, Insects, and Invertebrates",
+    "description": "1 swarm = 500 buzzing workers"
+  },
+  {
+    "id": "proxy-038",
+    "name": "Unicorns",
+    "ratePerCamel": 0.07,
+    "category": "Mythical and Absurd Concepts",
+    "description": "Rare sparkly legends"
+  },
+  {
+    "id": "proxy-039",
+    "name": "Dragons",
+    "ratePerCamel": 0.04,
+    "category": "Mythical and Absurd Concepts",
+    "description": "Fire-breathing negotiators"
+  },
+  {
+    "id": "proxy-040",
+    "name": "Phoenixes",
+    "ratePerCamel": 0.12,
+    "category": "Mythical and Absurd Concepts",
+    "description": "Reborn flame birds"
+  },
+  {
+    "id": "proxy-041",
+    "name": "Barrels of monkeys",
+    "ratePerCamel": 3.89,
+    "category": "Mythical and Absurd Concepts",
+    "description": "1 barrel = 10 chaotic primates"
+  },
+  {
+    "id": "proxy-042",
+    "name": "Invisible pink unicorns",
+    "ratePerCamel": 0.03,
+    "category": "Mythical and Absurd Concepts",
+    "description": "Unseen premium rarity"
+  },
+  {
+    "id": "proxy-043",
+    "name": "Flying pigs",
+    "ratePerCamel": 0.18,
+    "category": "Mythical and Absurd Concepts",
+    "description": "When impossible happens"
+  },
+  {
+    "id": "proxy-044",
+    "name": "Pots of gold at rainbow ends",
+    "ratePerCamel": 0.66,
+    "category": "Mythical and Absurd Concepts",
+    "description": "Meteorological treasure"
+  },
+  {
+    "id": "proxy-045",
+    "name": "Vintage typewriters",
+    "ratePerCamel": 5.27,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Clicky literary machines"
+  },
+  {
+    "id": "proxy-046",
+    "name": "Bitcoin",
+    "ratePerCamel": 0.01,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Fractional digital volatility"
+  },
+  {
+    "id": "proxy-047",
+    "name": "Antique teapots",
+    "ratePerCamel": 9.14,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Porcelain status symbols"
+  },
+  {
+    "id": "proxy-048",
+    "name": "Exploding toads",
+    "ratePerCamel": 6.78,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Amphibians with flair"
+  },
+  {
+    "id": "proxy-049",
+    "name": "Whispering winds",
+    "ratePerCamel": 11.23,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Bottled atmospheric gossip"
+  },
+  {
+    "id": "proxy-050",
+    "name": "Time-traveling squirrels",
+    "ratePerCamel": 0.52,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Chronologically ambiguous rodents"
+  },
+  {
+    "id": "proxy-051",
+    "name": "Quantum-entangled socks",
+    "ratePerCamel": 14.89,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Pairs linked across spacetime"
+  },
+  {
+    "id": "proxy-052",
+    "name": "Eldritch horrors",
+    "ratePerCamel": 0.19,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Miniature cosmic dread"
+  },
+  {
+    "id": "proxy-053",
+    "name": "Sentient cheese wheels",
+    "ratePerCamel": 2.45,
+    "category": "Other Bizarre Items and Collectives",
+    "description": "Conversational dairy rounds"
+  },
+  {
+    "id": "proxy-054",
+    "name": "Hypnotic hyenas",
+    "ratePerCamel": 1.41,
+    "category": "More Mammals and Land Creatures",
+    "description": "Laughing mesmerizers"
+  },
+  {
+    "id": "proxy-055",
+    "name": "Dancing bears",
+    "ratePerCamel": 0.95,
+    "category": "More Mammals and Land Creatures",
+    "description": "Groovy performers"
+  },
+  {
+    "id": "proxy-056",
+    "name": "Sneaky ferrets",
+    "ratePerCamel": 10.22,
+    "category": "More Mammals and Land Creatures",
+    "description": "Thieving weasels"
+  },
+  {
+    "id": "proxy-057",
+    "name": "Grumpy badgers",
+    "ratePerCamel": 3.77,
+    "category": "More Mammals and Land Creatures",
+    "description": "Burrowing curmudgeons"
+  },
+  {
+    "id": "proxy-058",
+    "name": "Fluffy chinchillas",
+    "ratePerCamel": 6.88,
+    "category": "More Mammals and Land Creatures",
+    "description": "Dust-bathing softies"
+  },
+  {
+    "id": "proxy-059",
+    "name": "Rampaging rhinos",
+    "ratePerCamel": 0.23,
+    "category": "More Mammals and Land Creatures",
+    "description": "Horned chargers"
+  },
+  {
+    "id": "proxy-060",
+    "name": "Electric eels",
+    "ratePerCamel": 2.56,
+    "category": "More Aquatic and Marine Life",
+    "description": "Shocking swimmers"
+  },
+  {
+    "id": "proxy-061",
+    "name": "Jellyfish jamborees",
+    "ratePerCamel": 1.09,
+    "category": "More Aquatic and Marine Life",
+    "description": "1 jamboree = 50 jellyfish"
+  },
+  {
+    "id": "proxy-062",
+    "name": "Crab raves",
+    "ratePerCamel": 4.33,
+    "category": "More Aquatic and Marine Life",
+    "description": "1 rave = 30 side-step dancers"
+  },
+  {
+    "id": "proxy-063",
+    "name": "Whale songs",
+    "ratePerCamel": 0.44,
+    "category": "More Aquatic and Marine Life",
+    "description": "Recorded oceanic ballads"
+  },
+  {
+    "id": "proxy-064",
+    "name": "Seahorse symphonies",
+    "ratePerCamel": 5.12,
+    "category": "More Aquatic and Marine Life",
+    "description": "Tiny orchestras"
+  },
+  {
+    "id": "proxy-065",
+    "name": "Conspiracy of ravens",
+    "ratePerCamel": 1.87,
+    "category": "More Birds and Flying Creatures",
+    "description": "1 conspiracy = 10 plotting birds"
+  },
+  {
+    "id": "proxy-066",
+    "name": "Exaltations of larks",
+    "ratePerCamel": 2.05,
+    "category": "More Birds and Flying Creatures",
+    "description": "1 exaltation = 20 joyful singers"
+  },
+  {
+    "id": "proxy-067",
+    "name": "Hummingbird hurricanes",
+    "ratePerCamel": 7.99,
+    "category": "More Birds and Flying Creatures",
+    "description": "Buzzing storms"
+  },
+  {
+    "id": "proxy-068",
+    "name": "Ostrich orchestras",
+    "ratePerCamel": 0.61,
+    "category": "More Birds and Flying Creatures",
+    "description": "Head-in-sand musicians"
+  },
+  {
+    "id": "proxy-069",
+    "name": "Vulture vigils",
+    "ratePerCamel": 1.72,
+    "category": "More Birds and Flying Creatures",
+    "description": "Circling watchers"
+  },
+  {
+    "id": "proxy-070",
+    "name": "Chameleon chameleons",
+    "ratePerCamel": 4.19,
+    "category": "More Reptiles, Insects, and Invertebrates",
+    "description": "Color-changing tricksters"
+  },
+  {
+    "id": "proxy-071",
+    "name": "Scorpion stings",
+    "ratePerCamel": 9.66,
+    "category": "More Reptiles, Insects, and Invertebrates",
+    "description": "Packaged venom surprises"
+  },
+  {
+    "id": "proxy-072",
+    "name": "Butterfly blizzards",
+    "ratePerCamel": 0.82,
+    "category": "More Reptiles, Insects, and Invertebrates",
+    "description": "1 blizzard = 100 butterflies"
+  },
+  {
+    "id": "proxy-073",
+    "name": "Worm wriggles",
+    "ratePerCamel": 12.34,
+    "category": "More Reptiles, Insects, and Invertebrates",
+    "description": "1 wriggle = 50 worms"
+  },
+  {
+    "id": "proxy-074",
+    "name": "Ant armies",
+    "ratePerCamel": 0.47,
+    "category": "More Reptiles, Insects, and Invertebrates",
+    "description": "1 army = 1000 marching ants"
+  },
+  {
+    "id": "proxy-075",
+    "name": "Griffin guardians",
+    "ratePerCamel": 0.11,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Lion-eagle protectors"
+  },
+  {
+    "id": "proxy-076",
+    "name": "Yeti yodels",
+    "ratePerCamel": 0.29,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Snowy singers"
+  },
+  {
+    "id": "proxy-077",
+    "name": "Mermaid melodies",
+    "ratePerCamel": 0.38,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Underwater tunes"
+  },
+  {
+    "id": "proxy-078",
+    "name": "Goblin gadgets",
+    "ratePerCamel": 8.55,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Mischievous inventions"
+  },
+  {
+    "id": "proxy-079",
+    "name": "Fairy dust sprinkles",
+    "ratePerCamel": 3.21,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Magical powders"
+  },
+  {
+    "id": "proxy-080",
+    "name": "Werewolf howls",
+    "ratePerCamel": 1.03,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Full moon editions"
+  },
+  {
+    "id": "proxy-081",
+    "name": "Vampire vintages",
+    "ratePerCamel": 2.78,
+    "category": "More Mythical and Absurd Concepts",
+    "description": "Bottles of blood wine"
+  },
+  {
+    "id": "proxy-082",
+    "name": "Cursed amulets",
+    "ratePerCamel": 1.56,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Unlucky charms"
+  },
+  {
+    "id": "proxy-083",
+    "name": "Steampunk squirrels",
+    "ratePerCamel": 4.67,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Geared rodents"
+  },
+  {
+    "id": "proxy-084",
+    "name": "Zombie zucchinis",
+    "ratePerCamel": 13.89,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Undead veggies"
+  },
+  {
+    "id": "proxy-085",
+    "name": "Portal potatoes",
+    "ratePerCamel": 5.43,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Dimensional spuds"
+  },
+  {
+    "id": "proxy-086",
+    "name": "Laser llamas",
+    "ratePerCamel": 1.22,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Beam-spitting fluffballs"
+  },
+  {
+    "id": "proxy-087",
+    "name": "Holographic hippos",
+    "ratePerCamel": 0.33,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Projected pachyderms"
+  },
+  {
+    "id": "proxy-088",
+    "name": "Telepathic toasters",
+    "ratePerCamel": 6.01,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Mind-reading appliances"
+  },
+  {
+    "id": "proxy-089",
+    "name": "Bubble wrap symphonies",
+    "ratePerCamel": 10.77,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Popping concerts"
+  },
+  {
+    "id": "proxy-090",
+    "name": "Invisible ink novels",
+    "ratePerCamel": 2.99,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Hidden stories"
+  },
+  {
+    "id": "proxy-091",
+    "name": "Dancing cacti",
+    "ratePerCamel": 3.45,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Prickly performers"
+  },
+  {
+    "id": "proxy-092",
+    "name": "Exploding confetti cannons",
+    "ratePerCamel": 7.12,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Festive booms"
+  },
+  {
+    "id": "proxy-093",
+    "name": "Sentient sandwiches",
+    "ratePerCamel": 9.88,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Talking lunches"
+  },
+  {
+    "id": "proxy-094",
+    "name": "Quantum quokkas",
+    "ratePerCamel": 0.76,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Smiling jumpers"
+  },
+  {
+    "id": "proxy-095",
+    "name": "Alien alpaca abductions",
+    "ratePerCamel": 0.14,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Cosmic kidnappings"
+  },
+  {
+    "id": "proxy-096",
+    "name": "Pirate parrots",
+    "ratePerCamel": 4.55,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Eye-patch squawkers"
+  },
+  {
+    "id": "proxy-097",
+    "name": "Ninja narwhals",
+    "ratePerCamel": 0.41,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Stealthy tuskers"
+  },
+  {
+    "id": "proxy-098",
+    "name": "Disco dinosaurs",
+    "ratePerCamel": 0.27,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Grooving fossils"
+  },
+  {
+    "id": "proxy-099",
+    "name": "Enchanted eggplants",
+    "ratePerCamel": 11.11,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Magical aubergines"
+  },
+  {
+    "id": "proxy-100",
+    "name": "Robotic raccoons",
+    "ratePerCamel": 2.22,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Trash-panda bots"
+  },
+  {
+    "id": "proxy-101",
+    "name": "Spectral sloths",
+    "ratePerCamel": 5.55,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Ghostly slowpokes"
+  },
+  {
+    "id": "proxy-102",
+    "name": "Bubblegum blowfish",
+    "ratePerCamel": 8.88,
+    "category": "More Other Bizarre Items and Collectives",
+    "description": "Inflatable chewers"
+  }
+]
