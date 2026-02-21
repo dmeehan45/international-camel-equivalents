@@ -4,13 +4,9 @@ export type ProxyCategory =
   | 'Birds and Flying Creatures'
   | 'Reptiles, Insects, and Invertebrates'
   | 'Mythical and Absurd Concepts'
-  | 'Other Bizarre Items and Collectives'
-  | 'More Mammals and Land Creatures'
-  | 'More Aquatic and Marine Life'
-  | 'More Birds and Flying Creatures'
-  | 'More Reptiles, Insects, and Invertebrates'
-  | 'More Mythical and Absurd Concepts'
-  | 'More Other Bizarre Items and Collectives';
+  | 'Other Bizarre Items and Collectives';
+
+export type ProxySource = 'reference' | 'extension';
 
 export interface ProxyDefinition {
   id: string;
@@ -18,6 +14,8 @@ export interface ProxyDefinition {
   ratePerCamel: number;
   category: ProxyCategory;
   description: string;
+  source?: ProxySource;
+  isExtension?: boolean;
 }
 
 export interface CalculationInput {
@@ -36,4 +34,9 @@ export interface ProxyEquivalent {
 export interface CalculationResult {
   camelValue: number;
   equivalents: ProxyEquivalent[];
+}
+
+export interface ConversionModifiers {
+  camelMultiplier?: number;
+  proxyRateOverrides?: Record<string, number>;
 }

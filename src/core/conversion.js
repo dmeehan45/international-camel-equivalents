@@ -36,6 +36,38 @@ export function toEquivalents(camelValue, proxies) {
   }));
 }
 
+/**
+ * Calculate ICE using deterministic modifier order:
+ * 1) base camel value
+ * 2) camel multiplier
+ * 3) proxy rate overrides
+ * 4) equivalent projection
+ * @param {{amount:number, unit:'USD'|'CAMEL'|'PROXY', camelUsdRate:number, proxyId?:string}} input
+ * @param {ProxyDefinition[]} proxies
+ * @param {{camelMultiplier?:number, proxyRateOverrides?:Record<string, number>}} [modifiers]
+ */
+export function calculateIceWithModifiers(input, proxies, modifiers = {}) {
+  const baseCamelValue = toCamelValue(input, proxies);
+  const camelMultiplier = modifiers.camelMultiplier ?? 1;
+  if (camelMultiplier <= 0) throw new Error('Camel multiplier must be greater than zero.');
+
+  const adjustedCamelValue = round2(baseCamelValue * camelMultiplier);
+  const proxyRateOverrides = modifiers.proxyRateOverrides ?? {};
+
+  const adjustedProxies = proxies.map((proxy) => {
+    const overrideRate = proxyRateOverrides[proxy.id];
+    if (overrideRate === undefined) return proxy;
+    if (overrideRate <= 0) throw new Error('Proxy override rate must be greater than zero.');
+
+    return { ...proxy, ratePerCamel: overrideRate };
+  });
+
+  return {
+    camelValue: adjustedCamelValue,
+    equivalents: toEquivalents(adjustedCamelValue, adjustedProxies),
+  };
+}
+
 function round2(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
