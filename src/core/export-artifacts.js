@@ -68,3 +68,26 @@ export function buildPdfExportBlob(input) {
 
   return new Blob([pdf], { type: 'application/pdf' });
 }
+
+export function buildHtmlExportDocument(input) {
+  const normalized = validateExportInput(input);
+  const heading = 'Camel Courtship Calculator';
+  const summary = `${normalized.camelValue} camels equals ${normalized.proxyQuantity} ${normalized.proxyName}.`;
+  const message = normalized.message ? `<p>${sanitizeText(normalized.message)}</p>` : '';
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${heading}</title>
+</head>
+<body>
+  <main>
+    <h1>${heading}</h1>
+    <p>${sanitizeText(summary)}</p>
+    ${message}
+  </main>
+</body>
+</html>`;
+}

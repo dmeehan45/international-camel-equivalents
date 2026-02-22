@@ -14,6 +14,7 @@ import { buildCompareSummary, CANONICAL_PROXY_CATEGORIES, filterReferenceProxies
 import { listTemplates, generateFormalizedMessage } from './core/formalizer.js';
 import { buildSharePayload } from './core/share-export.js';
 import { buildQrPayload } from './core/share-qr.js';
+import { buildHtmlExportDocument, buildImageExportDataUrl, buildPdfExportBlob } from './core/export-artifacts.js';
 import { locationPresets, readCustomizerSettings, resolveCamelMultiplier, writeCustomizerSettings } from './core/customizer-settings.js';
 import { createHistoryEntry, formatRelativeAge, readBidHistory, writeBidHistory } from './core/history-archive.js';
 import { parseBidInput } from './core/bid-parser.js';
@@ -276,6 +277,8 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
   const flowSteps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
   const [scanActionsOpen, setScanActionsOpen] = useState(false);
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
+  const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
+  const [exportToast, setExportToast] = useState('');
 
   function canOpenFlowStep(target: FlowStep) {
     const currentIndex = flowSteps.indexOf(state.flowStep);
@@ -335,6 +338,67 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
       dispatch({ type: 'setShare', text: payload.shareText, selectedProxyId: payload.selectedProxy.proxyId, qrPreview: qr.preview, error: '' });
     } catch (error) {
       dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : 'Share build failed.' });
+    }
+  }
+
+  function openShareTarget(target: 'mailto' | 'sms' | 'twitter' | 'whatsapp') {
+    try {
+      const { payload, qr } = buildExportArtifacts();
+      dispatch({ type: 'setShare', text: payload.shareText, selectedProxyId: payload.selectedProxy.proxyId, qrPreview: qr.preview, error: '' });
+      window.open(payload.urls[target], '_blank');
+    } catch (error) {
+      dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : 'Share build failed.' });
+      setExportToast('');
+    }
+  }
+
+  function buildExportArtifacts() {
+    if (!state.calculation) throw new Error('Run a calculation first.');
+    const payload = buildSharePayload(state.calculation, { proxyId: state.share.selectedProxyId || state.calculation.equivalents[0]?.proxyId, message: state.formalizer.message });
+    const qr = buildQrPayload({ mode: 'text', shareText: payload.shareText });
+    const exportInput = {
+      camelValue: state.calculation.camelValue,
+      proxyQuantity: payload.selectedProxy.quantity,
+      proxyName: payload.selectedProxy.proxyName,
+      message: state.formalizer.message,
+    };
+    const imageDataUrl = buildImageExportDataUrl(exportInput);
+    const pdfBlob = buildPdfExportBlob(exportInput);
+    const htmlDocument = buildHtmlExportDocument(exportInput);
+    return { payload, qr, imageDataUrl, pdfBlob, htmlDocument };
+  }
+
+  async function runExportAction(action: 'copy' | 'download' | 'share') {
+    try {
+      const { payload, qr, imageDataUrl, pdfBlob, htmlDocument } = buildExportArtifacts();
+      dispatch({ type: 'setShare', text: payload.shareText, selectedProxyId: payload.selectedProxy.proxyId, qrPreview: qr.preview, error: '' });
+      if (action === 'copy') {
+        const copyValue = exportTab === 'text' ? payload.shareText : exportTab === 'image' ? imageDataUrl : exportTab === 'html' ? htmlDocument : payload.shareText;
+        await navigator.clipboard.writeText(copyValue);
+      }
+
+      if (action === 'download') {
+        const href = exportTab === 'image'
+          ? imageDataUrl
+          : URL.createObjectURL(exportTab === 'pdf' ? pdfBlob : new Blob([exportTab === 'html' ? htmlDocument : payload.shareText], { type: exportTab === 'html' ? 'text/html' : 'text/plain' }));
+        const ext = exportTab === 'text' ? 'txt' : exportTab;
+        const link = document.createElement('a');
+        link.href = href;
+        link.download = `camel-export.${ext}`;
+        link.click();
+        if (exportTab !== 'image') URL.revokeObjectURL(href);
+      }
+
+      if (action === 'share') {
+        if (!navigator.share) throw new Error('Native share is not available in this browser.');
+        await navigator.share({ text: payload.shareText, title: 'Camel Courtship Calculator' });
+      }
+
+      const actionLabel = action === 'copy' ? 'Copied' : action === 'download' ? 'Downloaded' : 'Shared';
+      setExportToast(`${actionLabel} ${exportTab.toUpperCase()} export.`);
+    } catch (error) {
+      dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : 'Export failed.' });
+      setExportToast('');
     }
   }
 
@@ -466,11 +530,27 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
       {state.flowStep === 'share' && (
         <>
           <h2>Step 5: Share & Export</h2>
-          <div className="stepper"><button className="step active">Text</button><button className="step">Image</button><button className="step">PDF</button><button className="step">HTML</button></div>
-          <button onClick={generateShare}>Copy</button> <button>Download</button> <button>Share</button>
+          <div className="stepper">
+            <button className={exportTab === 'text' ? 'step active' : 'step'} onClick={() => setExportTab('text')}>Text</button>
+            <button className={exportTab === 'image' ? 'step active' : 'step'} onClick={() => setExportTab('image')}>Image</button>
+            <button className={exportTab === 'pdf' ? 'step active' : 'step'} onClick={() => setExportTab('pdf')}>PDF</button>
+            <button className={exportTab === 'html' ? 'step active' : 'step'} onClick={() => setExportTab('html')}>HTML</button>
+          </div>
+          <button onClick={() => runExportAction('copy')}>Copy</button> <button onClick={() => runExportAction('download')}>Download</button> <button onClick={() => runExportAction('share')}>Share</button>
+          <details>
+            <summary>Open</summary>
+            <div className="stepper">
+              <button onClick={generateShare}>Build Links</button>
+              <button onClick={() => openShareTarget('mailto')}>Email</button>
+              <button onClick={() => openShareTarget('sms')}>SMS</button>
+              <button onClick={() => openShareTarget('twitter')}>X/Twitter</button>
+              <button onClick={() => openShareTarget('whatsapp')}>WhatsApp</button>
+            </div>
+          </details>
           {state.share.text && <pre>{state.share.text}</pre>}
           {state.share.qrPreview && <p className="result">{state.share.qrPreview}</p>}
-          <button onClick={saveEntry}>Save to Archive</button>
+          {exportToast && <p className="helper">{exportToast}</p>}
+          {exportToast && <button onClick={saveEntry}>Save to Archive</button>}
         </>
       )}
 
