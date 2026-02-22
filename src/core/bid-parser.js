@@ -6,23 +6,13 @@ export function parseBidInput(rawInput) {
   const raw = rawInput.trim();
   if (!raw) return { kind: 'ambiguous', raw, reason: 'Enter a bid value first.' };
 
-  const usdMatch = raw.match(/^\s*(?:USD\s*)?\$\s*([\d,.]+)\s*$/i) ?? raw.match(/^\s*([\d,.]+)\s*(USD)\s*$/i);
-  if (usdMatch) {
-    const amount = Number(usdMatch[1].replace(/,/g, ''));
+  const camelMatch = raw.match(/^\s*([\d,.]+)\s*(camel|camels)\s*$/i);
+  if (camelMatch) {
+    const amount = Number(camelMatch[1].replace(/,/g, ''));
     if (!Number.isFinite(amount) || amount <= 0) {
-      return { kind: 'ambiguous', raw, reason: 'Currency amount must be a positive number.' };
+      return { kind: 'ambiguous', raw, reason: 'Camel quantity must be a positive number.' };
     }
-    return { kind: 'currency', amount: round2(amount), currency: 'USD', normalizedAmount: round2(amount), raw };
-  }
-
-  const eurMatch = raw.match(/^\s*(?:EUR\s*)?€\s*([\d,.]+)\s*$/i) ?? raw.match(/^\s*([\d,.]+)\s*(EUR)\s*$/i);
-  if (eurMatch) {
-    const amount = Number(eurMatch[1].replace(/,/g, ''));
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return { kind: 'ambiguous', raw, reason: 'Currency amount must be a positive number.' };
-    }
-    const normalizedAmount = round2(amount * 1.08);
-    return { kind: 'currency', amount: round2(amount), currency: 'EUR', normalizedAmount, raw };
+    return { kind: 'camel', amount: round2(amount), raw };
   }
 
   const proxyMatch = raw.match(/^\s*([\d,.]+)\s+(.+?)\s*$/i);
@@ -39,8 +29,8 @@ export function parseBidInput(rawInput) {
   }
 
   if (/^[\d,.]+$/.test(raw)) {
-    return { kind: 'ambiguous', raw, reason: 'Is this currency or a proxy quantity?' };
+    return { kind: 'ambiguous', raw, reason: 'Add a unit like "camels" or a proxy name (example: "5 yaks").' };
   }
 
-  return { kind: 'ambiguous', raw, reason: "I couldn't parse that. Try '$1000' or '5 yaks'." };
+  return { kind: 'ambiguous', raw, reason: "I couldn't parse that. Try '2 camels' or '5 yaks'." };
 }
