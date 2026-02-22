@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useState, type Dispatch } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import proxiesData from './data/proxies.json';
 import {
   applyDashboardView,
@@ -15,12 +16,16 @@ import { listTemplates, generateFormalizedMessage } from './core/formalizer.js';
 import { buildSharePayload } from './core/share-export.js';
 import { buildQrPayload } from './core/share-qr.js';
 import { buildHtmlExportDocument, buildImageExportDataUrl, buildPdfExportBlob } from './core/export-artifacts.js';
-import { locationPresets, readCustomizerSettings, resolveCamelMultiplier, writeCustomizerSettings } from './core/customizer-settings.js';
+import { readCustomizerSettings, resolveCamelMultiplier, writeCustomizerSettings } from './core/customizer-settings.js';
 import { createHistoryEntry, formatRelativeAge, readBidHistory, writeBidHistory } from './core/history-archive.js';
 import { parseBidInput } from './core/bid-parser.js';
 import type { CalculationResult, ProxyDefinition } from './domain/types';
+import { Phase1Input } from './phases/Phase1Input';
+import { Phase2Adjudication } from './phases/Phase2Adjudication';
+import { Phase3Instrument } from './phases/Phase3Instrument';
+import { Phase4Docket } from './phases/Phase4Docket';
 
-type FlowStep = 'bid' | 'context' | 'results' | 'message' | 'share';
+type FlowStep = 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
 type TopTab = 'top' | 'all' | 'compare';
 type RootTab = 'flow' | 'library' | 'archive' | 'premium';
 
@@ -122,7 +127,7 @@ function buildInitialState(): State {
     extensionProxies,
     mergedProxies,
     activeRootTab: 'flow',
-    flowStep: draft?.flowStep ?? 'bid',
+    flowStep: draft?.flowStep ?? 'phase1-input',
     showWelcome: !globalThis.localStorage?.getItem('ccc-welcome-dismissed'),
     guidedMode: draft?.guidedMode ?? true,
     chaosMode: draft?.chaosMode ?? false,
@@ -237,7 +242,7 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
     const result = calculateIceWithModifiers({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, proxyId: state.calcInput.proxyId }, state.mergedProxies, { camelMultiplier });
     dispatch({ type: 'setCalculation', value: result });
     dispatch({ type: 'setError', value: '' });
-    dispatch({ type: 'setFlowStep', value: 'context' });
+    dispatch({ type: 'setFlowStep', value: 'phase2-adjudication' });
   } catch (error) {
     dispatch({ type: 'setError', value: error instanceof Error ? error.message : 'Calculation failed.' });
   }
@@ -276,13 +281,12 @@ function computeRecommendation({ baseCalculation, regionFactor, traitModifiers }
 }
 
 function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: (step: FlowStep) => void; canNavigateTo: (step: FlowStep) => boolean }) {
-  const steps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
+  const steps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
   const labels: Record<FlowStep, string> = {
-    bid: 'Bid',
-    context: 'Context',
-    results: 'Results',
-    message: 'Message',
-    share: 'Share',
+    'phase1-input': 'Input',
+    'phase2-adjudication': 'Adjudication',
+    'phase3-instrument': 'Instrument',
+    'phase4-docket': 'Docket',
   };
   const currentIndex = steps.indexOf(step);
   const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
@@ -290,19 +294,12 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
 
   return (
     <div className="stepper-wrap">
-      <div className="stepper" aria-label="Workflow steps">
+      <div className="stepper" aria-label="Workflow phases">
         {steps.map((item, index) => {
           const status = index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming';
           return (
             <div key={item} className="stepper-item">
-              <button
-                className={step === item ? 'step active' : 'step'}
-                onClick={() => onChange(item)}
-                disabled={!canNavigateTo(item)}
-                aria-current={status === 'current' ? 'step' : undefined}
-              >
-                <span>{labels[item]}</span>
-              </button>
+              <button className={step === item ? 'step active' : 'step'} onClick={() => onChange(item)} disabled={!canNavigateTo(item)} aria-current={status === 'current' ? 'step' : undefined}><span>{labels[item]}</span></button>
               {index < steps.length - 1 && <span className="step-arrow" aria-hidden="true">→</span>}
             </div>
           );
@@ -317,7 +314,11 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
 }
 
 function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
-  const flowSteps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
+  const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
+  const navigate = useNavigate();
+  const location = useLocation();
+  const phasePathMap: Record<FlowStep, string> = { 'phase1-input': '/phase1', 'phase2-adjudication': '/phase2', 'phase3-instrument': '/phase3', 'phase4-docket': '/phase4' };
+  const pathPhaseMap: Record<string, FlowStep> = { '/phase1': 'phase1-input', '/phase2': 'phase2-adjudication', '/phase3': 'phase3-instrument', '/phase4': 'phase4-docket' };
   const [scanActionsOpen, setScanActionsOpen] = useState(false);
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
@@ -354,10 +355,9 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     const currentIndex = flowSteps.indexOf(state.flowStep);
     const targetIndex = flowSteps.indexOf(target);
     if (targetIndex <= currentIndex) return true;
-    if (target === 'context') return Boolean(state.calculation);
-    if (target === 'results') return Boolean(state.calculation);
-    if (target === 'message') return Boolean(state.calculation);
-    if (target === 'share') return Boolean(state.formalizer.message || state.calculation);
+    if (target === 'phase2-adjudication') return Boolean(state.calculation);
+    if (target === 'phase3-instrument') return Boolean(state.calculation);
+    if (target === 'phase4-docket') return Boolean(state.share.text || state.formalizer.message);
     return false;
   }
 
@@ -486,8 +486,26 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     dispatch({ type: 'setCalculation', value: recommendation.adjustedCalculation });
     dispatch({ type: 'setFormalizerField', field: 'message', value: '' });
     dispatch({ type: 'setShare', text: '', selectedProxyId: recommendation.adjustedCalculation.equivalents[0]?.proxyId ?? '', qrPreview: '', error: '' });
-    dispatch({ type: 'setFlowStep', value: 'message' });
+    dispatch({ type: 'setFlowStep', value: 'phase3-instrument' });
   }
+
+
+  useEffect(() => {
+    const fromPath = pathPhaseMap[location.pathname];
+    if (!fromPath) {
+      navigate(phasePathMap[state.flowStep], { replace: true });
+      return;
+    }
+    if (fromPath !== state.flowStep) {
+      if (canOpenFlowStep(fromPath)) dispatch({ type: 'setFlowStep', value: fromPath });
+      else navigate(phasePathMap[state.flowStep], { replace: true });
+    }
+  }, [location.pathname, state.flowStep]);
+
+  useEffect(() => {
+    const expectedPath = phasePathMap[state.flowStep];
+    if (location.pathname !== expectedPath) navigate(expectedPath, { replace: true });
+  }, [state.flowStep, location.pathname]);
 
   function resetToOriginalBid() {
     setRegionOverride('');
@@ -511,187 +529,77 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
 
   return (
     <section className="view-card ccc-card flow-surface">
-      <Stepper step={state.flowStep} onChange={(value) => dispatch({ type: 'setFlowStep', value })} canNavigateTo={canOpenFlowStep} />
+      <Stepper step={state.flowStep} onChange={(value) => { if (canOpenFlowStep(value)) { dispatch({ type: 'setFlowStep', value }); navigate(phasePathMap[value]); } }} canNavigateTo={canOpenFlowStep} />
       <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · {draftSaved ? 'Saved' : 'Saving…'}</div>
 
-      {state.flowStep === 'bid' && (
-        <>
-          <h2>Step 1: Enter camel bid</h2>
-          <div className="grid">
-            <label>Name<input className="ccc-input" value={bidName} onChange={(e) => setBidName(e.target.value)} placeholder="e.g. Layla" /></label>
-            <label>Region<select className="ccc-input" value={bidRegion} onChange={(e) => setBidRegion(e.target.value)}><option value="">Choose region</option>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
-          </div>
-          <label>Camel quantity: {camelQuantity}
-            <input
-              className="ccc-input"
-              type="range"
-              min={minCamelQuantity}
-              max={maxCamelQuantity}
-              value={camelQuantity}
-              onChange={(e) => setCamelQuantity(clampCamelQuantity(Number(e.target.value)))}
-            />
-          </label>
-          <p className="helper">Set the primary camel quantity, then calculate ICE. Guardrails keep the value between {minCamelQuantity} and {maxCamelQuantity} camels.</p>
-          <p className="helper">Examples: 2 camels, 5 yaks, 2 cows</p>
-
-          <div className="context-cards">
-            <details className="context-card">
-              <summary>Warrior status (optional)</summary>
-              <label><input type="checkbox" checked={isWarrior} onChange={(e) => setIsWarrior(e.target.checked)} /> Includes warrior context</label>
-            </details>
-            <details className="context-card">
-              <summary>Hobby (optional)</summary>
-              <label>Hobby<input className="ccc-input" value={hobby} onChange={(e) => setHobby(e.target.value)} placeholder="e.g. falconry" /></label>
-            </details>
-            <details className="context-card">
-              <summary>Courtship length (optional)</summary>
-              <label>Courtship years<input className="ccc-input" type="number" min="0" max="50" value={courtshipYears} onChange={(e) => setCourtshipYears(Math.min(50, Math.max(0, Number(e.target.value) || 0)))} /></label>
-            </details>
-            <details className="context-card">
-              <summary>Artifact included (optional)</summary>
-              <label><input type="checkbox" checked={hasArtifact} onChange={(e) => setHasArtifact(e.target.checked)} /> Includes ceremonial artifact</label>
-            </details>
-            <details className="context-card">
-              <summary>Quirks (optional)</summary>
-              <label>Quirks<textarea className="ccc-input" value={quirks} onChange={(e) => setQuirks(e.target.value)} placeholder="Add any notable details" /></label>
-            </details>
-          </div>
-
-          <button className="ccc-button-primary cta-primary" onClick={runStepOneCalculation} disabled={!canCalculateIce}>Calculate ICE</button>
-          <button className="cta-secondary" type="button" onClick={() => { setCamelQuantity(10); setIsWarrior(false); setHobby(''); setCourtshipYears(0); setHasArtifact(false); setQuirks(''); }}>Reset optional details</button>
-          {state.calcInput.parseSource && <p className="result">{state.calcInput.parseSource}</p>}
-        </>
+      {state.flowStep === 'phase1-input' && (
+        <Phase1Input
+          bidName={bidName}
+          bidRegion={bidRegion}
+          camelQuantity={camelQuantity}
+          minCamelQuantity={minCamelQuantity}
+          maxCamelQuantity={maxCamelQuantity}
+          canCalculateIce={canCalculateIce}
+          isWarrior={isWarrior}
+          hobby={hobby}
+          courtshipYears={courtshipYears}
+          hasArtifact={hasArtifact}
+          quirks={quirks}
+          parseSource={state.calcInput.parseSource}
+          setBidName={setBidName}
+          setBidRegion={setBidRegion}
+          setCamelQuantity={setCamelQuantity}
+          clampCamelQuantity={clampCamelQuantity}
+          setIsWarrior={setIsWarrior}
+          setHobby={setHobby}
+          setCourtshipYears={setCourtshipYears}
+          setHasArtifact={setHasArtifact}
+          setQuirks={setQuirks}
+          onCalculate={runStepOneCalculation}
+          onResetOptional={() => { setCamelQuantity(10); setIsWarrior(false); setHobby(''); setCourtshipYears(0); setHasArtifact(false); setQuirks(''); }}
+        />
       )}
 
-      {state.flowStep === 'context' && (
-        <>
-          <h2>Step 2: Context</h2>
-          <div className="context-cards">
-            <details className="context-card" open>
-              <summary>Region &amp; customs · {effectiveMultiplier.toFixed(2)}x</summary>
-              <div className="grid">
-                <label>Preset<select value={state.customizer.locationKey} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'locationKey', value: e.target.value })}>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
-                <label>Manual multiplier<select value={state.customizer.manualMultiplier} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}><option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option></select></label>
-              </div>
-            </details>
-
-            <section className="context-card">
-              <h3>Recommendation preview</h3>
-              <p className="helper">Original {state.calculation?.camelValue.toFixed(2) ?? '0.00'} camels → Adjusted {recommendation?.adjustedCamelValue.toFixed(2) ?? '0.00'} camels</p>
-              <div className="grid">
-                <label>Region override<select className="ccc-input" value={regionOverride} onChange={(e) => setRegionOverride(e.target.value)}><option value="">Use preset</option>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
-                <label>Social trait ({traitModifiers.social.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.social} onChange={(e) => setTraitModifiers((current) => ({ ...current, social: Number(e.target.value) }))} /></label>
-                <label>Resilience trait ({traitModifiers.resilience.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.resilience} onChange={(e) => setTraitModifiers((current) => ({ ...current, resilience: Number(e.target.value) }))} /></label>
-              </div>
-              <details>
-                <summary>Advanced options</summary>
-                <div className="grid">
-                  <label>Prestige trait ({traitModifiers.prestige.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.prestige} onChange={(e) => setTraitModifiers((current) => ({ ...current, prestige: Number(e.target.value) }))} /></label>
-                  <label>Ceremony trait ({traitModifiers.ceremony.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.ceremony} onChange={(e) => setTraitModifiers((current) => ({ ...current, ceremony: Number(e.target.value) }))} /></label>
-                  <label>Advanced multiplier ({advancedTrait.toFixed(2)}x)<input className="ccc-input" type="range" min="0.9" max="1.1" step="0.01" value={advancedTrait} onChange={(e) => setAdvancedTrait(Number(e.target.value))} /></label>
-                </div>
-              </details>
-            </section>
-
-            <details className="context-card">
-              <summary>Language · {state.customizer.language.toUpperCase()}</summary>
-              <label>Language<select value={state.customizer.language} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'language', value: e.target.value })}><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option></select></label>
-              <p className="helper">{languagePreview[state.customizer.language] ?? languagePreview.en}</p>
-            </details>
-
-            <details className="context-card">
-              <summary>Scan object to add proxy (optional)</summary>
-              <p className="helper">Permission only when you tap scan. Fallbacks: upload photo or manual add.</p>
-              {!scanActionsOpen && <button type="button" onClick={() => setScanActionsOpen(true)}>Start scan options</button>}
-              {scanActionsOpen && (
-                <div className="stepper">
-                  <button type="button">Scan now</button>
-                  <button type="button">Upload photo</button>
-                  <button type="button">Manual add</button>
-                  <button type="button" onClick={() => setScanActionsOpen(false)}>Close</button>
-                </div>
-              )}
-            </details>
-          </div>
-          <button className="ccc-button-primary cta-primary" onClick={() => dispatch({ type: 'setFlowStep', value: 'results' })}>Continue to Results</button>
-        </>
+      {state.flowStep === 'phase2-adjudication' && (
+        <Phase2Adjudication
+          state={state}
+          effectiveMultiplier={effectiveMultiplier}
+          recommendation={recommendation}
+          regionOverride={regionOverride}
+          setRegionOverride={setRegionOverride}
+          traitModifiers={traitModifiers}
+          setTraitModifiers={setTraitModifiers}
+          advancedTrait={advancedTrait}
+          setAdvancedTrait={setAdvancedTrait}
+          languagePreview={languagePreview}
+          scanActionsOpen={scanActionsOpen}
+          setScanActionsOpen={setScanActionsOpen}
+          resultsFiltersOpen={resultsFiltersOpen}
+          setResultsFiltersOpen={setResultsFiltersOpen}
+          topPicks={topPicks}
+          visibleEquivalents={visibleEquivalents}
+          runCompare={runCompare}
+          finalizeBid={finalizeBid}
+          resetToOriginalBid={resetToOriginalBid}
+          dispatch={dispatch}
+        />
       )}
 
-      {state.flowStep === 'results' && (
-        <>
-          <h2>Step 3: Results</h2>
-          {state.calculation ? <p className="hero">{state.calculation.camelValue.toFixed(2)} camels</p> : <p>Run a bid to see results.</p>}
-          <p className="helper">Detection: {state.calcInput.rawBid} · Affects message/export: templates and share format only.</p>
-
-          <div className="stepper">
-            <button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button>
-            <button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'all' })}>All</button>
-            <button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button>
-            <button className="step" onClick={() => setResultsFiltersOpen((value) => !value)}>{resultsFiltersOpen ? 'Hide filters' : 'Show filters'}</button>
-          </div>
-
-          {resultsFiltersOpen && (
-            <section className="context-card">
-              <h3>Result tools</h3>
-              <div className="grid">
-                <label>Search<input className="ccc-input" value={state.dashboardQuery} onChange={(e) => dispatch({ type: 'setDashboardQuery', value: e.target.value })} /></label>
-                <label>Sort<select className="ccc-input" value={state.dashboardSort} onChange={(e) => dispatch({ type: 'setDashboardSort', value: e.target.value as State['dashboardSort'] })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label>
-              </div>
-            </section>
-          )}
-
-          <table><thead><tr><th>Select</th><th>Proxy</th><th>Quantity</th></tr></thead><tbody>{(state.topTab === 'top' ? topPicks : visibleEquivalents).slice(0, 12).map((item) => <tr key={item.proxyId}><td><input type="checkbox" checked={state.compareSelected.includes(item.proxyId)} onChange={() => dispatch({ type: 'toggleCompareSelected', proxyId: item.proxyId })} /></td><td>{item.proxyName}</td><td>{item.quantity}</td></tr>)}</tbody></table>
-
-          {state.compareSelected.length > 0 && (
-            <section className="compare-panel" aria-label="Compare selected proxies">
-              <h3>Compare selected ({state.compareSelected.length})</h3>
-              <label>Amount<input className="ccc-input" value={state.compare.amount} onChange={(e) => dispatch({ type: 'setCompareField', field: 'amount', value: e.target.value })} /></label>
-              <button onClick={runCompare} disabled={state.compareSelected.length < 2}>Compare selected</button>
-              {state.compare.result && <p className="result">{state.compare.result}</p>}
-              {state.compare.error && <p className="error">{state.compare.error}</p>}
-            </section>
-          )}
-
-          {recommendation && (
-            <section className="context-card">
-              <h3>Original vs adjusted</h3>
-              <p className="helper">{state.calculation?.camelValue.toFixed(2)} → {recommendation.adjustedCamelValue.toFixed(2)} camels ({recommendation.regionFactor.toFixed(2)}x region · {recommendation.traitFactor.toFixed(2)}x traits)</p>
-              <button className="ccc-button-primary cta-primary" onClick={finalizeBid}>Finalize Bid (Continue to Message)</button>
-              <button className="cta-secondary" onClick={resetToOriginalBid}>Reset to Original</button>
-            </section>
-          )}
-
-          <details className={state.chaosMode ? 'celebrate-strip chaos-surface' : 'celebrate-strip'} onToggle={(event) => dispatch({ type: 'setCelebrateOpen', value: (event.currentTarget as HTMLDetailsElement).open })}><summary>Celebrate</summary>{state.celebrateOpen && <p>Show parade / show chart.</p>}</details>
-        </>
+      {state.flowStep === 'phase3-instrument' && (
+        <Phase3Instrument
+          state={state}
+          exportTab={exportTab}
+          setExportTab={setExportTab}
+          generateMessage={generateMessage}
+          runExportAction={runExportAction}
+          exportToast={exportToast}
+          dispatch={dispatch}
+          templates={listTemplates()}
+        />
       )}
 
-      {state.flowStep === 'message' && (
-        <>
-          <h2>Step 4: Formalize</h2>
-          <label>Template<select className="ccc-input" value={state.formalizer.template} onChange={(e) => dispatch({ type: 'setFormalizerField', field: 'template', value: e.target.value })}>{listTemplates().map((template) => <option key={template} value={template}>{template}</option>)}</select></label>
-          <button onClick={generateMessage}>Generate message</button>
-          {state.formalizer.message && <pre>{state.formalizer.message}</pre>}
-          <button className="ccc-button-primary cta-primary" onClick={() => dispatch({ type: 'setFlowStep', value: 'share' })}>Continue to Share</button>
-        </>
-      )}
-
-      {state.flowStep === 'share' && (
-        <>
-          <h2>Step 5: Share & Export</h2>
-          <div className="stepper">
-            <button className={exportTab === 'text' ? 'step active' : 'step'} onClick={() => setExportTab('text')}>Text</button>
-            <button className={exportTab === 'image' ? 'step active' : 'step'} onClick={() => setExportTab('image')}>Image</button>
-            <button className={exportTab === 'pdf' ? 'step active' : 'step'} onClick={() => setExportTab('pdf')}>PDF</button>
-            <button className={exportTab === 'html' ? 'step active' : 'step'} onClick={() => setExportTab('html')}>HTML</button>
-          </div>
-          <button className="ccc-button-primary cta-primary" onClick={() => runExportAction('copy')}>Copy</button>
-          <button onClick={() => runExportAction('download')}>Download</button>
-          <button onClick={() => runExportAction('share')}>Share</button>
-          {state.share.text && <pre>{state.share.text}</pre>}
-          {state.share.qrPreview && <p className="result">{state.share.qrPreview}</p>}
-          {exportToast && <p className="helper">{exportToast}</p>}
-          {exportToast && <button onClick={saveEntry}>Save to Archive</button>}
-        </>
+      {state.flowStep === 'phase4-docket' && (
+        <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} />
       )}
 
       {state.error && <p className="error">{state.error}</p>}
@@ -757,7 +665,7 @@ function ArchiveView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
 
 function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
-  const sideQuestReady = state.flowStep === 'message' || state.flowStep === 'share';
+  const sideQuestReady = state.flowStep === 'phase3-instrument' || state.flowStep === 'phase4-docket';
   return (
     <>
       <aside className={state.toolsOpen ? 'tools open desktop-tools' : 'tools desktop-tools'}>
