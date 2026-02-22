@@ -1,0 +1,30 @@
+.legal-card {
+  background: var(--ccc-pearl-white);
+  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 36%, transparent);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.legal-card-locked {
+  border-color: color-mix(in srgb, var(--ccc-champagne) 70%, var(--ccc-stone-border));
+}
+
+.phase-header {
+  margin-bottom: 12px;
+}
+
+.phase-label {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ccc-stone-border);
+}
+
+.primary-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}

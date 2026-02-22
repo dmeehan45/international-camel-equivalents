@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { buildDocketEntries } from '../core/history-archive.js';
 import { uxCopy } from '../content/uxCopy';
+import { LegalCard } from '../components/LegalCard';
+import { PhaseHeader } from '../components/PhaseHeader';
+import { PrimaryActionBar } from '../components/PrimaryActionBar';
 
 type HistoryEntry = { id: string; createdAt: string; amount: number; unit: string; camelValue: number; summary: string };
 
@@ -57,15 +60,17 @@ export function Phase4Docket(props: Props) {
 
   return (
     <>
-      <h2>{uxCopy.phases.phase4.heading}</h2>
-      <p className="helper">{uxCopy.phases.phase4.subtitle}</p>
-      <p className="hero">{props.calculation ? `${props.calculation.camelValue.toFixed(2)} camels` : uxCopy.phases.phase4.empty}</p>
-      {props.shareText && <pre>{props.shareText}</pre>}
-      {props.exportToast && <p className="helper">{props.exportToast}</p>}
-      <div className="stepper">
-        <button className="ccc-button-primary cta-primary" onClick={props.onSaveEntry} disabled={!props.shareText}>{uxCopy.phases.phase4.cta}</button>
-        <button onClick={props.onInitiateProceeding}>Initiate New Proceeding</button>
-      </div>
+      <PhaseHeader phaseLabel="Phase 4 of 4" heading={uxCopy.phases.phase4.heading} subtitle={uxCopy.phases.phase4.subtitle} />
+      <LegalCard>
+        <p className="hero">{props.calculation ? `${props.calculation.camelValue.toFixed(2)} camels` : uxCopy.phases.phase4.empty}</p>
+        {props.shareText && <pre>{props.shareText}</pre>}
+        {props.exportToast && <p className="helper">{props.exportToast}</p>}
+      </LegalCard>
+
+      <PrimaryActionBar
+        primary={{ label: uxCopy.phases.phase4.primaryCta, onClick: props.onInitiateProceeding }}
+        secondary={[{ label: uxCopy.phases.phase4.cta, onClick: props.onSaveEntry, disabled: !props.shareText }]}
+      />
 
       <h3>Docket Queue</h3>
       <div className="grid" role="list" aria-label="Docket queue entries">
@@ -73,12 +78,14 @@ export function Phase4Docket(props: Props) {
         {dockets.length === 0 && <p className="helper">Archive an entry to generate docket cards.</p>}
       </div>
 
-      <h3>Optional Modules</h3>
-      <div className="stepper side-quests">
-        {sideQuestModules.map((moduleName) => (
-          <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
-        ))}
-      </div>
+      <details className="context-card">
+        <summary>Optional side quests</summary>
+        <div className="stepper side-quests">
+          {sideQuestModules.map((moduleName) => (
+            <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
+          ))}
+        </div>
+      </details>
       {openModule && (
         <section className="view-card overlay" role="dialog" aria-modal="true" aria-label={openModule}>
           <h3>{openModule}</h3>
