@@ -211,13 +211,3 @@ pre {
 .tool-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-
-.proxy-category-group {
-  border-top: 1px dashed #d1d5db;
-  padding-top: 8px;
-}
-
-.proxy-category-group h4 {
-  margin: 6px 0;
-  color: var(--ccc-charcoal-vow);
-}

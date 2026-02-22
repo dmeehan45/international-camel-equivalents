@@ -18,6 +18,12 @@ type ToolTile = {
   description: string;
 };
 
+type ToolTile = {
+  id: string;
+  title: string;
+  description: string;
+};
+
 type Props = {
   copy: typeof uxCopy;
   drafts: SavedDraft[];

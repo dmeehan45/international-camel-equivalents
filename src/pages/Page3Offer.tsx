@@ -35,16 +35,6 @@ export function Page3Offer(props: Props) {
     return props.fullLibrary.filter((item) => item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q));
   }, [props.fullLibrary, query]);
 
-  const groupedLibrary = useMemo(() => {
-    const grouped = new Map<string, ProxyCard[]>();
-    for (const card of filteredLibrary) {
-      const items = grouped.get(card.category) ?? [];
-      items.push(card);
-      grouped.set(card.category, items);
-    }
-    return Array.from(grouped.entries());
-  }, [filteredLibrary]);
-
   return (
     <div>
       <h2>{props.copy.page3.title}</h2>
@@ -66,16 +56,12 @@ export function Page3Offer(props: Props) {
         <div className="drawer">
           <input value={query} placeholder={props.copy.page3.searchPlaceholder} onChange={(e) => setQuery(e.target.value)} />
           <div className="cards proxy-library-list">
-            {groupedLibrary.map(([category, cards]) => (
-              <section key={category} className="proxy-category-group">
-                <h4>{category}</h4>
-                {cards.map((card) => (
-                  <button key={card.id} className={`card-button ${props.selectedProxyId === card.id ? 'is-selected' : ''}`} onClick={() => props.onSelectProxy(card.id)}>
-                    <strong>{card.name}</strong>
-                    <p className="helper">1 Camel = {card.liveRate} {card.name}</p>
-                  </button>
-                ))}
-              </section>
+            {filteredLibrary.map((card) => (
+              <button key={card.id} className={`card-button ${props.selectedProxyId === card.id ? 'is-selected' : ''}`} onClick={() => props.onSelectProxy(card.id)}>
+                <strong>{card.name}</strong>
+                <p className="helper">{card.category}</p>
+                <p className="helper">1 Camel = {card.liveRate} {card.name}</p>
+              </button>
             ))}
             {filteredLibrary.length === 0 && <p>{props.copy.page3.empty}</p>}
           </div>

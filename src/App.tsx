@@ -70,16 +70,16 @@ function Shell() {
   const [proposalText, setProposalText] = useState('');
   const [drafts, setDrafts] = useState<SavedDraft[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
-  const [selectedProxyId, setSelectedProxyId] = useState('');
+  const [selectedProxyId, setSelectedProxyId] = useState(proxyLibrary[0].id);
   const [activeToolId, setActiveToolId] = useState('tool-1');
 
   const advisoryDate = formatAdvisoryDate(new Date('2026-02-22'));
   const volatilityPercent = getVolatilityPercent(new Date('2026-02-22'));
 
-  const selectedProxy = useMemo(() => proxyLibrary.find((proxy) => proxy.id === selectedProxyId) || null, [selectedProxyId]);
+  const selectedProxy = useMemo(() => proxyLibrary.find((proxy) => proxy.id === selectedProxyId) || proxyLibrary[0], [selectedProxyId]);
   const proxyQuantity = form.camelQuantity;
-  const liveRate = selectedProxy ? getLiveRate(selectedProxy.ratePerCamel, new Date('2026-02-22')) : 1;
-  const camelEquivalent = selectedProxy ? toCamelBenchmark(proxyQuantity, liveRate) : 0;
+  const liveRate = getLiveRate(selectedProxy.ratePerCamel, new Date('2026-02-22'));
+  const camelEquivalent = toCamelBenchmark(proxyQuantity, liveRate);
 
   const curated = useMemo(
     () => buildCuratedSuggestions(proxyLibrary, form.bidRegion, form.ageRange, form.occupation, form.quirkyFact),
@@ -98,7 +98,7 @@ function Shell() {
       name: form.bidName,
       region: form.bidRegion,
       quantity: proxyQuantity,
-      proxyName: selectedProxy?.name || 'Proxy Pending Selection',
+      proxyName: selectedProxy.name,
       camelEquivalent,
       rate: liveRate,
       volatilityPercent,
@@ -117,7 +117,7 @@ function Shell() {
     setTone('Formal');
     setSelectedClause('None');
     setError('');
-    setSelectedProxyId('');
+    setSelectedProxyId(proxyLibrary[0].id);
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -133,7 +133,7 @@ function Shell() {
     const item: SavedDraft = {
       id: crypto.randomUUID(),
       name: `${form.bidName}'s Indenture`,
-      summary: `${proxyQuantity} ${selectedProxy?.name || 'Proxy Pending Selection'} ≈ ${camelEquivalent} Camels (DBT Rate: ${advisoryDate})`,
+      summary: `${proxyQuantity} ${selectedProxy.name} ≈ ${camelEquivalent} Camels (DBT Rate: ${advisoryDate})`,
       text: finalText,
       createdAt: new Date().toISOString(),
       proxyName: selectedProxy?.name || 'Proxy Pending Selection',
@@ -184,7 +184,7 @@ function Shell() {
   }
 
   function handleLockOffer() {
-    if (!selectedProxy) {
+    if (!selectedProxyId) {
       setError(uxCopy.errors.proxyRequired);
       return;
     }
@@ -250,7 +250,7 @@ function Shell() {
           <Page3Offer
             copy={uxCopy}
             selectedProxyId={selectedProxyId}
-            selectedProxyName={selectedProxy?.name || ''}
+            selectedProxyName={selectedProxy.name}
             proxyQuantity={proxyQuantity}
             camelEquivalent={camelEquivalent}
             curatedCards={curated.map((proxy) => ({

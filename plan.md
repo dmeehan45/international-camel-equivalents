@@ -218,22 +218,6 @@ How we will prove it works:
 - [x] Side tools unlock only after first bid.
 - [x] Build passes.
 - [x] Targeted tests pass (unit/contract).
-- [x] Follow-up: structured docket metadata is persisted and rendered.
-- [x] Follow-up: no-proxy lock validation is reachable.
-- [x] Follow-up: full DBT drawer renders grouped category sections.
-
-
-
-## Follow-up alignment scope (approved Option B completion)
-To resolve reviewer feedback and fully align implementation to contracts, we will complete these remaining items:
-- Persist structured docket metadata fields (`proxyName`, `proxyQuantity`, `camelEquivalent`, `rateLabel`) in runtime draft objects, not only summary text.
-- Make no-proxy validation path reachable by requiring explicit proxy selection before locking a bid.
-- Render full DBT library in explicit category groups (not just category labels per item).
-
-Additional success criteria for this follow-up:
-- Docket cards render from structured metadata fields.
-- Lock action shows `proxyRequired` when no proxy is selected.
-- Full DBT drawer shows category section headers with grouped items.
 
 ## Risks + mitigations
 - **Contract drift across parallel agents:** keep canonical signatures in this file and import from shared module.
