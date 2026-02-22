@@ -419,18 +419,49 @@ function LibraryView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
 }
 
 function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  const drawerContent = <ToolsDrawerContent state={state} dispatch={dispatch} />;
+
   return (
-    <aside className={state.toolsOpen ? 'tools open' : 'tools'}>
+    <>
+      <aside className={state.toolsOpen ? 'tools open desktop-tools' : 'tools desktop-tools'}>
+        {drawerContent}
+      </aside>
+      <section className={state.toolsOpen ? 'tools open mobile-tools' : 'tools mobile-tools'}>
+        {drawerContent}
+      </section>
+    </>
+  );
+}
+
+function ToolsDrawerContent({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  return (
+    <>
       <h3>Tools Drawer</h3>
-      <p>Quick actions</p>
+      <ToolsLibraryPanel dispatch={dispatch} />
+      <ToolsAccessibilityPanel state={state} dispatch={dispatch} />
+    </>
+  );
+}
+
+function ToolsLibraryPanel({ dispatch }: { dispatch: Dispatch<Action> }) {
+  return (
+    <section className="tools-panel">
+      <h4>Quick actions</h4>
       <button onClick={() => dispatch({ type: 'setRootTab', value: 'library' })}>Open Library</button>
       <button onClick={() => dispatch({ type: 'setReferenceFilter', field: 'query', value: '' })}>Clear library search</button>
       <button onClick={() => dispatch({ type: 'setFlowStep', value: 'results' })}>Jump to results step</button>
+    </section>
+  );
+}
+
+function ToolsAccessibilityPanel({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  return (
+    <section className="tools-panel">
       <h4>Accessibility</h4>
       <label><input type="checkbox" checked={state.customizer.reducedMotion} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'reducedMotion', value: e.target.checked })} /> Reduced motion</label>
       <label><input type="checkbox" checked={state.customizer.highContrast} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'highContrast', value: e.target.checked })} /> High contrast</label>
       <label><input type="checkbox" checked={state.customizer.soundOn} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'soundOn', value: e.target.checked })} /> Sound on</label>
-    </aside>
+    </section>
   );
 }
 
