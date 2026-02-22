@@ -1,34 +1,32 @@
-describe('Master spec simplified flow', () => {
+describe('Master spec advisory flow', () => {
   beforeEach(() => {
     cy.visit('/');
   });
 
-  it('completes end-to-end draft creation with prefilled proposal text', () => {
-    cy.contains('button', 'Begin Proposal').click();
-    cy.contains('h2', 'Proposal For');
+  it('completes end-to-end docket creation with DBT contract text', () => {
+    cy.contains('button', 'Begin Advisory Process').click();
+    cy.contains('h2', 'Subject Profile');
 
-    cy.contains('button', 'Continue').click();
+    cy.contains('button', 'Proceed to Bid Library').click();
     cy.contains('Please enter a name.');
 
-    cy.get('input[placeholder="e.g. Sarah Kim"]').type('Layla Hassan');
+    cy.get('input[placeholder="e.g., Jordan Lee"]').type('Layla Hassan');
     cy.get('select').first().select('United States');
-    cy.contains('button', 'Continue').click();
+    cy.contains('button', 'Proceed to Bid Library').click();
 
-    cy.contains('h2', 'Your Dowry Offer');
-    cy.contains('Equivalent in used compact cars').click();
-    cy.contains('≈ 14 camels');
-    cy.contains('button', 'Lock in this offer').click();
+    cy.contains('h2', 'Select Bid Proxy & Amount');
+    cy.contains('button', 'Browse Full DBT Library').click();
+    cy.get('input[placeholder="Search proxies"]').type('Yaks');
+    cy.contains('button', /^Yaks$/).click();
+    cy.contains('button', 'Lock Advisory Bid').click();
 
-    cy.contains('h2', 'Your Proposal Text');
-    cy.get('textarea').invoke('val').should('contain', 'I hereby formally propose marriage');
-    cy.contains('button', 'Done – View my proposals').click();
+    cy.contains('h2', 'Advisory Proposal Contract');
+    cy.get('textarea').invoke('val').should('contain', 'DOWRY PROPOSAL INDENTURE');
+    cy.contains('button', 'Conclude & Access Docket').click();
 
-    cy.contains('h2', 'Your Drafts');
-    cy.contains('Layla Hassan');
-    cy.contains('button', 'Extras').click();
-    cy.contains('button', 'Generate polite rejection letter').click();
-    cy.contains('Thank you for your proposal submission.');
-    cy.contains('button', 'View past calculations').click();
-    cy.contains('used compact cars');
+    cy.contains('h2', 'Advisory Docket');
+    cy.contains("Layla Hassan's Indenture");
+    cy.contains('h3', 'Further Advisory Tools');
+    cy.contains('Proxy Personality Assessment');
   });
 });
