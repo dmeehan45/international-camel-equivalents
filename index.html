@@ -14,7 +14,7 @@
         color: #0f172a;
       }
       .card {
-        max-width: 42rem;
+        max-width: 56rem;
         margin: 0 auto;
         background: #fff;
         border-radius: 12px;
@@ -35,6 +35,10 @@
         border-radius: 8px;
         font: inherit;
       }
+      input,
+      select {
+        background: #fff;
+      }
       button {
         background: #0f172a;
         color: #fff;
@@ -42,6 +46,29 @@
       }
       #result {
         margin-top: 1rem;
+      }
+      .error {
+        margin-top: 0.75rem;
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.45rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      th {
+        color: #334155;
+      }
+      .meta {
+        color: #475569;
+        margin-top: 0.5rem;
       }
     </style>
   </head>
@@ -54,44 +81,203 @@
         <select id="unit" aria-label="Unit">
           <option value="USD">USD</option>
           <option value="CAMEL">Camels</option>
+          <option value="PROXY">Proxy</option>
         </select>
+        <select id="proxy" aria-label="Proxy" hidden></select>
         <button id="calculate">Convert</button>
       </div>
+
+      <section aria-label="Bid customizer" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Bid customizer</h2>
+        <p class="meta" style="margin-top: 0;">Apply local multipliers or override one proxy rate.</p>
+        <div class="row">
+          <input id="camel-multiplier" type="number" min="0.01" step="0.01" value="1" aria-label="Camel multiplier" />
+          <select id="override-proxy" aria-label="Override proxy"></select>
+          <input id="override-rate" type="number" min="0" step="0.01" value="" placeholder="Override rate per camel (optional)" aria-label="Override rate" />
+        </div>
+      </section>
+
+      <div class="row" aria-label="Dashboard controls">
+        <input id="filter" type="search" placeholder="Filter proxies by name" aria-label="Filter proxies" />
+        <select id="sort" aria-label="Sort equivalents">
+          <option value="quantity-desc">Sort: Quantity (high to low)</option>
+          <option value="quantity-asc">Sort: Quantity (low to high)</option>
+          <option value="name-asc">Sort: Name (A-Z)</option>
+          <option value="name-desc">Sort: Name (Z-A)</option>
+        </select>
+      </div>
+
+      <section aria-label="Reference compare tool" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Compare proxies</h2>
+        <p class="meta" style="margin-top: 0;">How many of proxy B are in proxy A?</p>
+        <div class="row">
+          <input id="compare-amount" type="number" min="0" value="1" aria-label="Compare amount" />
+          <select id="compare-from" aria-label="Compare from proxy"></select>
+          <select id="compare-to" aria-label="Compare to proxy"></select>
+        </div>
+        <div id="compare-result" class="meta" aria-live="polite"></div>
+      </section>
+
+      <div id="error" class="error" aria-live="polite"></div>
       <div id="result" aria-live="polite"></div>
     </main>
 
     <script type="module">
-      import { toCamelValue, toEquivalents } from '/src/core/conversion.js';
+      import {
+        calculateIceWithModifiers,
+        compareProxyUnits,
+        toCamelValue,
+        toEquivalents,
+      } from '/src/core/conversion.js';
 
       const result = document.getElementById('result');
+      const errorMessage = document.getElementById('error');
       const amountInput = document.getElementById('amount');
       const unitInput = document.getElementById('unit');
+      const proxyInput = document.getElementById('proxy');
+      const camelMultiplierInput = document.getElementById('camel-multiplier');
+      const overrideProxyInput = document.getElementById('override-proxy');
+      const overrideRateInput = document.getElementById('override-rate');
+      const filterInput = document.getElementById('filter');
+      const sortInput = document.getElementById('sort');
+      const compareAmountInput = document.getElementById('compare-amount');
+      const compareFromInput = document.getElementById('compare-from');
+      const compareToInput = document.getElementById('compare-to');
+      const compareResult = document.getElementById('compare-result');
       const button = document.getElementById('calculate');
-      const camelUsdRate = 50000;
+      const camelUsdRate = 500;
+      const maxRows = 25;
       let proxies = [];
 
       async function loadProxies() {
         const response = await fetch('/src/data/proxies.json');
         proxies = await response.json();
+
+        for (const proxy of proxies) {
+          const option = document.createElement('option');
+          option.value = proxy.id;
+          option.textContent = proxy.name;
+          proxyInput.append(option);
+
+          const overrideOption = option.cloneNode(true);
+          overrideProxyInput.append(overrideOption);
+
+          const compareFromOption = option.cloneNode(true);
+          const compareToOption = option.cloneNode(true);
+          compareFromInput.append(compareFromOption);
+          compareToInput.append(compareToOption);
+        }
+
+        if (proxies.length > 1) {
+          compareToInput.value = proxies[1].id;
+        }
+      }
+
+      function updateProxyVisibility() {
+        proxyInput.hidden = unitInput.value !== 'PROXY';
+      }
+
+      function sortEquivalents(items, sortValue) {
+        if (sortValue === 'quantity-asc') return items.sort((a, b) => a.quantity - b.quantity);
+        if (sortValue === 'name-asc') return items.sort((a, b) => a.proxyName.localeCompare(b.proxyName));
+        if (sortValue === 'name-desc') return items.sort((a, b) => b.proxyName.localeCompare(a.proxyName));
+
+        return items.sort((a, b) => b.quantity - a.quantity);
+      }
+
+      function buildModifiers() {
+        const camelMultiplier = Number(camelMultiplierInput.value);
+        const modifiers = {
+          camelMultiplier,
+          proxyRateOverrides: {},
+        };
+
+        const overrideRateText = overrideRateInput.value.trim();
+        if (overrideRateText !== '') {
+          modifiers.proxyRateOverrides[overrideProxyInput.value] = Number(overrideRateText);
+        }
+
+        if (Object.keys(modifiers.proxyRateOverrides).length === 0) {
+          delete modifiers.proxyRateOverrides;
+        }
+
+        return modifiers;
+      }
+
+      function renderCompare() {
+        const amount = Number(compareAmountInput.value);
+        const fromProxyId = compareFromInput.value;
+        const toProxyId = compareToInput.value;
+
+        try {
+          const quantity = compareProxyUnits({ amount, fromProxyId, toProxyId }, proxies);
+          const fromName = compareFromInput.options[compareFromInput.selectedIndex]?.textContent ?? 'Proxy A';
+          const toName = compareToInput.options[compareToInput.selectedIndex]?.textContent ?? 'Proxy B';
+          compareResult.textContent = `${amount} ${fromName} equals ${quantity} ${toName}.`;
+        } catch (error) {
+          compareResult.textContent = error.message;
+        }
       }
 
       function render() {
         const amount = Number(amountInput.value);
         const unit = unitInput.value;
-        const camelValue = toCamelValue({ amount, unit, camelUsdRate }, proxies);
-        const equivalents = toEquivalents(camelValue, proxies).slice(0, 5);
+        const proxyId = proxyInput.value;
 
-        result.innerHTML = `
-          <p><strong>${amount} ${unit}</strong> equals <strong>${camelValue} camels</strong>.</p>
-          <ul>
-            ${equivalents.map((item) => `<li>${item.proxyName}: ${item.quantity}</li>`).join('')}
-          </ul>
-        `;
+        try {
+          const modifiers = buildModifiers();
+          const baseCamelValue = toCamelValue({ amount, unit, proxyId, camelUsdRate }, proxies);
+          const { camelValue, equivalents } = calculateIceWithModifiers(
+            { amount, unit, proxyId, camelUsdRate },
+            proxies,
+            modifiers,
+          );
+          const query = filterInput.value.trim().toLowerCase();
+          const filtered = equivalents.filter((item) => item.proxyName.toLowerCase().includes(query));
+          const sorted = sortEquivalents([...filtered], sortInput.value);
+          const visible = sorted.slice(0, maxRows);
+
+          errorMessage.textContent = '';
+          result.innerHTML = `
+            <p><strong>${amount} ${unit}</strong> equals <strong>${camelValue} camels</strong>.</p>
+            <p class="meta">Base ICE: ${baseCamelValue} camels. Showing ${visible.length} of ${sorted.length} matching equivalents.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Proxy</th>
+                  <th>Equivalent Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${visible.map((item) => `<tr><td>${item.proxyName}</td><td>${item.quantity}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          `;
+        } catch (error) {
+          result.innerHTML = '';
+          errorMessage.textContent = error.message;
+        }
       }
 
       await loadProxies();
+      updateProxyVisibility();
       render();
+      renderCompare();
+
+      unitInput.addEventListener('change', () => {
+        updateProxyVisibility();
+        render();
+      });
+      filterInput.addEventListener('input', render);
+      sortInput.addEventListener('change', render);
+      proxyInput.addEventListener('change', render);
+      camelMultiplierInput.addEventListener('input', render);
+      overrideProxyInput.addEventListener('change', render);
+      overrideRateInput.addEventListener('input', render);
       button.addEventListener('click', render);
+      compareAmountInput.addEventListener('input', renderCompare);
+      compareFromInput.addEventListener('change', renderCompare);
+      compareToInput.addEventListener('change', renderCompare);
     </script>
   </body>
 </html>

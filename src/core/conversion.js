@@ -68,6 +68,29 @@ export function calculateIceWithModifiers(input, proxies, modifiers = {}) {
   };
 }
 
+
+/**
+ * Compare proxy units by converting through camel value.
+ * @param {{fromProxyId:string,toProxyId:string,amount:number}} input
+ * @param {ProxyDefinition[]} proxies
+ * @returns {number}
+ */
+export function compareProxyUnits(input, proxies) {
+  if (!Number.isFinite(input.amount)) throw new Error('Input amount must be a finite number.');
+  if (input.amount < 0) throw new Error("That's worth negative camels—time to up your game!");
+
+  const fromProxy = proxies.find((item) => item.id === input.fromProxyId);
+  const toProxy = proxies.find((item) => item.id === input.toProxyId);
+
+  if (!fromProxy || !toProxy) throw new Error('Unknown proxy selected.');
+  if (fromProxy.ratePerCamel <= 0 || toProxy.ratePerCamel <= 0) {
+    throw new Error('Proxy rate must be greater than zero.');
+  }
+
+  const camelValue = input.amount / fromProxy.ratePerCamel;
+  return round2(camelValue * toProxy.ratePerCamel);
+}
+
 function round2(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
