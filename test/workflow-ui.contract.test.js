@@ -36,3 +36,9 @@ test('page actions and disclosure controls are present', () => {
 test('app source removes fantasy and game language', () => {
   assert.equal(/wizard|dragon|arcane|warrior|artifact|side quest|Statute|Invalid Declaration/i.test(`${appSource}\n${pageSources}`), false);
 });
+
+
+test('proxy lock requires explicit selection path is reachable', () => {
+  assert.match(appSource, /useState\(''\)/);
+  assert.match(appSource, /uxCopy\.errors\.proxyRequired/);
+});

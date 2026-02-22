@@ -76,3 +76,19 @@ export interface QueueItem {
   channel: string;
   status: 'pending' | 'sent';
 }
+
+
+export interface LockedBid {
+  selectedProxyId: string;
+  proxyQuantity: number;
+  liveRatePerCamel: number;
+  camelEquivalent: number;
+  volatilityPercent: number;
+}
+
+export interface DocketBidMeta {
+  proxyName: string;
+  proxyQuantity: number;
+  camelEquivalent: number;
+  rateLabel: string;
+}

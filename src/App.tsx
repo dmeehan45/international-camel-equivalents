@@ -7,102 +7,117 @@ import { Page2Basics } from './pages/Page2Basics';
 import { Page3Offer } from './pages/Page3Offer';
 import { Page4Proposal } from './pages/Page4Proposal';
 import { Page5Drafts } from './pages/Page5Drafts';
+import proxies from './data/proxies.json';
+import { buildCuratedSuggestions, formatAdvisoryDate, getLiveRate, getVolatilityPercent, toCamelBenchmark } from './core/dbt-rates';
+import type { ProxyDefinition } from './domain/types';
+
+const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
+const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
+const tones = ['Formal', 'Ironic', 'Pedantic'] as const;
+const clauseOptions = ['None', 'Proxy Maintenance Waiver', 'Absurdity Escalation Rider', 'No Take-Backs Covenant'] as const;
+type Tone = (typeof tones)[number];
+const proxyLibrary = proxies as ProxyDefinition[];
 
 type SavedDraft = {
   id: string;
   name: string;
-  camels: number;
   summary: string;
   text: string;
   createdAt: string;
+  proxyName: string;
+  proxyQuantity: number;
+  camelEquivalent: number;
+  rateLabel: string;
 };
 
-const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
-const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
-const tones = ['Formal', 'Playful', 'Very Dry'] as const;
+function buildAdvisoryContract(input: {
+  name: string;
+  region: string;
+  quantity: number;
+  proxyName: string;
+  camelEquivalent: number;
+  rate: number;
+  volatilityPercent: number;
+  advisoryDate: string;
+  particulars: string;
+  selectedClause: string;
+  customClause: string;
+  tone: Tone;
+}) {
+  const toneLine = input.tone === 'Formal'
+    ? 'This instrument is submitted with procedural seriousness and ceremonial restraint.'
+    : input.tone === 'Ironic'
+      ? 'This instrument is tendered with measured dignity and unmeasured confidence.'
+      : 'This instrument is submitted pursuant to precision language and excessive footnote energy.';
 
-type Tone = (typeof tones)[number];
+  const clauseLine = input.selectedClause !== 'None' ? input.selectedClause : 'Standard Advisory Compliance';
+  const addendum = input.customClause.trim() || 'No additional custom clauses entered.';
 
-const CAMEL_USD = 2500;
-const HANDBAG_USD = 6000;
-const COMPACT_CAR_USD = 18000;
-const FLIGHT_USD = 3000;
-
-function estimateSuggestion(name: string, region: string, ageRange: string, occupation: string, quirkyFact: string) {
-  let score = 18;
-  if (name.trim().length > 10) score += 2;
-  if (region && region !== 'Other') score += 1;
-  if (ageRange) score += 1;
-  if (occupation.trim()) score += 2;
-  if (quirkyFact.trim()) score += 1;
-  return Math.min(100, Math.max(5, score));
-}
-
-function equivalentCards(camels: number) {
-  const usdValue = camels * CAMEL_USD;
-  const handbagCamels = Math.min(100, Math.max(5, Math.round((3 * HANDBAG_USD) / CAMEL_USD)));
-  const carCamels = Math.min(100, Math.max(5, Math.round((2 * COMPACT_CAR_USD) / CAMEL_USD)));
-  const flightCamels = Math.min(100, Math.max(5, Math.round((8 * FLIGHT_USD) / CAMEL_USD)));
-
-  return [
-    { label: `${camels} Camels`, camels },
-    { label: `Equivalent in luxury handbags (~$${usdValue.toLocaleString()})`, camels: handbagCamels },
-    { label: `Equivalent in used compact cars (~${Math.max(1, Math.round(usdValue / COMPACT_CAR_USD))} vehicles)`, camels: carCamels },
-    { label: `Equivalent in international flights (~${Math.max(1, Math.round(usdValue / FLIGHT_USD))} business-class round-trips)`, camels: flightCamels },
-  ];
-}
-
-function buildProposalText(name: string, camels: number, usd: number, tone: Tone, customSentence: string) {
-  const toneLine = tone === 'Formal'
-    ? 'This offer is made in sincere good faith.'
-    : tone === 'Playful'
-      ? 'This offer is sincere, if admittedly dramatic.'
-      : 'This offer is submitted with calm administrative confidence.';
-
-  return `To: ${name}\n\nI hereby formally propose marriage and offer, in good faith, a dowry of ${camels} camels (or a modern equivalent value of approximately $${usd.toLocaleString()}).\n\n${toneLine}\n\nAccepted terms are binding in the court of public opinion.${customSentence ? `\n\n${customSentence}` : ''}\n\nRegards,`;
+  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${input.quantity} ${input.proxyName} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${input.proxyName}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${input.proxyName} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n5. Signatories: Proposer ________________ / Acceptor ________________.\n\nSupplemental Clause: ${clauseLine}.\nAddendum: ${addendum}.\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
 }
 
 function Shell() {
-  const { form, dispatchForm, canCalculateIce, clampCamelQuantity } = useDowryForm();
+  const { form, dispatchForm } = useDowryForm();
   const [step, setStep] = useState<FlowStepId>('page1-landing');
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [personalizeOpen, setPersonalizeOpen] = useState(false);
-  const [extrasOpen, setExtrasOpen] = useState(false);
-  const [calculationsOpen, setCalculationsOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [error, setError] = useState('');
   const [tone, setTone] = useState<Tone>('Formal');
+  const [selectedClause, setSelectedClause] = useState<string>('None');
   const [customSentence, setCustomSentence] = useState('');
   const [proposalText, setProposalText] = useState('');
-  const [rejectionText, setRejectionText] = useState('');
   const [drafts, setDrafts] = useState<SavedDraft[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
+  const [selectedProxyId, setSelectedProxyId] = useState('');
+  const [activeToolId, setActiveToolId] = useState('tool-1');
 
-  const suggestedCamels = useMemo(
-    () => estimateSuggestion(form.bidName, form.bidRegion, form.ageRange, form.occupation, form.quirkyFact),
-    [form.bidName, form.bidRegion, form.ageRange, form.occupation, form.quirkyFact],
+  const advisoryDate = formatAdvisoryDate(new Date('2026-02-22'));
+  const volatilityPercent = getVolatilityPercent(new Date('2026-02-22'));
+
+  const selectedProxy = useMemo(() => proxyLibrary.find((proxy) => proxy.id === selectedProxyId) || null, [selectedProxyId]);
+  const proxyQuantity = form.camelQuantity;
+  const liveRate = selectedProxy ? getLiveRate(selectedProxy.ratePerCamel, new Date('2026-02-22')) : 1;
+  const camelEquivalent = selectedProxy ? toCamelBenchmark(proxyQuantity, liveRate) : 0;
+
+  const curated = useMemo(
+    () => buildCuratedSuggestions(proxyLibrary, form.bidRegion, form.ageRange, form.occupation, form.quirkyFact),
+    [form.bidRegion, form.ageRange, form.occupation, form.quirkyFact],
   );
 
   const flowContext = {
     currentStep: step,
-    hasBasics: canCalculateIce,
-    hasOffer: form.camelQuantity >= 5,
+    hasBasics: Boolean(form.bidName.trim() && form.bidRegion.trim()),
+    hasOffer: Boolean(selectedProxyId && proxyQuantity >= 1),
     hasProposal: Boolean(proposalText.trim()),
   };
 
-  const cards = equivalentCards(form.camelQuantity);
-
   function generatedProposal() {
-    return buildProposalText(form.bidName || 'Name', form.camelQuantity, form.camelQuantity * CAMEL_USD, tone, customSentence);
+    return buildAdvisoryContract({
+      name: form.bidName,
+      region: form.bidRegion,
+      quantity: proxyQuantity,
+      proxyName: selectedProxy?.name || 'Proxy Pending Selection',
+      camelEquivalent,
+      rate: liveRate,
+      volatilityPercent,
+      advisoryDate,
+      particulars: [form.ageRange, form.occupation, form.quirkyFact].filter(Boolean).join('; ') || 'No additional particulars supplied',
+      selectedClause,
+      customClause: customSentence,
+      tone,
+    });
   }
 
   function startOver() {
     setStep('page1-landing');
     setProposalText('');
     setCustomSentence('');
-    setRejectionText('');
     setTone('Formal');
+    setSelectedClause('None');
     setError('');
+    setSelectedProxyId('');
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -117,11 +132,14 @@ function Shell() {
     }
     const item: SavedDraft = {
       id: crypto.randomUUID(),
-      name: form.bidName,
-      camels: form.camelQuantity,
-      summary: `${form.camelQuantity} camels ≈ ${Math.max(1, Math.round(form.camelQuantity / 8))} used compact cars`,
+      name: `${form.bidName}'s Indenture`,
+      summary: `${proxyQuantity} ${selectedProxy?.name || 'Proxy Pending Selection'} ≈ ${camelEquivalent} Camels (DBT Rate: ${advisoryDate})`,
       text: finalText,
       createdAt: new Date().toISOString(),
+      proxyName: selectedProxy?.name || 'Proxy Pending Selection',
+      proxyQuantity,
+      camelEquivalent,
+      rateLabel: `DBT Rate: ${advisoryDate}`,
     };
     setDrafts((current) => [item, ...current]);
     setStep('page5-drafts');
@@ -137,16 +155,16 @@ function Shell() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'dowry-proposal.txt';
+    link.download = 'advisory-proposal-contract.txt';
     link.click();
     URL.revokeObjectURL(url);
   }
 
   function downloadPdf() {
-    const html = `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre>`;
+    const html = `<pre style="font-family:'Times New Roman',serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre>`;
     const win = window.open('', '_blank', 'width=700,height=900');
     if (!win) return;
-    win.document.write(`<html><head><title>Dowry Proposal</title></head><body>${html}<script>window.print();</script></body></html>`);
+    win.document.write(`<html><head><title>Advisory Proposal Contract</title></head><body>${html}<script>window.print();</script></body></html>`);
     win.document.close();
   }
 
@@ -161,22 +179,34 @@ function Shell() {
   function handleContinueBasics() {
     if (!form.bidName.trim()) return setError(uxCopy.errors.nameRequired);
     if (!form.bidRegion.trim()) return setError(uxCopy.errors.regionRequired);
-    dispatchForm({ type: 'setField', field: 'camelQuantity', value: suggestedCamels });
     setError('');
     setStep('page3-offer');
   }
 
   function handleLockOffer() {
+    if (!selectedProxy) {
+      setError(uxCopy.errors.proxyRequired);
+      return;
+    }
     const nextText = generatedProposal();
     setProposalText(nextText);
     setStep('page4-proposal');
   }
 
-  function generateRejection() {
-    const name = drafts[0]?.name || form.bidName || 'Applicant';
-    const note = `To: ${name}\n\nThank you for your proposal submission. After careful review, we respectfully decline at this time.\n\nWe appreciate the gesture and wish you well in future negotiations.\n\nRegards,`;
-    setRejectionText(note);
-  }
+  const libraryCards = proxyLibrary.map((proxy) => ({
+    id: proxy.id,
+    name: proxy.name,
+    category: proxy.category,
+    description: proxy.description,
+    liveRate: getLiveRate(proxy.ratePerCamel, new Date('2026-02-22')),
+  }));
+
+  const tools = [
+    { id: 'tool-1', title: 'Proxy Personality Assessment', description: 'Match your spirit proxy for future bids.' },
+    { id: 'tool-2', title: 'Bid Volatility Simulator', description: 'Forecast rate swings using absurd scenarios.' },
+    { id: 'tool-3', title: 'Maiden Response Estimator', description: 'Receive pun-heavy response odds and notes.' },
+    { id: 'tool-4', title: 'Full DBT Archive', description: 'Review historical proxy fluctuation logs.' },
+  ];
 
   return (
     <main className="app-shell">
@@ -219,11 +249,27 @@ function Shell() {
         {step === 'page3-offer' && (
           <Page3Offer
             copy={uxCopy}
-            camelQuantity={form.camelQuantity}
-            suggestedCamels={suggestedCamels}
-            cards={cards}
-            onSliderChange={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: clampCamelQuantity(value) })}
-            onSelectCard={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: clampCamelQuantity(value) })}
+            selectedProxyId={selectedProxyId}
+            selectedProxyName={selectedProxy?.name || ''}
+            proxyQuantity={proxyQuantity}
+            camelEquivalent={camelEquivalent}
+            curatedCards={curated.map((proxy) => ({
+              id: proxy.id,
+              name: proxy.name,
+              category: proxy.category,
+              description: proxy.description,
+              liveRate: getLiveRate(proxy.ratePerCamel, new Date('2026-02-22')),
+            }))}
+            fullLibrary={libraryCards}
+            isLibraryOpen={libraryOpen}
+            onToggleLibrary={() => setLibraryOpen((v) => !v)}
+            onSelectProxy={(id) => {
+              setSelectedProxyId(id);
+              setError('');
+            }}
+            onQuantityChange={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: Math.min(100, Math.max(1, Math.round(value))) })}
+            volatilityPercent={volatilityPercent}
+            selectedLiveRate={liveRate}
             onLockIn={handleLockOffer}
           />
         )}
@@ -237,9 +283,12 @@ function Shell() {
             onTogglePersonalize={() => setPersonalizeOpen((v) => !v)}
             customSentence={customSentence}
             onSetCustomSentence={setCustomSentence}
+            selectedClause={selectedClause}
+            onSetSelectedClause={setSelectedClause}
             tone={tone}
             tones={tones}
             onSetTone={setTone}
+            clauseOptions={clauseOptions}
             onGenerate={() => setProposalText(generatedProposal())}
             onCopy={() => copyText(proposalText || generatedProposal())}
             onDownloadTxt={downloadTxt}
@@ -258,12 +307,10 @@ function Shell() {
             onCopyDraft={copyText}
             onShareDraft={shareText}
             onDeleteDraft={(id) => setDrafts((current) => current.filter((item) => item.id !== id))}
-            extrasOpen={extrasOpen}
-            onToggleExtras={() => setExtrasOpen((v) => !v)}
-            rejectionText={rejectionText}
-            onGenerateRejection={generateRejection}
-            calculationsOpen={calculationsOpen}
-            onToggleCalculations={() => setCalculationsOpen((v) => !v)}
+            toolsUnlocked={drafts.length > 0}
+            tools={tools}
+            activeToolId={activeToolId}
+            onSelectTool={setActiveToolId}
             onStartNew={startOver}
           />
         )}

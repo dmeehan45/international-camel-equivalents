@@ -3,10 +3,19 @@ import type { uxCopy } from '../content/uxCopy';
 type SavedDraft = {
   id: string;
   name: string;
-  camels: number;
   summary: string;
   text: string;
   createdAt: string;
+  proxyName: string;
+  proxyQuantity: number;
+  camelEquivalent: number;
+  rateLabel: string;
+};
+
+type ToolTile = {
+  id: string;
+  title: string;
+  description: string;
 };
 
 type Props = {
@@ -17,12 +26,10 @@ type Props = {
   onCopyDraft: (text: string) => void;
   onShareDraft: (text: string) => void;
   onDeleteDraft: (id: string) => void;
-  extrasOpen: boolean;
-  onToggleExtras: () => void;
-  rejectionText: string;
-  onGenerateRejection: () => void;
-  calculationsOpen: boolean;
-  onToggleCalculations: () => void;
+  toolsUnlocked: boolean;
+  tools: ToolTile[];
+  activeToolId: string;
+  onSelectTool: (id: string) => void;
   onStartNew: () => void;
 };
 
@@ -35,7 +42,7 @@ export function Page5Drafts(props: Props) {
         {props.drafts.map((draft) => (
           <article key={draft.id} className="draft-card">
             <p><strong>{draft.name}</strong></p>
-            <p>{draft.summary}</p>
+            <p>{draft.proxyQuantity} {draft.proxyName} ≈ {draft.camelEquivalent} Camels ({draft.rateLabel})</p>
             <p className="helper">{new Date(draft.createdAt).toLocaleString()}</p>
             {props.selectedDraftId === draft.id && <pre>{draft.text}</pre>}
             <div className="actions-row">
@@ -48,20 +55,17 @@ export function Page5Drafts(props: Props) {
         ))}
       </div>
 
-      <button className="cta-secondary text-link" onClick={props.onToggleExtras}>{props.copy.page5.extras}</button>
-      {props.extrasOpen && (
-        <div className="drawer">
-          <button className="cta-secondary" onClick={props.onGenerateRejection}>{props.copy.page5.rejection}</button>
-          {props.rejectionText && <pre>{props.rejectionText}</pre>}
-          <button className="cta-secondary" onClick={props.onToggleCalculations}>{props.copy.page5.history}</button>
-          {props.calculationsOpen && (
-            <ul className="calc-log">
-              {props.drafts.map((draft) => (
-                <li key={`calc-${draft.id}`}>{draft.summary} · {new Date(draft.createdAt).toLocaleDateString()}</li>
-              ))}
-              {props.drafts.length === 0 && <li>No calculations yet.</li>}
-            </ul>
-          )}
+      {props.toolsUnlocked && (
+        <div>
+          <h3>{props.copy.page5.extras}</h3>
+          <div className="cards tool-grid">
+            {props.tools.map((tool) => (
+              <button key={tool.id} className={`card-button ${props.activeToolId === tool.id ? 'is-selected' : ''}`} onClick={() => props.onSelectTool(tool.id)}>
+                <strong>{tool.title}</strong>
+                <p className="helper">{tool.description}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
