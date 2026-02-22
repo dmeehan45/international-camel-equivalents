@@ -170,3 +170,24 @@ pre {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.text-only-link {
+  width: auto;
+  border: 0;
+  background: transparent;
+  color: var(--ccc-charcoal-vow);
+  text-decoration: underline;
+  padding: 0;
+  margin: 0 0 12px;
+  min-height: auto;
+}
+
+.actions-row--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.calc-log {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--ccc-muted-rose);
+}

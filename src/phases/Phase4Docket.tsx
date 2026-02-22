@@ -20,13 +20,13 @@ type Props = {
   onInitiateProceeding: () => void;
 };
 
-const sideQuestModules = ['Quiz', 'Rejection Generator', 'Precedent Archive'] as const;
+const extraModules = ['Quiz', 'Rejection Generator', 'Precedent Archive'] as const;
 
 export function Phase4Docket(props: Props) {
   const [openDocketId, setOpenDocketId] = useState<string | null>(null);
-  const [openModule, setOpenModule] = useState<(typeof sideQuestModules)[number] | null>(null);
+  const [openModule, setOpenModule] = useState<(typeof extraModules)[number] | null>(null);
   const [queueOpen, setQueueOpen] = useState(true);
-  const [sideQuestOpen, setSideQuestOpen] = useState(false);
+  const [extrasOpen, setSideQuestOpen] = useState(false);
 
   const dockets = useMemo(
     () => buildDocketEntries(props.history, props.docketReadIds),
@@ -91,12 +91,12 @@ export function Phase4Docket(props: Props) {
       </div>
 
       <div className="results-drawer">
-        <button className="cta-secondary" aria-expanded={sideQuestOpen} onClick={() => setSideQuestOpen((current) => !current)}>
-          {sideQuestOpen ? 'Hide side quests' : 'Bored? Try a side quest'}
+        <button className="cta-secondary" aria-expanded={extrasOpen} onClick={() => setSideQuestOpen((current) => !current)}>
+          {extrasOpen ? 'Hide extras' : 'Need a break? Try extras'}
         </button>
-        {sideQuestOpen && (
+        {extrasOpen && (
           <div className="stepper mobile-drawer-body">
-            {sideQuestModules.map((moduleName) => (
+            {extraModules.map((moduleName) => (
               <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
             ))}
           </div>

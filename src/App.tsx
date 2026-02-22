@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react';
 import { DowryFormProvider, useDowryForm } from './store/DowryFormContext';
 import { FLOW_STEP_LABELS, canOpenFlowStep, getFlowSteps, type FlowStepId } from './domain/flow';
 import { uxCopy } from './content/uxCopy';
+import { Page1Landing } from './pages/Page1Landing';
+import { Page2Basics } from './pages/Page2Basics';
+import { Page3Offer } from './pages/Page3Offer';
+import { Page4Proposal } from './pages/Page4Proposal';
+import { Page5Drafts } from './pages/Page5Drafts';
 
 type SavedDraft = {
   id: string;
@@ -18,6 +23,11 @@ const tones = ['Formal', 'Playful', 'Very Dry'] as const;
 
 type Tone = (typeof tones)[number];
 
+const CAMEL_USD = 2500;
+const HANDBAG_USD = 6000;
+const COMPACT_CAR_USD = 18000;
+const FLIGHT_USD = 3000;
+
 function estimateSuggestion(name: string, region: string, ageRange: string, occupation: string, quirkyFact: string) {
   let score = 18;
   if (name.trim().length > 10) score += 2;
@@ -29,11 +39,16 @@ function estimateSuggestion(name: string, region: string, ageRange: string, occu
 }
 
 function equivalentCards(camels: number) {
+  const usdValue = camels * CAMEL_USD;
+  const handbagCamels = Math.min(100, Math.max(5, Math.round((3 * HANDBAG_USD) / CAMEL_USD)));
+  const carCamels = Math.min(100, Math.max(5, Math.round((2 * COMPACT_CAR_USD) / CAMEL_USD)));
+  const flightCamels = Math.min(100, Math.max(5, Math.round((8 * FLIGHT_USD) / CAMEL_USD)));
+
   return [
     { label: `${camels} Camels`, camels },
-    { label: `Luxury handbags (~$${(camels * 2500).toLocaleString()})`, camels },
-    { label: `Used compact cars (~${Math.max(1, Math.round(camels / 8))} vehicles)`, camels },
-    { label: `Business-class flights (~${Math.max(1, Math.round(camels * 0.9))} round-trips)`, camels },
+    { label: `Equivalent in luxury handbags (~$${usdValue.toLocaleString()})`, camels: handbagCamels },
+    { label: `Equivalent in used compact cars (~${Math.max(1, Math.round(usdValue / COMPACT_CAR_USD))} vehicles)`, camels: carCamels },
+    { label: `Equivalent in international flights (~${Math.max(1, Math.round(usdValue / FLIGHT_USD))} business-class round-trips)`, camels: flightCamels },
   ];
 }
 
@@ -53,10 +68,13 @@ function Shell() {
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [personalizeOpen, setPersonalizeOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [calculationsOpen, setCalculationsOpen] = useState(false);
   const [error, setError] = useState('');
   const [tone, setTone] = useState<Tone>('Formal');
   const [customSentence, setCustomSentence] = useState('');
   const [proposalText, setProposalText] = useState('');
+  const [rejectionText, setRejectionText] = useState('');
   const [drafts, setDrafts] = useState<SavedDraft[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
@@ -74,10 +92,15 @@ function Shell() {
 
   const cards = equivalentCards(form.camelQuantity);
 
+  function generatedProposal() {
+    return buildProposalText(form.bidName || 'Name', form.camelQuantity, form.camelQuantity * CAMEL_USD, tone, customSentence);
+  }
+
   function startOver() {
     setStep('page1-landing');
     setProposalText('');
     setCustomSentence('');
+    setRejectionText('');
     setTone('Formal');
     setError('');
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
@@ -87,7 +110,8 @@ function Shell() {
   }
 
   function saveDraft() {
-    if (!proposalText.trim()) {
+    const finalText = proposalText.trim() ? proposalText : generatedProposal();
+    if (!finalText.trim()) {
       setError(uxCopy.errors.proposalRequired);
       return;
     }
@@ -96,7 +120,7 @@ function Shell() {
       name: form.bidName,
       camels: form.camelQuantity,
       summary: `${form.camelQuantity} camels ≈ ${Math.max(1, Math.round(form.camelQuantity / 8))} used compact cars`,
-      text: proposalText,
+      text: finalText,
       createdAt: new Date().toISOString(),
     };
     setDrafts((current) => [item, ...current]);
@@ -108,8 +132,8 @@ function Shell() {
     await navigator.clipboard.writeText(text);
   }
 
-  function downloadText() {
-    const blob = new Blob([proposalText], { type: 'text/plain;charset=utf-8' });
+  function downloadTxt() {
+    const blob = new Blob([proposalText || generatedProposal()], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -118,12 +142,40 @@ function Shell() {
     URL.revokeObjectURL(url);
   }
 
+  function downloadPdf() {
+    const html = `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre>`;
+    const win = window.open('', '_blank', 'width=700,height=900');
+    if (!win) return;
+    win.document.write(`<html><head><title>Dowry Proposal</title></head><body>${html}<script>window.print();</script></body></html>`);
+    win.document.close();
+  }
+
   async function shareText(text: string) {
     if (navigator.share) {
       await navigator.share({ title: uxCopy.global.appTitle, text });
       return;
     }
     await copyText(text);
+  }
+
+  function handleContinueBasics() {
+    if (!form.bidName.trim()) return setError(uxCopy.errors.nameRequired);
+    if (!form.bidRegion.trim()) return setError(uxCopy.errors.regionRequired);
+    dispatchForm({ type: 'setField', field: 'camelQuantity', value: suggestedCamels });
+    setError('');
+    setStep('page3-offer');
+  }
+
+  function handleLockOffer() {
+    const nextText = generatedProposal();
+    setProposalText(nextText);
+    setStep('page4-proposal');
+  }
+
+  function generateRejection() {
+    const name = drafts[0]?.name || form.bidName || 'Applicant';
+    const note = `To: ${name}\n\nThank you for your proposal submission. After careful review, we respectfully decline at this time.\n\nWe appreciate the gesture and wish you well in future negotiations.\n\nRegards,`;
+    setRejectionText(note);
   }
 
   return (
@@ -146,138 +198,74 @@ function Shell() {
         ))}
       </nav>
 
+      {step !== 'page1-landing' && <button className="text-only-link" onClick={startOver}>{uxCopy.global.startOver}</button>}
+
       <section className="view-card">
-        {step === 'page1-landing' && (
-          <div>
-            <h2>{uxCopy.page1.title}</h2>
-            {uxCopy.page1.body.map((line) => <p key={line}>{line}</p>)}
-            <button className="ccc-button-primary" onClick={() => setStep('page2-basics')}>{uxCopy.page1.begin}</button>
-            <button className="cta-secondary text-link" onClick={() => setHowOpen((v) => !v)}>{uxCopy.page1.howItWorksLabel}</button>
-            {howOpen && <p className="helper">{uxCopy.page1.howItWorksText}</p>}
-          </div>
-        )}
+        {step === 'page1-landing' && <Page1Landing copy={uxCopy} howOpen={howOpen} onToggleHow={() => setHowOpen((v) => !v)} onBegin={() => setStep('page2-basics')} />}
 
         {step === 'page2-basics' && (
-          <div>
-            <h2>{uxCopy.page2.title}</h2>
-            <label>{uxCopy.page2.nameLabel}
-              <input value={form.bidName} placeholder={uxCopy.page2.namePlaceholder} onChange={(e) => dispatchForm({ type: 'setField', field: 'bidName', value: e.target.value })} />
-            </label>
-            <label>{uxCopy.page2.regionLabel}
-              <select value={form.bidRegion} onChange={(e) => dispatchForm({ type: 'setField', field: 'bidRegion', value: e.target.value })}>
-                <option value="">{uxCopy.page2.regionPlaceholder}</option>
-                {regions.map((region) => <option key={region} value={region}>{region}</option>)}
-              </select>
-            </label>
-
-            <button className="cta-secondary text-link" onClick={() => setOptionalOpen((v) => !v)}>{optionalOpen ? uxCopy.page2.hideMore : uxCopy.page2.addMore}</button>
-            {optionalOpen && (
-              <div className="drawer">
-                <label>{uxCopy.page2.ageRange}
-                  <select value={form.ageRange} onChange={(e) => dispatchForm({ type: 'setField', field: 'ageRange', value: e.target.value })}>
-                    <option value="">Select age range</option>
-                    {ageRanges.map((value) => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                </label>
-                <label>{uxCopy.page2.occupation}
-                  <input value={form.occupation} placeholder={uxCopy.page2.occupationPlaceholder} onChange={(e) => dispatchForm({ type: 'setField', field: 'occupation', value: e.target.value })} />
-                </label>
-                <label>{uxCopy.page2.quirkyFact}
-                  <input value={form.quirkyFact} placeholder={uxCopy.page2.quirkyFactPlaceholder} onChange={(e) => dispatchForm({ type: 'setField', field: 'quirkyFact', value: e.target.value })} />
-                </label>
-              </div>
-            )}
-
-            <button className="ccc-button-primary" onClick={() => {
-              if (!form.bidName.trim()) return setError(uxCopy.errors.nameRequired);
-              if (!form.bidRegion.trim()) return setError(uxCopy.errors.regionRequired);
-              dispatchForm({ type: 'setField', field: 'camelQuantity', value: suggestedCamels });
-              setError('');
-              setStep('page3-offer');
-            }}>{uxCopy.page2.continue}</button>
-          </div>
+          <Page2Basics
+            copy={uxCopy}
+            form={form}
+            regions={regions}
+            ageRanges={ageRanges}
+            optionalOpen={optionalOpen}
+            onToggleOptional={() => setOptionalOpen((v) => !v)}
+            onSetField={(field, value) => dispatchForm({ type: 'setField', field, value })}
+            onContinue={handleContinueBasics}
+          />
         )}
 
         {step === 'page3-offer' && (
-          <div>
-            <h2>{uxCopy.page3.title}</h2>
-            <p>{uxCopy.page3.suggestion(suggestedCamels)}</p>
-            <p className="helper">{uxCopy.page3.helper}</p>
-            <label>{uxCopy.page3.live(form.camelQuantity)}
-              <input type="range" min={5} max={100} value={form.camelQuantity} onChange={(e) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: clampCamelQuantity(Number(e.target.value)) })} />
-            </label>
-            <div className="cards">
-              {cards.map((card) => (
-                <button key={card.label} className="card-button" onClick={() => dispatchForm({ type: 'setField', field: 'camelQuantity', value: card.camels })}>{card.label}</button>
-              ))}
-            </div>
-            <button className="ccc-button-primary" onClick={() => setStep('page4-proposal')}>{uxCopy.page3.lockIn}</button>
-            <p className="helper">{uxCopy.page3.footnote}</p>
-          </div>
+          <Page3Offer
+            copy={uxCopy}
+            camelQuantity={form.camelQuantity}
+            suggestedCamels={suggestedCamels}
+            cards={cards}
+            onSliderChange={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: clampCamelQuantity(value) })}
+            onSelectCard={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: clampCamelQuantity(value) })}
+            onLockIn={handleLockOffer}
+          />
         )}
 
         {step === 'page4-proposal' && (
-          <div>
-            <h2>{uxCopy.page4.title}</h2>
-            <textarea
-              rows={10}
-              value={proposalText}
-              onChange={(e) => setProposalText(e.target.value)}
-              placeholder={buildProposalText(form.bidName || 'Name', form.camelQuantity, form.camelQuantity * 2500, tone, customSentence)}
-            />
-
-            <button className="cta-secondary text-link" onClick={() => setPersonalizeOpen((v) => !v)}>{uxCopy.page4.personalizeLabel}</button>
-            {personalizeOpen && (
-              <div className="drawer">
-                <label>{uxCopy.page4.customSentence}
-                  <input value={customSentence} onChange={(e) => setCustomSentence(e.target.value)} />
-                </label>
-                <label>{uxCopy.page4.tone}
-                  <select value={tone} onChange={(e) => setTone(e.target.value as Tone)}>
-                    {tones.map((option) => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                </label>
-                <button className="cta-secondary" onClick={() => setProposalText(buildProposalText(form.bidName, form.camelQuantity, form.camelQuantity * 2500, tone, customSentence))}>Generate / Refresh text</button>
-              </div>
-            )}
-
-            <div className="actions-row">
-              <button className="cta-secondary" onClick={() => copyText(proposalText || buildProposalText(form.bidName, form.camelQuantity, form.camelQuantity * 2500, tone, customSentence))}>{uxCopy.page4.copy}</button>
-              <button className="cta-secondary" onClick={downloadText}>{uxCopy.page4.download}</button>
-              <button className="cta-secondary" onClick={() => shareText(proposalText || buildProposalText(form.bidName, form.camelQuantity, form.camelQuantity * 2500, tone, customSentence))}>{uxCopy.page4.share}</button>
-            </div>
-            <button className="ccc-button-primary" onClick={saveDraft}>{uxCopy.page4.done}</button>
-          </div>
+          <Page4Proposal
+            copy={uxCopy}
+            proposalText={proposalText}
+            onSetProposalText={setProposalText}
+            personalizeOpen={personalizeOpen}
+            onTogglePersonalize={() => setPersonalizeOpen((v) => !v)}
+            customSentence={customSentence}
+            onSetCustomSentence={setCustomSentence}
+            tone={tone}
+            tones={tones}
+            onSetTone={setTone}
+            onGenerate={() => setProposalText(generatedProposal())}
+            onCopy={() => copyText(proposalText || generatedProposal())}
+            onDownloadTxt={downloadTxt}
+            onDownloadPdf={downloadPdf}
+            onShare={() => shareText(proposalText || generatedProposal())}
+            onDone={saveDraft}
+          />
         )}
 
         {step === 'page5-drafts' && (
-          <div>
-            <h2>{uxCopy.page5.title}</h2>
-            {drafts.length === 0 && <p>{uxCopy.page5.empty}</p>}
-            <div className="cards">
-              {drafts.map((draft) => (
-                <article key={draft.id} className="draft-card">
-                  <p><strong>{draft.name}</strong></p>
-                  <p>{draft.summary}</p>
-                  <p className="helper">{new Date(draft.createdAt).toLocaleString()}</p>
-                  {selectedDraftId === draft.id && <pre>{draft.text}</pre>}
-                  <div className="actions-row">
-                    <button className="cta-secondary" onClick={() => setSelectedDraftId(selectedDraftId === draft.id ? null : draft.id)}>{uxCopy.page5.view}</button>
-                    <button className="cta-secondary" onClick={() => copyText(draft.text)}>{uxCopy.page5.copy}</button>
-                    <button className="cta-secondary" onClick={() => shareText(draft.text)}>{uxCopy.page5.share}</button>
-                    <button className="cta-secondary" onClick={() => setDrafts((current) => current.filter((item) => item.id !== draft.id))}>{uxCopy.page5.delete}</button>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <details>
-              <summary>{uxCopy.page5.extras}</summary>
-              <p>{uxCopy.page5.rejection}</p>
-              <p>{uxCopy.page5.history}</p>
-            </details>
-            <p className="helper">{uxCopy.page5.localNote}</p>
-            <button className="ccc-button-primary" onClick={startOver}>{uxCopy.page5.startNew}</button>
-          </div>
+          <Page5Drafts
+            copy={uxCopy}
+            drafts={drafts}
+            selectedDraftId={selectedDraftId}
+            onToggleView={(id) => setSelectedDraftId(selectedDraftId === id ? null : id)}
+            onCopyDraft={copyText}
+            onShareDraft={shareText}
+            onDeleteDraft={(id) => setDrafts((current) => current.filter((item) => item.id !== id))}
+            extrasOpen={extrasOpen}
+            onToggleExtras={() => setExtrasOpen((v) => !v)}
+            rejectionText={rejectionText}
+            onGenerateRejection={generateRejection}
+            calculationsOpen={calculationsOpen}
+            onToggleCalculations={() => setCalculationsOpen((v) => !v)}
+            onStartNew={startOver}
+          />
         )}
 
         {error && <p className="error">{error}</p>}
