@@ -191,3 +191,23 @@ pre {
   padding-left: 18px;
   color: var(--ccc-muted-rose);
 }
+
+.proxy-cards .card-button.is-selected,
+.proxy-library-list .card-button.is-selected,
+.tool-grid .card-button.is-selected {
+  border-color: var(--ccc-charcoal-vow);
+  box-shadow: 0 0 0 1px var(--ccc-charcoal-vow);
+}
+
+.proxy-library-list {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.contract-text {
+  font-family: 'Times New Roman', serif;
+}
+
+.tool-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

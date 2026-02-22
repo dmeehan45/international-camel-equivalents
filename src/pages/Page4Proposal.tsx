@@ -1,6 +1,6 @@
 import type { uxCopy } from '../content/uxCopy';
 
-type Tone = 'Formal' | 'Playful' | 'Very Dry';
+type Tone = 'Formal' | 'Ironic' | 'Pedantic';
 
 type Props = {
   copy: typeof uxCopy;
@@ -10,9 +10,12 @@ type Props = {
   onTogglePersonalize: () => void;
   customSentence: string;
   onSetCustomSentence: (value: string) => void;
+  selectedClause: string;
+  onSetSelectedClause: (value: string) => void;
   tone: Tone;
   tones: readonly Tone[];
   onSetTone: (value: Tone) => void;
+  clauseOptions: readonly string[];
   onGenerate: () => void;
   onCopy: () => void;
   onDownloadTxt: () => void;
@@ -25,11 +28,16 @@ export function Page4Proposal(props: Props) {
   return (
     <div>
       <h2>{props.copy.page4.title}</h2>
-      <textarea rows={10} value={props.proposalText} onChange={(e) => props.onSetProposalText(e.target.value)} />
+      <textarea className="contract-text" rows={14} value={props.proposalText} onChange={(e) => props.onSetProposalText(e.target.value)} />
 
       <button className="cta-secondary text-link" onClick={props.onTogglePersonalize}>{props.copy.page4.personalizeLabel}</button>
       {props.personalizeOpen && (
         <div className="drawer">
+          <label>{props.copy.page4.clauseLabel}
+            <select value={props.selectedClause} onChange={(e) => props.onSetSelectedClause(e.target.value)}>
+              {props.clauseOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </label>
           <label>{props.copy.page4.customSentence}
             <input value={props.customSentence} onChange={(e) => props.onSetCustomSentence(e.target.value)} />
           </label>
@@ -38,7 +46,7 @@ export function Page4Proposal(props: Props) {
               {props.tones.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
-          <button className="cta-secondary" onClick={props.onGenerate}>Generate / Refresh text</button>
+          <button className="cta-secondary" onClick={props.onGenerate}>{props.copy.page4.generate}</button>
         </div>
       )}
 
