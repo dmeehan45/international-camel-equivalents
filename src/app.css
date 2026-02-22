@@ -327,6 +327,12 @@ pre {
   color: #fff;
 }
 
+.cta-secondary {
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  color: var(--text-primary);
+}
+
 .flow-surface {
   display: grid;
   gap: var(--space-3);
