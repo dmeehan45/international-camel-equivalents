@@ -242,8 +242,6 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
 
   const topPicks = useMemo(() => visibleEquivalents.slice(0, 12), [visibleEquivalents]);
 
-  const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
-
   function runCompare() {
     try {
       const quantity = compareProxyUnits({ fromProxyId: state.compare.fromProxyId, toProxyId: state.compare.toProxyId, amount: Number(state.compare.amount) }, state.mergedProxies);
@@ -254,19 +252,6 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
       dispatch({ type: 'setCompareField', field: 'error', value: '' });
     } catch (error) {
       dispatch({ type: 'setCompareField', field: 'error', value: error instanceof Error ? error.message : 'Compare failed.' });
-    }
-  }
-
-  function saveProxy() {
-    try {
-      const created = createProxyDefinition({ name: state.newProxy.name, ratePerCamel: Number(state.newProxy.ratePerCamel), category: state.newProxy.category, description: state.newProxy.description }, state.mergedProxies);
-      const next = [...state.extensionProxies, created];
-      writeStoredExtensions(next);
-      dispatch({ type: 'hydrateExtensions', value: next });
-      dispatch({ type: 'setNewProxyField', field: 'success', value: `Added ${created.name}` });
-      dispatch({ type: 'setNewProxyField', field: 'error', value: '' });
-    } catch (error) {
-      dispatch({ type: 'setNewProxyField', field: 'error', value: error instanceof Error ? error.message : 'Unable to create proxy.' });
     }
   }
 
@@ -387,26 +372,65 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
       {state.error && <p className="error">{state.error}</p>}
       {state.calcInput.parseNote && <p className="error">{state.calcInput.parseNote}</p>}
 
-      <aside className={state.toolsOpen ? 'tools open' : 'tools'}>
-        <h3>Tools Drawer</h3>
-        <div className="grid">
-          <label>Search<input value={state.referenceFilters.query} onChange={(e) => dispatch({ type: 'setReferenceFilter', field: 'query', value: e.target.value })} /></label>
-          <label>Category<select value={state.referenceFilters.category} onChange={(e) => dispatch({ type: 'setReferenceFilter', field: 'category', value: e.target.value })}><option value="">All</option>{CANONICAL_PROXY_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
-        </div>
-        <p>{filtered.length} proxies in library</p>
-        <ul className="list">{filtered.slice(0, 10).map((proxy) => <li key={proxy.id}>{proxy.name} · {proxy.category}</li>)}</ul>
-        <h4>Proxy Generator</h4>
-        <div className="grid">
-          <label>Name<input value={state.newProxy.name} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'name', value: e.target.value })} /></label>
-          <label>Rate<input value={state.newProxy.ratePerCamel} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'ratePerCamel', value: e.target.value })} /></label>
-        </div>
-        <button onClick={saveProxy}>Add custom proxy</button>
-        <h4>Accessibility</h4>
-        <label><input type="checkbox" checked={state.customizer.reducedMotion} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'reducedMotion', value: e.target.checked })} /> Reduced motion</label>
-        <label><input type="checkbox" checked={state.customizer.highContrast} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'highContrast', value: e.target.checked })} /> High contrast</label>
-        <label><input type="checkbox" checked={state.customizer.soundOn} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'soundOn', value: e.target.checked })} /> Sound on</label>
-      </aside>
     </section>
+  );
+}
+
+function LibraryView({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
+
+  function saveProxy() {
+    try {
+      const created = createProxyDefinition({ name: state.newProxy.name, ratePerCamel: Number(state.newProxy.ratePerCamel), category: state.newProxy.category, description: state.newProxy.description }, state.mergedProxies);
+      const next = [...state.extensionProxies, created];
+      writeStoredExtensions(next);
+      dispatch({ type: 'hydrateExtensions', value: next });
+      dispatch({ type: 'setNewProxyField', field: 'success', value: `Added ${created.name}` });
+      dispatch({ type: 'setNewProxyField', field: 'error', value: '' });
+    } catch (error) {
+      dispatch({ type: 'setNewProxyField', field: 'error', value: error instanceof Error ? error.message : 'Unable to create proxy.' });
+    }
+  }
+
+  return (
+    <section className="view-card">
+      <h2>Library</h2>
+      <p>Search, filter, browse, and generate custom proxies.</p>
+      <div className="grid">
+        <label>Search<input value={state.referenceFilters.query} onChange={(e) => dispatch({ type: 'setReferenceFilter', field: 'query', value: e.target.value })} /></label>
+        <label>Category<select value={state.referenceFilters.category} onChange={(e) => dispatch({ type: 'setReferenceFilter', field: 'category', value: e.target.value })}><option value="">All</option>{CANONICAL_PROXY_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+        <label>Source<select value={state.referenceFilters.source} onChange={(e) => dispatch({ type: 'setReferenceFilter', field: 'source', value: e.target.value })}><option value="all">All</option><option value="reference">Reference only</option><option value="extension">Custom only</option></select></label>
+      </div>
+      <p>{filtered.length} proxies in library</p>
+      <ul className="list">{filtered.map((proxy) => <li key={proxy.id}>{proxy.name} · {proxy.category}</li>)}</ul>
+
+      <h3>Proxy Generator</h3>
+      <div className="grid">
+        <label>Name<input value={state.newProxy.name} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'name', value: e.target.value })} /></label>
+        <label>Rate<input value={state.newProxy.ratePerCamel} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'ratePerCamel', value: e.target.value })} /></label>
+        <label>Category<input value={state.newProxy.category} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'category', value: e.target.value })} placeholder="e.g. livestock" /></label>
+      </div>
+      <label>Description<textarea value={state.newProxy.description} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'description', value: e.target.value })} /></label>
+      <button onClick={saveProxy}>Add custom proxy</button>
+      {state.newProxy.success && <p className="result">{state.newProxy.success}</p>}
+      {state.newProxy.error && <p className="error">{state.newProxy.error}</p>}
+    </section>
+  );
+}
+
+function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  return (
+    <aside className={state.toolsOpen ? 'tools open' : 'tools'}>
+      <h3>Tools Drawer</h3>
+      <p>Quick actions</p>
+      <button onClick={() => dispatch({ type: 'setRootTab', value: 'library' })}>Open Library</button>
+      <button onClick={() => dispatch({ type: 'setReferenceFilter', field: 'query', value: '' })}>Clear library search</button>
+      <button onClick={() => dispatch({ type: 'setFlowStep', value: 'results' })}>Jump to results step</button>
+      <h4>Accessibility</h4>
+      <label><input type="checkbox" checked={state.customizer.reducedMotion} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'reducedMotion', value: e.target.checked })} /> Reduced motion</label>
+      <label><input type="checkbox" checked={state.customizer.highContrast} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'highContrast', value: e.target.checked })} /> High contrast</label>
+      <label><input type="checkbox" checked={state.customizer.soundOn} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'soundOn', value: e.target.checked })} /> Sound on</label>
+    </aside>
   );
 }
 
@@ -466,9 +490,11 @@ export function App() {
       )}
 
       {state.activeRootTab === 'flow' && <FlowView state={state} dispatch={dispatch} />}
-      {state.activeRootTab === 'library' && <FlowView state={state} dispatch={dispatch} />}
+      {state.activeRootTab === 'library' && <LibraryView state={state} dispatch={dispatch} />}
       {state.activeRootTab === 'archive' && <ArchiveView state={state} dispatch={dispatch} />}
       {state.activeRootTab === 'premium' && <section className="view-card"><h2>Premium</h2><p>Negotiate this bid (premium feature placeholder).</p><p>$69/year with local premium flag.</p></section>}
+
+      <ToolsDrawer state={state} dispatch={dispatch} />
     </main>
   );
 }
