@@ -1,3 +1,5 @@
+import type { FlowStepId } from './flow';
+
 export type ProxyCategory =
   | 'Mammals and Land Creatures'
   | 'Aquatic and Marine Life'
@@ -41,8 +43,8 @@ export interface ConversionModifiers {
 }
 
 export interface PhaseProgress {
-  currentStep: 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
-  completedSteps: Array<'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket'>;
+  currentStep: FlowStepId;
+  completedSteps: FlowStepId[];
 }
 
 export interface DowryForm {
