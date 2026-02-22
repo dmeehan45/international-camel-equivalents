@@ -129,3 +129,13 @@ test('customizer scenario applies multiplier and override together', () => {
   const yakEquivalent = result.equivalents.find((item) => item.proxyId === yaks.id);
   assert.equal(yakEquivalent.quantity, 44);
 });
+
+
+test('toEquivalents rejects non-finite camel value', () => {
+  assert.throws(() => toEquivalents(Number.NaN, proxies), /finite number/);
+});
+
+test('toEquivalents rejects invalid proxy rate', () => {
+  const invalid = [{ id: 'broken', name: 'Broken proxy', ratePerCamel: 0 }];
+  assert.throws(() => toEquivalents(1, invalid), /greater than zero/);
+});

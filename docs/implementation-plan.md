@@ -7,6 +7,11 @@ This initial commit creates foundational assets from the spec:
 3. Shared domain types (`src/domain/types.ts`).
 4. Redux slice blueprint (`src/store/slices/README.md`).
 
+
+## Option A stage-gate plan
+- See `docs/option-a-stage-gates.md` for gate order, traceability, and exit criteria.
+- Gate 1 is focused on spec lock and measurable delivery guardrails before additional feature work.
+
 ## Milestone sequence
 1. Scaffold React + TypeScript app shell and Redux store wiring.
 2. Implement Home/Dashboard calculator using the conversion engine.
