@@ -27,6 +27,8 @@ import { Phase3Instrument } from './phases/Phase3Instrument';
 import { Phase4Docket } from './phases/Phase4Docket';
 import { DowryFormProvider, useDowryForm, WORKFLOW_STORAGE_KEY } from './store/DowryFormContext';
 import { uxCopy } from './content/uxCopy';
+import { ErrorMessage } from './components/ErrorMessage';
+import { LoadingFactRotator } from './components/LoadingFactRotator';
 
 type FlowStep = 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
 type TopTab = 'top' | 'all' | 'compare';
@@ -50,6 +52,7 @@ type State = {
   calculation: CalculationResult | null;
   error: string;
   customizer: { locationKey: string; manualMultiplier: string; language: string; reducedMotion: boolean; highContrast: boolean; soundOn: boolean };
+  showLoadingFacts: boolean;
   referenceFilters: { query: string; category: string; source: 'all' | 'reference' | 'extension' };
   compare: { amount: string; fromProxyId: string; toProxyId: string; result: string; error: string };
   compareSelected: string[];
@@ -76,6 +79,7 @@ type Action =
   | { type: 'setError'; value: string }
   | { type: 'hydrateExtensions'; value: ProxyDefinition[] }
   | { type: 'setCustomizerField'; field: keyof State['customizer']; value: string | boolean }
+  | { type: 'setShowLoadingFacts'; value: boolean }
   | { type: 'setReferenceFilter'; field: keyof State['referenceFilters']; value: string }
   | { type: 'setCompareField'; field: keyof State['compare']; value: string }
   | { type: 'toggleCompareSelected'; proxyId: string }
@@ -148,6 +152,7 @@ function buildInitialState(): State {
       highContrast: false,
       soundOn: false,
     },
+    showLoadingFacts: true,
     referenceFilters: { query: '', category: '', source: 'all' },
     compare: {
       amount: '1',
@@ -185,6 +190,7 @@ function reducer(state: State, action: Action): State {
       return { ...state, extensionProxies: action.value, mergedProxies: merged };
     }
     case 'setCustomizerField': return { ...state, customizer: { ...state.customizer, [action.field]: action.value } };
+    case 'setShowLoadingFacts': return { ...state, showLoadingFacts: action.value };
     case 'setReferenceFilter': return { ...state, referenceFilters: { ...state.referenceFilters, [action.field]: action.value } as State['referenceFilters'] };
     case 'setCompareField': return { ...state, compare: { ...state.compare, [action.field]: action.value } };
     case 'toggleCompareSelected':
@@ -312,6 +318,57 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
   );
 }
 
+function FixedShellHeader({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
+  const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
+  const labels: Record<FlowStep, string> = {
+    'phase1-input': 'Phase I',
+    'phase2-adjudication': 'Phase II',
+    'phase3-instrument': 'Phase III',
+    'phase4-docket': 'Phase IV',
+  };
+
+  return (
+    <header className="fixed-header" role="banner">
+      <div className="fixed-header-top">
+        <div>
+          <h1>International Camel Equivalents</h1>
+          <p>Courtship workflow experience</p>
+        </div>
+        <div className="fixed-header-actions">
+          <p className="helper">Autosave: {draftSaved ? 'All changes saved' : 'Saving changes…'}</p>
+          <button onClick={() => dispatch({ type: 'toggleTools' })}>Tools</button>
+        </div>
+      </div>
+      <nav className="phase-progress" aria-label="Wizard phase progress">
+        {flowSteps.map((flowStep, index) => (
+          <button
+            key={flowStep}
+            className={state.flowStep === flowStep ? 'step active' : 'step'}
+            onClick={() => {
+              dispatch({ type: 'setRootTab', value: 'flow' });
+              dispatch({ type: 'setFlowStep', value: flowStep });
+            }}
+          >
+            <span>{labels[flowStep]}</span>
+            <small>{index + 1}/4</small>
+          </button>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+function LegalPlaceholderPage({ title, summary }: { title: string; summary: string }) {
+  return (
+    <section className="view-card ccc-card legal-placeholder">
+      <h2>{title}</h2>
+      <p>{summary}</p>
+      <p className="helper">Placeholder page: legal counsel is currently out negotiating with a particularly litigious camel.</p>
+    </section>
+  );
+}
+
+
 function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
   const { form, dispatchForm, canCalculateIce, minCamelQuantity, maxCamelQuantity, clampCamelQuantity, queue } = useDowryForm();
   const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
@@ -323,6 +380,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
   const [exportToast, setExportToast] = useState('');
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [fiatTraitsEnabled, setFiatTraitsEnabled] = useState(true);
   const [lockedRecommendation, setLockedRecommendation] = useState<ReturnType<typeof computeRecommendation> | null>(null);
 
@@ -426,6 +484,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   }
 
   async function runExportAction(action: 'copy' | 'download' | 'share', forcedTab?: 'text' | 'image' | 'pdf' | 'html') {
+    setLoadingAction(action === 'download' ? 'Preparing export packet' : action === 'share' ? 'Preparing share packet' : 'Preparing clipboard packet');
     try {
       const { payload, qr, imageDataUrl, pdfBlob, htmlDocument } = buildExportArtifacts();
       dispatch({ type: 'setShare', text: payload.shareText, selectedProxyId: payload.selectedProxy.proxyId, qrPreview: qr.preview, error: '' });
@@ -473,10 +532,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     } catch (error) {
       dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : uxCopy.errors.exportFailed });
       setExportToast('');
+    } finally {
+      setLoadingAction(null);
     }
   }
 
   function saveEntry() {
+    setLoadingAction('Archiving docket entry');
     try {
       if (!state.calculation) throw new Error('Run a calculation before archiving.');
       const entry = createHistoryEntry({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, camelValue: state.calculation.camelValue, summary: state.share.text || state.formalizer.message || 'Camel bid summary' });
@@ -485,6 +547,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       dispatch({ type: 'setHistory', value: next });
     } catch (error) {
       dispatch({ type: 'setError', value: error instanceof Error ? error.message : uxCopy.errors.archiveFailed });
+    } finally {
+      setLoadingAction(null);
     }
   }
 
@@ -613,6 +677,10 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         />
       )}
 
+      {state.showLoadingFacts && (
+        <LoadingFactRotator active={Boolean(loadingAction)} actionLabel={loadingAction ?? 'Processing'} facts={uxCopy.loadingFacts} />
+      )}
+
       {state.flowStep === 'phase4-docket' && (
         <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} history={state.history} docketReadIds={state.docketReadIds} onMarkDocketRead={(id) => {
           const next = Array.from(new Set([id, ...state.docketReadIds]));
@@ -621,8 +689,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'phase1-input' }); navigate('/phase1'); }} />
       )}
 
-      {state.error && <p className="error">{state.error}</p>}
-      {state.calcInput.parseNote && <p className="error">{state.calcInput.parseNote}</p>}
+      <ErrorMessage message={state.error} statute="Statute 15" />
+      <ErrorMessage message={state.calcInput.parseNote} statute="Statute 1.7" />
 
     </section>
   );
@@ -666,7 +734,7 @@ function LibraryView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
       <label>Description<textarea className="ccc-input" value={state.newProxy.description} onChange={(e) => dispatch({ type: 'setNewProxyField', field: 'description', value: e.target.value })} /></label>
       <button onClick={saveProxy}>Add custom proxy</button>
       {state.newProxy.success && <p className="result">{state.newProxy.success}</p>}
-      {state.newProxy.error && <p className="error">{state.newProxy.error}</p>}
+      <ErrorMessage message={state.newProxy.error} statute="Statute 5" />
     </section>
   );
 }
@@ -705,6 +773,7 @@ function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Act
           <label><input type="checkbox" checked={state.customizer.reducedMotion} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'reducedMotion', value: e.target.checked })} /> Reduced motion</label>
           <label><input type="checkbox" checked={state.customizer.highContrast} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'highContrast', value: e.target.checked })} /> High contrast</label>
           <label><input type="checkbox" checked={state.customizer.soundOn} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'soundOn', value: e.target.checked })} /> Sound on</label>
+          <label><input type="checkbox" checked={state.showLoadingFacts} onChange={(e) => dispatch({ type: 'setShowLoadingFacts', value: e.target.checked })} /> Loading fact rotator</label>
         </details>
         <details className="tools-panel">
           <summary>Library snapshot ({filtered.length})</summary>
@@ -719,9 +788,17 @@ function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Act
 }
 
 function AppShell() {
+  const location = useLocation();
   const { form, queue } = useDowryForm();
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key)));
+
+  const legalPage = {
+    '/fine-print': { title: 'Fine Print', summary: 'All obligations are subject to weather, whim, and committee interpretation.' },
+    '/privacy-theater': { title: 'Privacy Theater', summary: 'We theatrically whisper your bid to no one in particular behind velvet curtains.' },
+    '/terms-of-camelage': { title: 'Terms of Camelage', summary: 'By proceeding, you agree that camels may be represented by metaphor, proxy, or interpretive dance.' },
+  }[location.pathname];
 
   useEffect(() => {
     writeCustomizerSettings({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier), language: state.customizer.language });
@@ -745,16 +822,19 @@ function AppShell() {
 
   return (
     <main className={`app-shell ccc-app ${state.chaosMode ? 'chaos-mode' : ''}`}>
-      <header className="header-row">
-        <div>
-          <h1>International Camel Equivalents</h1>
-          <p>Courtship workflow experience</p>
-          <p className="helper">Autosave: {draftSaved ? 'All changes saved' : 'Saving changes…'}</p>
-        </div>
-        <div>
-          <button onClick={() => dispatch({ type: 'toggleTools' })}>Tools</button>
-        </div>
-      </header>
+      <FixedShellHeader state={state} dispatch={dispatch} draftSaved={draftSaved} />
+
+      {!disclaimerDismissed && (
+        <section className="shell-disclaimer" role="note" aria-label="Satirical legal disclaimer">
+          <p>{uxCopy.disclaimer.text}</p>
+          <button onClick={() => {
+            setDisclaimerDismissed(true);
+            globalThis.localStorage?.setItem(uxCopy.disclaimer.key, '1');
+          }}>
+            {uxCopy.disclaimer.dismissCta}
+          </button>
+        </section>
+      )}
 
       {state.showWelcome && (
         <section className="view-card ccc-card overlay">
@@ -766,10 +846,19 @@ function AppShell() {
         </section>
       )}
 
-      {state.activeRootTab === 'flow' && <FlowView state={state} dispatch={dispatch} draftSaved={draftSaved} />}
-      {state.activeRootTab === 'library' && <LibraryView state={state} dispatch={dispatch} />}
-      {state.activeRootTab === 'archive' && <ArchiveView state={state} dispatch={dispatch} />}
-      {state.activeRootTab === 'premium' && <section className="view-card ccc-card"><h2>Premium</h2><button onClick={() => dispatch({ type: 'setRootTab', value: 'flow' })}>Back to flow</button><p>Negotiate this bid (premium feature placeholder).</p><p>69/year with local premium flag.</p></section>}
+      {legalPage && <LegalPlaceholderPage title={legalPage.title} summary={legalPage.summary} />}
+      {!legalPage && state.activeRootTab === 'flow' && <FlowView state={state} dispatch={dispatch} draftSaved={draftSaved} />}
+      {!legalPage && state.activeRootTab === 'library' && <LibraryView state={state} dispatch={dispatch} />}
+      {!legalPage && state.activeRootTab === 'archive' && <ArchiveView state={state} dispatch={dispatch} />}
+      {!legalPage && state.activeRootTab === 'premium' && <section className="view-card ccc-card"><h2>Premium</h2><button onClick={() => dispatch({ type: 'setRootTab', value: 'flow' })}>Back to flow</button><p>Negotiate this bid (premium feature placeholder).</p><p>69/year with local premium flag.</p></section>}
+
+      <footer className="legal-footer">
+        <p>{uxCopy.legal.footerLabel}</p>
+        <div>
+          {uxCopy.legal.links.map((link) => <a key={link.href} href={link.href}>{link.label}</a>)}
+        </div>
+        <p className="helper">Filed under Article 404: Seriousness Not Found.</p>
+      </footer>
 
       <ToolsDrawer state={state} dispatch={dispatch} />
     </main>

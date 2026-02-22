@@ -25,7 +25,7 @@ body {
 .app-shell {
   width: min(100% - 2rem, 72rem);
   margin: 0 auto;
-  padding: calc(var(--space-6) + 4.5rem) 0 var(--space-6);
+  padding: calc(var(--space-6) + 9rem) 0 var(--space-6);
 }
 
 .hero {
@@ -38,7 +38,7 @@ body {
 }
 
 
-.header-row {
+.fixed-header {
   position: fixed;
   top: 0;
   left: 50%;
@@ -52,21 +52,43 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.header-row::after {
-  content: "Advisory: cultural equivalence estimates are educational only and not legal advice.";
-  display: block;
-  margin-top: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent-secondary) 45%, var(--border-muted));
-  background: color-mix(in srgb, var(--accent-secondary) 18%, var(--surface-1));
-  color: var(--text-main);
-  font-size: 0.75rem;
-  line-height: 1.4;
-  letter-spacing: 0.03em;
+.fixed-header-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-.header-row h1,
+.fixed-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.phase-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: var(--space-2);
+}
+
+.phase-progress .step small {
+  font-size: 0.64rem;
+}
+
+.shell-disclaimer {
+  margin: 0 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--accent-secondary) 45%, var(--border-muted));
+  background: color-mix(in srgb, var(--accent-secondary) 18%, var(--surface-1));
+  border-radius: 10px;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.fixed-header h1,
 .view-card h2,
 .view-card h3 {
   font-family: var(--font-heading);
@@ -421,6 +443,36 @@ pre {
 }
 
 
+
+.error-banner {
+  border: 1px solid color-mix(in srgb, var(--ccc-error-berry) 32%, var(--border-muted));
+  background: color-mix(in srgb, var(--ccc-error-berry) 10%, var(--surface-1));
+  border-radius: 8px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.loading-facts {
+  border: 1px dashed var(--border-muted);
+  border-radius: 12px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+}
+
+.legal-footer {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--border-muted);
+  padding-top: var(--space-3);
+}
+
+.legal-footer > div {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.legal-footer a {
+  font-size: 0.85rem;
+}
 .legal-card,
 .document-preview {
   background: linear-gradient(180deg, #f7f1df 0%, #efe3c7 100%);
@@ -439,15 +491,20 @@ pre {
 @media (max-width: 767px) {
   .app-shell {
     width: calc(100% - 1rem);
-    padding-top: 10.5rem;
+    padding-top: 13.5rem;
   }
 
-  .header-row {
+  .fixed-header {
     width: calc(100% - 1rem);
     padding: var(--space-2) var(--space-3);
   }
 
+  .shell-disclaimer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .stepper-wrap {
-    top: 10rem;
+    top: 12.6rem;
   }
 }

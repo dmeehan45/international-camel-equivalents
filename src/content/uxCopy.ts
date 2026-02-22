@@ -1,4 +1,22 @@
 export const uxCopy = {
+  disclaimer: {
+    key: 'ccc-shell-disclaimer-v1',
+    text: 'Educational satire only. No camels were notarized, appraised, or emotionally consulted during these proceedings.',
+    dismissCta: 'Dismiss notice',
+  },
+  legal: {
+    footerLabel: 'Entirely Serious Legal Department™',
+    links: [
+      { href: '/fine-print', label: 'Fine Print' },
+      { href: '/privacy-theater', label: 'Privacy Theater' },
+      { href: '/terms-of-camelage', label: 'Terms of Camelage' },
+    ],
+  },
+  loadingFacts: [
+    'Statute 4.2 requires every export to receive at least one ceremonial stamp.',
+    'Two clerks are currently debating whether one camel equals exactly three alpacas.',
+    'The archive vault opens only after a dramatic pause for legal suspense.',
+  ],
   phases: {
     phase1: {
       heading: 'Phase I: Petition Intake & Bid Filing',
@@ -46,6 +64,7 @@ export const uxCopy = {
     },
   },
   errors: {
+    defaultStatute: 'Statute 0',
     parseUnknown: "By order of the Camel Court, that filing is indecipherable. Try '2 camels' or '5 yaks'.",
     proxyNotFound: (proxyName: string) => `Statute 12(b): '${proxyName}' is not a recognized proxy witness in this jurisdiction.`,
     calculationFailed: 'Statute 3.14 stayed these proceedings; valuation could not be computed.',
