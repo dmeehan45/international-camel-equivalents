@@ -1,4 +1,5 @@
 const HISTORY_KEY = 'ccc-bid-history-v1';
+const DOCKET_READ_KEY = 'ccc-docket-read-v1';
 const MAX_ITEMS = 50;
 
 export function readBidHistory(storage = globalThis?.localStorage) {
@@ -60,4 +61,39 @@ export function formatRelativeAge(isoTimestamp, now = Date.now()) {
 
   const days = Math.floor(hours / 24);
   return days === 1 ? '1 day ago' : `${days} days ago`;
+}
+
+export function readDocketReadIds(storage = globalThis?.localStorage) {
+  if (!storage) return [];
+
+  try {
+    const raw = storage.getItem(DOCKET_READ_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeDocketReadIds(ids, storage = globalThis?.localStorage) {
+  if (!storage) return;
+  storage.setItem(DOCKET_READ_KEY, JSON.stringify(ids.slice(0, MAX_ITEMS)));
+}
+
+export function buildDocketEntries(historyEntries, readIds = [], now = Date.now()) {
+  const readSet = new Set(readIds);
+  return historyEntries.map((entry, index) => {
+    const ageMinutes = Math.max(0, Math.floor((now - new Date(entry.createdAt).getTime()) / 60000));
+    const status = ageMinutes < 5 ? 'Filed' : ageMinutes < 30 ? 'Under Review' : 'Closed';
+    const timerText = ageMinutes < 1 ? 'Timer: 00:59 remaining' : `Timer: 00:${String(Math.max(0, 59 - (ageMinutes % 60))).padStart(2, '0')} remaining`;
+    return {
+      ...entry,
+      docketNumber: `DCK-${new Date(entry.createdAt).getFullYear()}-${String(index + 1).padStart(3, '0')}`,
+      status,
+      timerText,
+      ageText: formatRelativeAge(entry.createdAt, now),
+      unread: !readSet.has(entry.id),
+    };
+  });
 }
