@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:smoke": "node --test test/release-smoke.integration.test.js",
+    "test:integration": "npm run test:smoke && node --test test/proxy-library.test.js"
   }
 }
