@@ -7,6 +7,9 @@ import { buildSharePayload } from '../src/core/share-export.js';
 import { createHistoryEntry, readBidHistory, writeBidHistory } from '../src/core/history-archive.js';
 
 test('release smoke flow: calculate → formalize → share → archive', () => {
+  const yaks = proxies.find((proxy) => proxy.name === 'Yaks');
+  assert.ok(yaks);
+
   const calculation = calculateIceWithModifiers(
     { amount: 2, unit: 'CAMEL' },
     proxies,
@@ -16,6 +19,12 @@ test('release smoke flow: calculate → formalize → share → archive', () => 
   assert.equal(calculation.camelValue, 2.4);
   const topEquivalent = calculation.equivalents[0];
   assert.ok(topEquivalent);
+
+  const proxyCalculation = calculateIceWithModifiers(
+    { amount: 5, unit: 'PROXY', proxyId: yaks.id },
+    proxies,
+  );
+  assert.equal(proxyCalculation.camelValue, 4);
 
   const message = generateFormalizedMessage({
     template: 'formal',

@@ -11,7 +11,7 @@ test('validateDashboardInput requires proxy selection for PROXY unit', () => {
 
 test('validateDashboardInput rejects non-finite amount', () => {
   assert.throws(
-    () => validateDashboardInput({ amount: Number.NaN, unit: 'USD' }),
+    () => validateDashboardInput({ amount: Number.NaN, unit: 'CAMEL' }),
     /finite number/,
   );
 });
