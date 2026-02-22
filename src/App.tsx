@@ -17,7 +17,7 @@ import { buildSharePayload } from './core/share-export.js';
 import { buildQrPayload } from './core/share-qr.js';
 import { buildHtmlExportDocument, buildImageExportDataUrl, buildPdfExportBlob } from './core/export-artifacts.js';
 import { readCustomizerSettings, resolveCamelMultiplier, writeCustomizerSettings } from './core/customizer-settings.js';
-import { createHistoryEntry, formatRelativeAge, readBidHistory, writeBidHistory } from './core/history-archive.js';
+import { createHistoryEntry, formatRelativeAge, readBidHistory, readDocketReadIds, writeBidHistory, writeDocketReadIds } from './core/history-archive.js';
 import { parseBidInput } from './core/bid-parser.js';
 import { calculateAdjudicatedCamelValue } from './core/adjudication.js';
 import type { CalculationResult, ProxyDefinition } from './domain/types';
@@ -43,7 +43,6 @@ type State = {
   chaosMode: boolean;
   toolsOpen: boolean;
   celebrateOpen: boolean;
-  sideQuest: string;
   calcInput: { rawBid: string; amount: string; unit: 'CAMEL' | 'PROXY'; proxyId: string; parseNote: string; parseSource: string };
   dashboardQuery: string;
   dashboardSort: 'quantity-desc' | 'quantity-asc' | 'name-asc' | 'name-desc';
@@ -58,13 +57,13 @@ type State = {
   formalizer: { template: string; message: string; error: string };
   share: { selectedProxyId: string; text: string; qrPreview: string; error: string };
   history: Array<{ id: string; createdAt: string; amount: number; unit: string; camelValue: number; summary: string }>;
+  docketReadIds: string[];
 };
 
 type Action =
   | { type: 'setRootTab'; value: RootTab }
   | { type: 'setFlowStep'; value: FlowStep }
   | { type: 'toggleTools' }
-  | { type: 'setSideQuest'; value: string }
   | { type: 'setCelebrateOpen'; value: boolean }
   | { type: 'setShowWelcome'; value: boolean }
   | { type: 'setGuidedMode'; value: boolean }
@@ -83,7 +82,8 @@ type Action =
   | { type: 'setNewProxyField'; field: keyof State['newProxy']; value: string }
   | { type: 'setFormalizerField'; field: keyof State['formalizer']; value: string }
   | { type: 'setShare'; text: string; selectedProxyId: string; qrPreview: string; error: string }
-  | { type: 'setHistory'; value: State['history'] };
+  | { type: 'setHistory'; value: State['history'] }
+  | { type: 'setDocketReadIds'; value: string[] };
 
 const referenceProxies = proxiesData as ProxyDefinition[];
 function readDraft() {
@@ -134,7 +134,6 @@ function buildInitialState(): State {
     chaosMode: draft?.chaosMode ?? false,
     toolsOpen: false,
     celebrateOpen: false,
-    sideQuest: '',
     calcInput: normalizeDraftCalcInput(draft, mergedProxies),
     dashboardQuery: '',
     dashboardSort: 'quantity-desc',
@@ -162,6 +161,7 @@ function buildInitialState(): State {
     formalizer: { template: listTemplates()[0] ?? 'formal', message: '', error: '' },
     share: { selectedProxyId: '', text: '', qrPreview: '', error: '' },
     history: readBidHistory(),
+    docketReadIds: readDocketReadIds(),
   };
 }
 
@@ -170,7 +170,6 @@ function reducer(state: State, action: Action): State {
     case 'setRootTab': return { ...state, activeRootTab: action.value };
     case 'setFlowStep': return { ...state, flowStep: action.value };
     case 'toggleTools': return { ...state, toolsOpen: !state.toolsOpen };
-    case 'setSideQuest': return { ...state, sideQuest: action.value };
     case 'setCelebrateOpen': return { ...state, celebrateOpen: action.value };
     case 'setShowWelcome': return { ...state, showWelcome: action.value };
     case 'setGuidedMode': return { ...state, guidedMode: action.value };
@@ -199,6 +198,7 @@ function reducer(state: State, action: Action): State {
     case 'setFormalizerField': return { ...state, formalizer: { ...state.formalizer, [action.field]: action.value } };
     case 'setShare': return { ...state, share: { text: action.text, selectedProxyId: action.selectedProxyId, qrPreview: action.qrPreview, error: action.error } };
     case 'setHistory': return { ...state, history: action.value };
+    case 'setDocketReadIds': return { ...state, docketReadIds: action.value };
     default: return state;
   }
 }
@@ -614,7 +614,11 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       )}
 
       {state.flowStep === 'phase4-docket' && (
-        <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} />
+        <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} history={state.history} docketReadIds={state.docketReadIds} onMarkDocketRead={(id) => {
+          const next = Array.from(new Set([id, ...state.docketReadIds]));
+          writeDocketReadIds(next);
+          dispatch({ type: 'setDocketReadIds', value: next });
+        }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'phase1-input' }); navigate('/phase1'); }} />
       )}
 
       {state.error && <p className="error">{state.error}</p>}
@@ -673,14 +677,13 @@ function ArchiveView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
       <h2>Archive</h2>
       <button onClick={() => dispatch({ type: 'setRootTab', value: 'flow' })}>Back to flow</button>
       <ul className="list">{state.history.map((entry) => <li key={entry.id}>{entry.summary} · {entry.camelValue} camels · {formatRelativeAge(entry.createdAt)}</li>)}</ul>
-      <button onClick={() => { writeBidHistory([]); dispatch({ type: 'setHistory', value: [] }); }}>Clear archive</button>
+      <button onClick={() => { writeBidHistory([]); writeDocketReadIds([]); dispatch({ type: 'setHistory', value: [] }); dispatch({ type: 'setDocketReadIds', value: [] }); }}>Clear archive</button>
     </section>
   );
 }
 
 function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
-  const sideQuestReady = state.flowStep === 'phase3-instrument' || state.flowStep === 'phase4-docket';
   return (
     <>
       <aside className={state.toolsOpen ? 'tools open desktop-tools' : 'tools desktop-tools'}>
@@ -694,9 +697,8 @@ function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Act
         </details>
         <details className="tools-panel">
           <summary>Side Quests</summary>
-          {!sideQuestReady && <p className="helper">Unlocks after you finalize and generate a message.</p>}
-          {sideQuestReady && <div className="stepper side-quests">{['Personality Quiz', 'Bargaining Mini-Game', 'Maiden Mood Simulator', 'Proxy Parade'].map((item) => <button key={item} className="step" onClick={() => dispatch({ type: 'setSideQuest', value: item })}>{item}</button>)}</div>}
-          {sideQuestReady && state.sideQuest && <p className="result">{state.sideQuest} opened as overlay (placeholder).</p>}
+          <p className="helper">Optional modules now open from Phase 4 docket cards.</p>
+          <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'phase4-docket' }); }}>Go to Phase 4 modules</button>
         </details>
         <details className="tools-panel">
           <summary>Accessibility</summary>
