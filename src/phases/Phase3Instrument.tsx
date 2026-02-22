@@ -1,3 +1,5 @@
+import { uxCopy } from '../content/uxCopy';
+
 type Props = {
   state: any;
   exportTab: 'text' | 'image' | 'pdf' | 'html';
@@ -12,7 +14,7 @@ type Props = {
 export function Phase3Instrument(props: Props) {
   return (
     <>
-      <h2>Phase 3: Instrument</h2>
+      <h2>{uxCopy.phases.phase3.heading}</h2>
       <label>Template<select className="ccc-input" value={props.state.formalizer.template} onChange={(e) => props.dispatch({ type: 'setFormalizerField', field: 'template', value: e.target.value })}>{props.templates.map((template) => <option key={template} value={template}>{template}</option>)}</select></label>
       <button onClick={props.generateMessage}>Generate message</button>
       {props.state.formalizer.message && <pre>{props.state.formalizer.message}</pre>}
@@ -22,7 +24,7 @@ export function Phase3Instrument(props: Props) {
         <button className={props.exportTab === 'pdf' ? 'step active' : 'step'} onClick={() => props.setExportTab('pdf')}>PDF</button>
         <button className={props.exportTab === 'html' ? 'step active' : 'step'} onClick={() => props.setExportTab('html')}>HTML</button>
       </div>
-      <button className="ccc-button-primary cta-primary" onClick={() => props.runExportAction('copy')}>Copy</button>
+      <button className="ccc-button-primary cta-primary" onClick={() => props.runExportAction('copy')}>{uxCopy.phases.phase3.cta}</button>
       <button onClick={() => props.runExportAction('download')}>Download</button>
       <button onClick={() => props.runExportAction('share')}>Share</button>
       {props.state.share.text && <pre>{props.state.share.text}</pre>}

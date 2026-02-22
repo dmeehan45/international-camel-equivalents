@@ -38,5 +38,5 @@ export function parseBidInput(rawInput) {
     return { kind: 'ambiguous', raw, reason: 'Add a unit like "camels" or a proxy name (example: "5 yaks").' };
   }
 
-  return { kind: 'ambiguous', raw, reason: "I couldn't parse that. Try '2 camels' or '5 yaks'." };
+  return { kind: 'ambiguous', raw, reason: "By order of the Camel Court, that filing is indecipherable. Try '2 camels' or '5 yaks'." };
 }
