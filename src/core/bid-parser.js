@@ -25,6 +25,12 @@ export function parseBidInput(rawInput) {
     if (proxyName.length < 2) {
       return { kind: 'ambiguous', raw, reason: 'Proxy name is too short to map.' };
     }
+
+    const currencyLikeProxy = /^(usd|eur|gbp|aed|sar|dollars?|bucks?|euros?|pounds?)$/i;
+    if (currencyLikeProxy.test(proxyName)) {
+      return { kind: 'ambiguous', raw, reason: 'Use camel or proxy quantities only (example: "2 camels" or "5 yaks").' };
+    }
+
     return { kind: 'proxy', amount: round2(amount), proxyName, raw };
   }
 

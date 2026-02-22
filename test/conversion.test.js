@@ -139,3 +139,16 @@ test('toEquivalents rejects invalid proxy rate', () => {
   const invalid = [{ id: 'broken', name: 'Broken proxy', ratePerCamel: 0 }];
   assert.throws(() => toEquivalents(1, invalid), /greater than zero/);
 });
+
+
+test('camel and proxy conversions stay within camel/proxy unit model', () => {
+  const elephants = proxies.find((proxy) => proxy.name === 'Elephants');
+  const camelFromProxy = toCamelValue(
+    { amount: 3, unit: 'PROXY', proxyId: elephants.id },
+    proxies,
+  );
+  const camelFromCamel = toCamelValue({ amount: 3, unit: 'CAMEL' }, proxies);
+
+  assert.equal(camelFromProxy, 20);
+  assert.equal(camelFromCamel, 3);
+});
