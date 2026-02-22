@@ -32,8 +32,8 @@
 }
 
 .ccc-card {
-  background: color-mix(in srgb, var(--ccc-camel-core) 18%, white);
-  border: 1px solid color-mix(in srgb, var(--ccc-hump-highlight) 35%, white);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--ccc-hump-highlight) 22%, white);
   border-radius: var(--ccc-card-radius);
   padding: 16px;
 }
@@ -41,7 +41,7 @@
 .ccc-heading {
   color: var(--ccc-hump-highlight);
   font-family: Fredoka, Roboto, Arial, sans-serif;
-  text-shadow: 1px 1px 2px rgb(0 0 0 / 10%);
+  text-shadow: none;
 }
 
 .ccc-button-primary {
@@ -61,8 +61,13 @@
 }
 
 .ccc-button-primary:hover {
+  background: color-mix(in srgb, var(--ccc-proxy-pandemonium) 90%, black);
+}
+
+.chaos-mode .ccc-button-primary:hover,
+.chaos-mode .chaos-surface {
   background: var(--ccc-camel-gradient);
-  transform: rotate(1deg) scale(1.03);
+  transform: rotate(1deg) scale(1.02);
 }
 
 .ccc-input {
