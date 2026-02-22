@@ -756,7 +756,7 @@ function ArchiveView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
   );
 }
 
-function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: State; dispatch: Dispatch<Action>; themeMode: 'light' | 'dark' | 'system'; setThemeMode: (value: 'light' | 'dark' | 'system') => void }) {
+function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
   return (
     <>
@@ -773,16 +773,6 @@ function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: Stat
           <summary>Side Quests</summary>
           <p className="helper">Optional modules now open from Phase 4 docket cards.</p>
           <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'phase4-docket' }); }}>Go to Phase 4 modules</button>
-        </details>
-        <details className="tools-panel">
-          <summary>Theme</summary>
-          <label>Display mode
-            <select className="ccc-input" value={themeMode} onChange={(e) => setThemeMode(e.target.value as 'light' | 'dark' | 'system')}>
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
         </details>
         <details className="tools-panel">
           <summary>Accessibility</summary>
@@ -809,11 +799,6 @@ function AppShell() {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
   const [disclaimerDismissed, setDisclaimerDismissed] = useState(Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key)));
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
-    const stored = globalThis.localStorage?.getItem('icea-theme-mode');
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-  });
-
   const legalPage = {
     '/fine-print': { title: 'Fine Print', summary: 'All obligations are subject to weather, whim, and committee interpretation.' },
     '/privacy-theater': { title: 'Privacy Theater', summary: 'We theatrically whisper your bid to no one in particular behind velvet curtains.' },
@@ -824,13 +809,6 @@ function AppShell() {
     writeCustomizerSettings({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier), language: state.customizer.language });
   }, [state.customizer.locationKey, state.customizer.manualMultiplier, state.customizer.language]);
 
-
-  useEffect(() => {
-    globalThis.localStorage?.setItem('icea-theme-mode', themeMode);
-    const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    const resolved = themeMode === 'system' ? (prefersDark ? 'dark' : 'light') : themeMode;
-    document.documentElement.setAttribute('data-theme', resolved);
-  }, [themeMode]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -898,7 +876,7 @@ function AppShell() {
         <p className="helper">Filed under Article 404: Seriousness Not Found.</p>
       </footer>
 
-      <ToolsDrawer state={state} dispatch={dispatch} themeMode={themeMode} setThemeMode={setThemeMode} />
+      <ToolsDrawer state={state} dispatch={dispatch} />
     </main>
   );
 }

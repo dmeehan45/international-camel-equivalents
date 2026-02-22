@@ -1,10 +1,10 @@
 :root {
-  --ccc-ivory-mist: #f9fafb;
+  --ccc-ivory-mist: #ffffff;
   --ccc-pearl-white: #ffffff;
-  --ccc-sage-mist: #eef2f7;
+  --ccc-sage-mist: #f8fafc;
   --ccc-stone-border: #6b7280;
   --ccc-eucalyptus-ink: #0f172a;
-  --ccc-charcoal-vow: #001f3f;
+  --ccc-charcoal-vow: #1e3a8a;
   --ccc-champagne: #d4af37;
   --ccc-muted-rose: #6b7280;
   --ccc-success-leaf: #1d4ed8;
@@ -12,23 +12,10 @@
   --ccc-card-radius: 12px;
   --ccc-pill-radius: 999px;
   --ccc-button-radius: 8px;
-  --ccc-transition-standard: 300ms;
-  --ccc-soft-floral-fade: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
-  --ccc-font-heading: "Times New Roman", Georgia, serif;
+  --ccc-transition-standard: 200ms;
+  --ccc-soft-floral-fade: #ffffff;
+  --ccc-font-heading: Helvetica, Arial, sans-serif;
   --ccc-font-body: Helvetica, Arial, sans-serif;
-}
-
-[data-theme='dark'] {
-  --ccc-ivory-mist: #0a0a0a;
-  --ccc-pearl-white: #111827;
-  --ccc-sage-mist: #1f2937;
-  --ccc-stone-border: #94a3b8;
-  --ccc-eucalyptus-ink: #e5e7eb;
-  --ccc-charcoal-vow: #e2e8f0;
-  --ccc-champagne: #d4af37;
-  --ccc-muted-rose: #9ca3af;
-  --ccc-success-leaf: #60a5fa;
-  --ccc-error-berry: #f87171;
 }
 
 .ccc-app {
@@ -48,7 +35,7 @@
 .ccc-heading {
   color: var(--ccc-charcoal-vow);
   font-family: var(--ccc-font-heading);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .ccc-button-primary {
@@ -64,11 +51,11 @@
   min-height: 44px;
   min-width: 44px;
   padding: 10px 20px;
-  transition: background var(--ccc-transition-standard) ease, box-shadow var(--ccc-transition-standard) ease;
+  transition: background var(--ccc-transition-standard) ease;
 }
 
 .ccc-button-primary:hover {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ccc-champagne) 70%, transparent);
+  background: color-mix(in srgb, var(--ccc-charcoal-vow) 86%, white);
 }
 
 .ccc-button-primary:disabled {
