@@ -302,7 +302,7 @@ function Stepper({ step, flowContext, onChange }: { step: FlowStepId; flowContex
 
   return (
     <div className="stepper-wrap">
-      <div className="stepper" aria-label="Workflow phases">
+      <div className="stepper" aria-label="Workflow cards">
         {steps.map((item, index) => {
           const status = index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming';
           return (
@@ -333,10 +333,10 @@ function FixedShellHeader({ state, dispatch, draftSaved }: { state: State; dispa
         </div>
         <div className="fixed-header-actions">
           <p className="helper">Autosave: {draftSaved ? 'All changes saved' : 'Saving changes…'}</p>
-          <button onClick={() => dispatch({ type: 'toggleTools' })}>Tools</button>
+          <button onClick={() => dispatch({ type: 'toggleTools' })}>Menu</button>
         </div>
       </div>
-      <nav className="phase-progress" aria-label="Wizard phase progress">
+      <nav className="phase-progress" aria-label="Card progress">
         {flowSteps.map((flowStep, index) => (
           <button
             key={flowStep}
@@ -771,12 +771,12 @@ function ArchiveView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
   );
 }
 
-function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: State; dispatch: Dispatch<Action>; themeMode: 'light' | 'dark' | 'system'; setThemeMode: (value: 'light' | 'dark' | 'system') => void }) {
+function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
   return (
     <>
       <aside className={state.toolsOpen ? 'tools open desktop-tools' : 'tools desktop-tools'}>
-        <h3>Tools</h3>
+        <h3>Menu</h3>
         <details open className="tools-panel">
           <summary>Navigation</summary>
           <button onClick={() => dispatch({ type: 'setRootTab', value: 'flow' })}>Courtship Flow</button>
@@ -786,18 +786,8 @@ function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: Stat
         </details>
         <details className="tools-panel">
           <summary>Side Quests</summary>
-          <p className="helper">Optional modules now open from Phase 4 docket cards.</p>
-          <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'card6-queue' }); }}>Go to Phase 4 modules</button>
-        </details>
-        <details className="tools-panel">
-          <summary>Theme</summary>
-          <label>Display mode
-            <select className="ccc-input" value={themeMode} onChange={(e) => setThemeMode(e.target.value as 'light' | 'dark' | 'system')}>
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
+          <p className="helper">Optional modules now open from the queue card.</p>
+          <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'card6-queue' }); }}>Go to queue modules</button>
         </details>
         <details className="tools-panel">
           <summary>Accessibility</summary>
@@ -808,11 +798,11 @@ function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: Stat
         </details>
         <details className="tools-panel">
           <summary>Library snapshot ({filtered.length})</summary>
-          <p className="helper">Use Library tab from this drawer for full search and generator.</p>
+          <p className="helper">Use Library for full search and generator tools.</p>
         </details>
       </aside>
       <section className={state.toolsOpen ? 'tools open mobile-tools' : 'tools mobile-tools'}>
-        <h3>Tools</h3>
+        <h3>Menu</h3>
       </section>
     </>
   );
@@ -824,10 +814,6 @@ function AppShell() {
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
   const [showDisclaimerToast, setShowDisclaimerToast] = useState(false);
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
-    const stored = globalThis.localStorage?.getItem('icea-theme-mode');
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-  });
 
   const legalPage = {
     '/fine-print': { title: 'Fine Print', summary: 'All obligations are subject to weather, whim, and committee interpretation.' },
@@ -849,11 +835,8 @@ function AppShell() {
 
 
   useEffect(() => {
-    globalThis.localStorage?.setItem('icea-theme-mode', themeMode);
-    const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    const resolved = themeMode === 'system' ? (prefersDark ? 'dark' : 'light') : themeMode;
-    document.documentElement.setAttribute('data-theme', resolved);
-  }, [themeMode]);
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -925,7 +908,7 @@ function AppShell() {
         </details>
       </footer>
 
-      <ToolsDrawer state={state} dispatch={dispatch} themeMode={themeMode} setThemeMode={setThemeMode} />
+      <ToolsDrawer state={state} dispatch={dispatch} />
     </main>
   );
 }

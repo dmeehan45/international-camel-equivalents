@@ -23,10 +23,10 @@ const BASE_STEPS: FlowStepId[] = [
 
 export const FLOW_STEP_LABELS: Record<FlowStepId, string> = {
   'card1-basics': 'Card 1 · Basics',
-  'card2-adjudication': 'Card 2 · Adjudication',
-  'card3-review': 'Card 3 · Review',
+  'card2-adjudication': 'Card 2 · Equivalent',
+  'card3-review': 'Card 3 · Confirm',
   'card4-tune': 'Card 4 · Tune (optional)',
-  'card5-instrument': 'Card 5 · Instrument',
+  'card5-instrument': 'Card 5 · Proposal',
   'card6-queue': 'Card 6 · Queue',
 };
 

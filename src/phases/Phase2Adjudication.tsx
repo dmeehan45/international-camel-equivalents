@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { uxCopy } from '../content/uxCopy';
 import { locationPresets } from '../core/customizer-settings.js';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -40,61 +41,91 @@ type Props = {
 
 export function Phase2Adjudication(props: Props) {
   const { state } = props;
+  const [adjustmentsOpen, setAdjustmentsOpen] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
   const displayRecommendation = props.lockedRecommendation ?? props.recommendation;
 
   return (
     <>
-      <PhaseHeader phaseLabel="Phase 2 of 4" heading={uxCopy.phases.phase2.heading} subtitle={uxCopy.phases.phase2.subtitle} />
+      <PhaseHeader phaseLabel="Card 2 of 6" heading={uxCopy.phases.phase2.heading} subtitle={uxCopy.phases.phase2.subtitle} />
       <LegalCard tone={props.adjudicationLocked ? 'locked' : 'default'}>
         {state.calculation ? <p className="hero">{state.calculation.camelValue.toFixed(2)} camels</p> : <p>{uxCopy.phases.phase2.noResult}</p>}
-        <p className="helper">Original {state.calculation?.camelValue.toFixed(2) ?? '0.00'} → Adjusted {displayRecommendation?.adjustedCamelValue.toFixed(2) ?? '0.00'} camels</p>
-        {props.adjudicationLocked && <p className="helper">Bid lock complete. This ruling is sealed.</p>}
+        <p className="helper">Suggested equivalent: {displayRecommendation?.adjustedCamelValue.toFixed(2) ?? '0.00'} camels</p>
+        {props.adjudicationLocked && <p className="helper">Locked in. You can continue to the proposal draft.</p>}
       </LegalCard>
 
-      <details className="context-card">
-        <summary>{uxCopy.phases.phase2.advancedLabel}</summary>
-        <div className="context-cards">
-          <section className="context-card">
-            <h3>Jurisdiction controls · {props.effectiveMultiplier.toFixed(2)}x</h3>
-            <div className="grid">
-              <label>Preset<select className="ccc-input" value={state.customizer.locationKey} onChange={(e) => props.dispatch({ type: 'setCustomizerField', field: 'locationKey', value: e.target.value })}>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
-              <label>Manual multiplier<select className="ccc-input" value={state.customizer.manualMultiplier} onChange={(e) => props.dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}><option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option></select></label>
-              <label>Region override
-                <select className="ccc-input" value={props.regionOverride} onChange={(e) => props.setRegionOverride(e.target.value)} disabled={props.adjudicationLocked}>
-                  <option value="">Use preset</option>
-                  {Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}
-                </select>
+      <div className="results-drawer">
+        <button className="cta-secondary" aria-expanded={adjustmentsOpen} onClick={() => setAdjustmentsOpen((current) => !current)}>
+          {adjustmentsOpen ? 'Hide adjustments' : 'Tweak details'}
+        </button>
+        {adjustmentsOpen && (
+          <div className="context-cards mobile-drawer-body">
+            <section className="context-card">
+              <h3>Location and multiplier</h3>
+              <div className="grid">
+                <label>Preset
+                  <select className="ccc-input" value={state.customizer.locationKey} onChange={(e) => props.dispatch({ type: 'setCustomizerField', field: 'locationKey', value: e.target.value })}>
+                    {Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}
+                  </select>
+                </label>
+                <label>Manual multiplier
+                  <select className="ccc-input" value={state.customizer.manualMultiplier} onChange={(e) => props.dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}>
+                    <option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option>
+                  </select>
+                </label>
+                <label>Region override
+                  <select className="ccc-input" value={props.regionOverride} onChange={(e) => props.setRegionOverride(e.target.value)} disabled={props.adjudicationLocked}>
+                    <option value="">Use preset</option>
+                    {Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}
+                  </select>
+                </label>
+              </div>
+              <p className="helper">Active multiplier: {props.effectiveMultiplier.toFixed(2)}x</p>
+            </section>
+
+            <section className="context-card">
+              <h3>Optional traits</h3>
+              <label>
+                <input type="checkbox" checked={props.fiatTraitsEnabled} onChange={(e) => props.setFiatTraitsEnabled(e.target.checked)} disabled={props.adjudicationLocked} />
+                Apply trait boosts
               </label>
-            </div>
-          </section>
-          <section className="context-card">
-            <h3>Trait affidavits</h3>
-            <label>
-              <input type="checkbox" checked={props.fiatTraitsEnabled} onChange={(e) => props.setFiatTraitsEnabled(e.target.checked)} disabled={props.adjudicationLocked} />
-              Apply fiat trait bonuses
-            </label>
-            <div className="grid">
-              <label>Social<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.social} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, social: Number(e.target.value) }))} /></label>
-              <label>Resilience<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.resilience} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, resilience: Number(e.target.value) }))} /></label>
-              <label>Prestige<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.prestige} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, prestige: Number(e.target.value) }))} /></label>
-              <label>Ceremony<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.ceremony} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, ceremony: Number(e.target.value) }))} /></label>
-              <label>Advanced multiplier<input className="ccc-input" type="number" min="0.9" max="1.1" step="0.01" value={props.advancedTrait} disabled={props.adjudicationLocked} onChange={(e) => props.setAdvancedTrait(Number(e.target.value))} /></label>
-            </div>
-          </section>
-        </div>
-      </details>
+              <div className="grid">
+                <label>Social<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.social} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, social: Number(e.target.value) }))} /></label>
+                <label>Resilience<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.resilience} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, resilience: Number(e.target.value) }))} /></label>
+                <label>Prestige<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.prestige} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, prestige: Number(e.target.value) }))} /></label>
+                <label>Ceremony<input className="ccc-input" type="number" min="0.8" max="1.2" step="0.05" value={props.traitModifiers.ceremony} disabled={props.adjudicationLocked} onChange={(e) => props.setTraitModifiers((current: any) => ({ ...current, ceremony: Number(e.target.value) }))} /></label>
+                <label>Fine tune<input className="ccc-input" type="number" min="0.9" max="1.1" step="0.01" value={props.advancedTrait} disabled={props.adjudicationLocked} onChange={(e) => props.setAdvancedTrait(Number(e.target.value))} /></label>
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
 
-      <LegalCard>
-        <h3>Top recommendations</h3>
-        <ul className="list">{props.topPicks.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
-      </LegalCard>
-
-      <details className="context-card">
-        <summary>Result tools</summary>
-        <div className="stepper"><button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button><button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'all' })}>All</button><button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button></div>
-        <div className="grid"><label>Search<input className="ccc-input" value={state.dashboardQuery} onChange={(e) => props.dispatch({ type: 'setDashboardQuery', value: e.target.value })} /></label><label>Sort<select className="ccc-input" value={state.dashboardSort} onChange={(e) => props.dispatch({ type: 'setDashboardSort', value: e.target.value })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label></div>
-        <ul className="list">{props.visibleEquivalents.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
-      </details>
+      <div className="results-drawer">
+        <button className="cta-secondary" aria-expanded={resultsOpen} onClick={() => setResultsOpen((current) => !current)}>
+          {resultsOpen ? 'Hide full results' : 'More results'}
+        </button>
+        {resultsOpen && (
+          <>
+            <LegalCard>
+              <h3>Top matches</h3>
+              <ul className="list">{props.topPicks.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
+            </LegalCard>
+            <div className="context-card mobile-drawer-body">
+              <div className="stepper">
+                <button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'top' })}>Top</button>
+                <button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'all' })}>All</button>
+                <button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button>
+              </div>
+              <div className="grid">
+                <label>Search<input className="ccc-input" value={state.dashboardQuery} onChange={(e) => props.dispatch({ type: 'setDashboardQuery', value: e.target.value })} /></label>
+                <label>Sort<select className="ccc-input" value={state.dashboardSort} onChange={(e) => props.dispatch({ type: 'setDashboardSort', value: e.target.value })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label>
+              </div>
+              <ul className="list">{props.visibleEquivalents.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
+            </div>
+          </>
+        )}
+      </div>
 
       <PrimaryActionBar
         primary={{ label: uxCopy.phases.phase2.cta, onClick: props.finalizeBid, disabled: props.adjudicationLocked || !state.calculation }}
