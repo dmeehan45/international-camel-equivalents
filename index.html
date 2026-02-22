@@ -70,12 +70,46 @@
         color: #475569;
         margin-top: 0.5rem;
       }
+      [dir='rtl'] .row {
+        flex-direction: row-reverse;
+      }
+      [dir='rtl'] th,
+      [dir='rtl'] td {
+        text-align: right;
+      }
+      .focus-ring:focus-visible {
+        outline: 3px solid #2563eb;
+        outline-offset: 2px;
+      }
+      .high-contrast {
+        background: #000;
+        color: #fff;
+      }
+      .high-contrast .card {
+        background: #000;
+        color: #fff;
+        border: 2px solid #fff;
+      }
+      .high-contrast input,
+      .high-contrast select,
+      .high-contrast textarea,
+      .high-contrast button {
+        background: #000;
+        color: #fff;
+        border-color: #fff;
+      }
+      .reduced-motion *,
+      .reduced-motion *::before,
+      .reduced-motion *::after {
+        transition: none !important;
+        animation: none !important;
+      }
     </style>
   </head>
   <body>
     <main class="card">
-      <h1>International Camel Equivalents</h1>
-      <p>Quick calculator powered by the repository's core conversion engine.</p>
+      <h1 id="title">International Camel Equivalents</h1>
+      <p id="subtitle">Quick calculator powered by the repository's core conversion engine.</p>
       <div class="row">
         <input id="amount" type="number" min="0" value="1000" aria-label="Amount" />
         <select id="unit" aria-label="Unit">
@@ -84,7 +118,7 @@
           <option value="PROXY">Proxy</option>
         </select>
         <select id="proxy" aria-label="Proxy" hidden></select>
-        <button id="calculate">Convert</button>
+        <button id="calculate" class="focus-ring">Convert</button>
       </div>
 
       <section aria-label="Bid customizer" style="margin-top: 1rem;">
@@ -101,12 +135,21 @@
           </select>
           <input id="camel-multiplier" type="number" min="0.01" step="0.01" value="1" aria-label="Manual camel multiplier" />
           <select id="override-proxy" aria-label="Override proxy"></select>
-          <input id="override-rate" type="number" min="0" step="0.01" value="" placeholder="Override rate per camel (optional)" aria-label="Override rate" />
+          <input id="override-rate" type="number" min="0" step="0.01" value="" placeholder="Override rate per camel (optional)" aria-label="Override rate" class="focus-ring" />
+        </div>
+      </section>
+
+
+      <section aria-label="Accessibility display options" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Accessibility display options</h2>
+        <div class="row">
+          <button id="toggle-motion" type="button" class="focus-ring" aria-pressed="false">Reduced motion: Off</button>
+          <button id="toggle-contrast" type="button" class="focus-ring" aria-pressed="false">High contrast: Off</button>
         </div>
       </section>
 
       <div class="row" aria-label="Dashboard controls">
-        <input id="filter" type="search" placeholder="Filter proxies by name" aria-label="Filter proxies" />
+        <input id="filter" type="search" placeholder="Filter proxies by name" aria-label="Filter proxies" class="focus-ring" />
         <select id="sort" aria-label="Sort equivalents">
           <option value="quantity-desc">Sort: Quantity (high to low)</option>
           <option value="quantity-asc">Sort: Quantity (low to high)</option>
@@ -119,7 +162,7 @@
         <h2 style="margin-bottom: 0.25rem;">Reference library</h2>
         <p class="meta" style="margin-top: 0;">Search canonical and custom proxies by name, category, and source.</p>
         <div class="row">
-          <input id="reference-query" type="search" placeholder="Search reference proxies" aria-label="Reference query" />
+          <input id="reference-query" type="search" placeholder="Search reference proxies" aria-label="Reference query" class="focus-ring" />
           <select id="reference-category" aria-label="Reference category"></select>
           <select id="reference-source" aria-label="Reference source">
             <option value="all">All sources</option>
@@ -135,11 +178,11 @@
         <h2 style="margin-bottom: 0.25rem;">Proxy generator</h2>
         <p class="meta" style="margin-top: 0;">Add your own bizarre proxy and keep it saved in this browser.</p>
         <div class="row">
-          <input id="new-proxy-name" type="text" placeholder="Proxy name" aria-label="New proxy name" />
-          <input id="new-proxy-rate" type="number" min="0.01" step="0.01" placeholder="Rate per camel" aria-label="New proxy rate per camel" />
-          <input id="new-proxy-category" type="text" placeholder="Category" aria-label="New proxy category" />
-          <input id="new-proxy-description" type="text" placeholder="Description" aria-label="New proxy description" />
-          <button id="add-proxy" type="button">Unleash the Proxy Pandemonium!</button>
+          <input id="new-proxy-name" type="text" placeholder="Proxy name" aria-label="New proxy name" class="focus-ring" />
+          <input id="new-proxy-rate" type="number" min="0.01" step="0.01" placeholder="Rate per camel" aria-label="New proxy rate per camel" class="focus-ring" />
+          <input id="new-proxy-category" type="text" placeholder="Category" aria-label="New proxy category" class="focus-ring" />
+          <input id="new-proxy-description" type="text" placeholder="Description" aria-label="New proxy description" class="focus-ring" />
+          <button id="add-proxy" type="button" class="focus-ring">Unleash the Proxy Pandemonium!</button>
         </div>
         <div id="generator-status" class="meta" aria-live="polite"></div>
       </section>
@@ -162,9 +205,9 @@
         <div class="row">
           <select id="message-template" aria-label="Message template"></select>
           <select id="message-proxy" aria-label="Message proxy"></select>
-          <button id="generate-message" type="button">Formalize message</button>
+          <button id="generate-message" type="button" class="focus-ring">Formalize message</button>
         </div>
-        <textarea id="message-output" rows="4" aria-label="Generated message" style="width: 100%; margin-top: 0.75rem;"></textarea>
+        <textarea id="message-output" rows="4" aria-label="Generated message" style="width: 100%; margin-top: 0.75rem;" class="focus-ring"></textarea>
       </section>
 
 
@@ -172,14 +215,14 @@
         <h2 style="margin-bottom: 0.25rem;">Sharing and export</h2>
         <p class="meta" style="margin-top: 0;">Build share text, copy it, or open messaging apps.</p>
         <div class="row">
-          <button id="build-share" type="button">Build share text</button>
-          <button id="copy-share" type="button">Copy share text</button>
-          <button id="open-mail" type="button">Open mail draft</button>
-          <button id="open-sms" type="button">Open SMS draft</button>
-          <button id="open-twitter" type="button">Open Twitter draft</button>
-          <button id="open-whatsapp" type="button">Open WhatsApp draft</button>
+          <button id="build-share" type="button" class="focus-ring">Build share text</button>
+          <button id="copy-share" type="button" class="focus-ring">Copy share text</button>
+          <button id="open-mail" type="button" class="focus-ring">Open mail draft</button>
+          <button id="open-sms" type="button" class="focus-ring">Open SMS draft</button>
+          <button id="open-twitter" type="button" class="focus-ring">Open Twitter draft</button>
+          <button id="open-whatsapp" type="button" class="focus-ring">Open WhatsApp draft</button>
         </div>
-        <textarea id="share-output" rows="4" aria-label="Share output" style="width: 100%; margin-top: 0.75rem;"></textarea>
+        <textarea id="share-output" rows="4" aria-label="Share output" style="width: 100%; margin-top: 0.75rem;" class="focus-ring"></textarea>
       </section>
 
 
@@ -187,7 +230,7 @@
         <h2 style="margin-bottom: 0.25rem;">Historical bid archive</h2>
         <p class="meta" style="margin-top: 0;">Save recent bids into your local time capsule.</p>
         <div class="row">
-          <button id="archive-bid" type="button">Archive this bid</button>
+          <button id="archive-bid" type="button" class="focus-ring">Archive this bid</button>
         </div>
         <div id="archive-status" class="meta" aria-live="polite"></div>
         <ul id="archive-list"></ul>
@@ -219,6 +262,7 @@
       import { buildSharePayload } from '/src/core/share-export.js';
       import { applyDashboardView, validateDashboardInput } from '/src/core/dashboard-view.js';
       import { buildCompareSummary, filterReferenceProxies, validateReferenceCatalog } from '/src/core/reference-library.js';
+      import { createI18n, getLocaleDirection } from '/src/core/i18n-runtime.js';
       import {
         createHistoryEntry,
         formatRelativeAge,
@@ -267,12 +311,19 @@
       const archiveBidButton = document.getElementById('archive-bid');
       const archiveStatus = document.getElementById('archive-status');
       const archiveList = document.getElementById('archive-list');
+      const motionToggleButton = document.getElementById('toggle-motion');
+      const contrastToggleButton = document.getElementById('toggle-contrast');
+      const title = document.getElementById('title');
+      const subtitle = document.getElementById('subtitle');
       const button = document.getElementById('calculate');
       const camelUsdRate = 500;
       const maxRows = 25;
+      const i18n = createI18n('en');
       let proxies = [];
       let lastResult = null;
       let archiveEntries = [];
+      let reducedMotion = false;
+      let highContrast = false;
 
 
       function hydratePresetOptions() {
@@ -297,7 +348,7 @@
         referenceCategoryInput.replaceChildren();
         const allOption = document.createElement('option');
         allOption.value = '';
-        allOption.textContent = 'All categories';
+        allOption.textContent = i18n.t('allCategories');
         referenceCategoryInput.append(allOption);
 
         const categories = [...new Set(proxies.map((proxy) => proxy.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -324,7 +375,70 @@
           referenceList.append(item);
         }
 
-        referenceMeta.textContent = `Showing ${rows.length} of ${visible.length} proxies.`;
+        referenceMeta.textContent = i18n.t('showingProxies', { showing: rows.length, total: visible.length });
+      }
+
+      function applyLocale(locale) {
+        i18n.setLocale(locale);
+        document.documentElement.lang = i18n.locale;
+        document.documentElement.dir = getLocaleDirection(i18n.locale);
+        title.textContent = i18n.t('appTitle');
+        subtitle.textContent = i18n.t('appSubtitle');
+        button.textContent = i18n.t('convert');
+        filterInput.placeholder = i18n.t('filterPlaceholder');
+        referenceQueryInput.placeholder = i18n.t('referencePlaceholder');
+        newProxyNameInput.placeholder = i18n.t('proxyNamePlaceholder');
+        newProxyRateInput.placeholder = i18n.t('ratePlaceholder');
+        newProxyCategoryInput.placeholder = i18n.t('categoryPlaceholder');
+        newProxyDescriptionInput.placeholder = i18n.t('descriptionPlaceholder');
+        overrideRateInput.placeholder = i18n.t('overrideRatePlaceholder');
+        addProxyButton.textContent = i18n.t('proxyPandemonium');
+        generateMessageButton.textContent = i18n.t('formalizeMessage');
+        buildShareButton.textContent = i18n.t('buildShareText');
+        copyShareButton.textContent = i18n.t('copyShareText');
+        openMailButton.textContent = i18n.t('openMailDraft');
+        openSmsButton.textContent = i18n.t('openSmsDraft');
+        openTwitterButton.textContent = i18n.t('openTwitterDraft');
+        openWhatsappButton.textContent = i18n.t('openWhatsappDraft');
+        archiveBidButton.textContent = i18n.t('archiveBid');
+        hydrateReferenceSourceOptions();
+        hydrateReferenceCategories();
+        renderReferenceLibrary();
+      }
+
+      function hydrateReferenceSourceOptions() {
+        const labels = {
+          all: i18n.t('allSources'),
+          reference: i18n.t('referenceOnly'),
+          extension: i18n.t('extensionOnly'),
+        };
+        for (const option of referenceSourceInput.options) {
+          option.textContent = labels[option.value] ?? option.textContent;
+        }
+      }
+
+      function applyAccessibilityModes() {
+        document.body.classList.toggle('reduced-motion', reducedMotion);
+        document.body.classList.toggle('high-contrast', highContrast);
+        motionToggleButton.setAttribute('aria-pressed', String(reducedMotion));
+        contrastToggleButton.setAttribute('aria-pressed', String(highContrast));
+        motionToggleButton.textContent = `Reduced motion: ${reducedMotion ? 'On' : 'Off'}`;
+        contrastToggleButton.textContent = `High contrast: ${highContrast ? 'On' : 'Off'}`;
+      }
+
+      function setupKeyboardNavigation() {
+        const sections = Array.from(document.querySelectorAll('main section'));
+        for (const section of sections) {
+          section.tabIndex = 0;
+          section.addEventListener('keydown', (event) => {
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            event.preventDefault();
+            const nextIndex = event.key === 'ArrowDown'
+              ? Math.min(sections.length - 1, sections.indexOf(section) + 1)
+              : Math.max(0, sections.indexOf(section) - 1);
+            sections[nextIndex].focus();
+          });
+        }
       }
 
       function renderProxySelects() {
@@ -412,7 +526,6 @@
           renderProxySelects();
           render();
           renderCompare();
-      renderReferenceLibrary();
           renderReferenceLibrary();
           generatorStatus.textContent = `${newProxy.name} added to your local proxy library.`;
 
@@ -427,7 +540,7 @@
 
       function renderFormalizedMessage() {
         if (!lastResult) {
-          messageOutput.value = 'Run a valid conversion first to generate a message.';
+          messageOutput.value = i18n.t('noResultMessage');
           return;
         }
 
@@ -548,6 +661,7 @@
           camelMultiplierInput.value = String(saved.manualMultiplier);
         }
         languageInput.value = saved.language;
+        applyLocale(saved.language);
       }
 
       function renderCompare() {
@@ -612,6 +726,8 @@
       hydratePresetOptions();
       hydrateMessageTemplates();
       loadCustomizerSettings();
+      applyAccessibilityModes();
+      setupKeyboardNavigation();
       await loadProxies();
       archiveEntries = readBidHistory();
       renderArchive();
@@ -635,7 +751,10 @@
         saveCustomizerSettings();
         render();
       });
-      languageInput.addEventListener('change', saveCustomizerSettings);
+      languageInput.addEventListener('change', () => {
+        saveCustomizerSettings();
+        applyLocale(languageInput.value);
+      });
       overrideProxyInput.addEventListener('change', render);
       overrideRateInput.addEventListener('input', render);
       button.addEventListener('click', render);
@@ -654,6 +773,14 @@
       referenceQueryInput.addEventListener('input', renderReferenceLibrary);
       referenceCategoryInput.addEventListener('change', renderReferenceLibrary);
       referenceSourceInput.addEventListener('change', renderReferenceLibrary);
+      motionToggleButton.addEventListener('click', () => {
+        reducedMotion = !reducedMotion;
+        applyAccessibilityModes();
+      });
+      contrastToggleButton.addEventListener('click', () => {
+        highContrast = !highContrast;
+        applyAccessibilityModes();
+      });
     </script>
   </body>
 </html>
