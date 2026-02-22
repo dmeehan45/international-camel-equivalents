@@ -1,27 +1,43 @@
-# Camel Courtship Calculator Visual System (Implemented Foundation)
+# Wedding Editorial Design System (The Knot Inspired)
 
-This repository currently contains core conversion logic and data assets, so this update adds **drop-in design foundations** that can be wired into the React/PWA UI without altering conversion behavior.
+This design system extracts the **visual language** from:
+`https://www.theknot.com/us/courtney-colella-and-justin-kalusa-sep-2025`
 
-## Added assets
+It is now adapted for this project so the existing calculator UI keeps behavior but adopts a softer wedding-editorial presentation.
 
-- `src/design/tokens.js`: JavaScript token map for light/dark colors, typography, radii, motion, and gradients.
-- `src/design/theme.css`: CSS custom properties and utility classes for app background, cards, headings, buttons, and inputs.
+## Extracted style signals
 
-## How to use in React
+- **Typography contrast**: elevated serif display headings with clean geometric sans-serif body copy.
+- **Muted romantic palette**: ivory, eucalyptus gray-green, champagne, and dusty rose accents.
+- **Lightweight controls**: slim borders, subtle rounded corners (not heavy pills), uppercase micro-labels.
+- **Airy surfaces**: soft gradients, calm elevation, and low-contrast section cards.
 
-1. Import stylesheet once in app entrypoint:
-   - `import './design/theme.css';`
-2. Wrap app root with `<main className="ccc-app">`.
-3. Use classes on components:
-   - Card container: `ccc-card`
-   - Primary heading: `ccc-heading`
-   - CTA button: `ccc-button-primary`
-   - Inputs: `ccc-input`
-4. Enable dark mode with a root attribute:
-   - `<html data-theme="dark">` or `<body data-theme="dark">`
+## Token mapping for this project
+
+Implemented in `src/design/tokens.js` and consumed in app styles via CSS variables in `src/app.css`.
+
+- Base background: `#F8F6F2`
+- Elevated panel: `#FFFFFF`
+- Soft neutral section: `#EEF1ED`
+- Border: `#D7DBD8`
+- Primary text: `#747675`
+- Accent tones: `#DCC8A0` (champagne), `#B89A95` (muted rose)
+
+## Typography system
+
+- Heading: `"Cormorant Infant", "Times New Roman", Georgia, serif`
+- Body/UI: `"Josefin Sans", "Avenir Next", "Segoe UI", sans-serif`
+- Hero treatment: uppercase + wide letter spacing for ceremony-style presentation.
+
+## Component guidance
+
+- **Buttons/step chips**: 6px radius, uppercase labels, subtle letter spacing.
+- **Cards**: 18px radius with soft border and shadow.
+- **Inputs/focus**: neutral borders with champagne-tinted focus ring.
+- **Status + error colors**: softened/desaturated tones to match muted palette.
 
 ## Accessibility notes
 
-- Interactive controls keep a minimum 44px target.
-- Motion is reduced automatically via `prefers-reduced-motion`.
-- Palette maintains semantic separation (success/error/accent) for clear affordance.
+- Focus-visible outlines remain explicit.
+- Body copy preserves readable line-height.
+- Contrast is intentionally soft but still foreground-first for key text.

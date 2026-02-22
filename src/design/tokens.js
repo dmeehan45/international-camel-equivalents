@@ -1,51 +1,51 @@
 export const colors = {
   light: {
-    camelCore: '#D2A679',
-    humpHighlight: '#8B4513',
-    proxyPandemonium: '#FF4500',
-    bidBliss: '#228B22',
-    dowryDisaster: '#FF1493',
-    sandDune: '#F5F5DC',
-    textPrimary: '#333333',
-    textSecondary: '#696969',
-    yakYakYellow: '#FFD700',
-    sharkShockBlue: '#00BFFF',
-    monkeyMayhemPurple: '#9370DB',
+    ivoryMist: '#F8F6F2',
+    pearlWhite: '#FFFFFF',
+    sageMist: '#E6EBE6',
+    stoneBorder: '#D7DBD8',
+    eucalyptusInk: '#747675',
+    charcoalVow: '#2F3331',
+    champagne: '#DCC8A0',
+    mutedRose: '#B89A95',
+    successLeaf: '#5E7E69',
+    errorBerry: '#9C5454',
   },
   dark: {
-    camelCore: '#4A3728',
-    humpHighlight: '#C48A5E',
-    proxyPandemonium: '#FF4500',
-    bidBliss: '#228B22',
-    dowryDisaster: '#FF1493',
-    sandDune: '#2F2F2F',
-    textPrimary: '#EDEDED',
-    textSecondary: '#C8C8C8',
-    yakYakYellow: '#FFD700',
-    sharkShockBlue: '#00BFFF',
-    monkeyMayhemPurple: '#9370DB',
+    ivoryMist: '#1E2220',
+    pearlWhite: '#252A28',
+    sageMist: '#2D3430',
+    stoneBorder: '#4A514D',
+    eucalyptusInk: '#D4D8D5',
+    charcoalVow: '#EFF3F0',
+    champagne: '#BDAA83',
+    mutedRose: '#A4837E',
+    successLeaf: '#83A68E',
+    errorBerry: '#CF8585',
   },
 };
 
 export const typography = {
-  fontFamilyHeading: 'Fredoka, Roboto, Arial, sans-serif',
-  fontFamilyBody: 'Roboto, Arial, sans-serif',
-  h1Size: '24px',
+  fontFamilyHeading: '"Cormorant Infant", "Times New Roman", Georgia, serif',
+  fontFamilyBody: '"Josefin Sans", "Avenir Next", "Segoe UI", sans-serif',
+  h1Size: 'clamp(2.2rem, 4vw, 3.75rem)',
   bodySize: '16px',
-  lineHeight: 1.5,
+  lineHeight: 1.55,
+  headingLetterSpacing: '0.22em',
 };
 
 export const radii = {
-  card: '16px',
+  card: '18px',
   pill: '999px',
+  button: '6px',
 };
 
 export const motion = {
   fast: '160ms',
-  standard: '240ms',
-  wobble: '300ms',
+  standard: '220ms',
+  gentle: '320ms',
 };
 
 export const gradients = {
-  camelCalmToProxyPanic: 'linear-gradient(to right, #D2A679, #FF4500)',
+  softFloralFade: 'linear-gradient(135deg, #f8f6f2 0%, #eef1ed 45%, #f3ece8 100%)',
 };
