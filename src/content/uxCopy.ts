@@ -46,7 +46,8 @@ export const uxCopy = {
     tone: 'Tone',
     done: 'Done – View my proposals',
     copy: 'Copy to clipboard',
-    download: 'Download .txt',
+    downloadTxt: 'Download .txt',
+    downloadPdf: 'Download .pdf',
     share: 'Send',
   },
   page5: {

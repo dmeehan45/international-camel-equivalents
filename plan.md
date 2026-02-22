@@ -1,152 +1,144 @@
-# plan.md — Dowry Proposal Service Big-Bang Rewrite (5-page UX)
+# Parallel Plan: Simplified UX Spec Alignment (Option B)
 
 ## Executive overview
-We are rebuilding the app into a five-page, mobile-first parody drafting flow for users who want a joke dowry proposal in under 2–3 minutes. The experience must feel like a calm online legal form, not a fantasy/game interface.
+We are bringing the simplified 5-page flow closer to the approved UX spec for mobile users who need to complete a humorous dowry proposal in under 2–3 minutes. We will preserve the existing flow while improving interaction fidelity (prefilled text, meaningful equivalent cards), export completeness (.txt + .pdf), explicit navigation affordances, and functional extras. We will also split page rendering into page-specific components to reduce complexity without changing core data contracts.
 
 How we will prove it works:
-1. The app exposes exactly 5 pages in sequence: Landing → Basics → Offer → Proposal Text → Drafts.
-2. Global UI always shows the slim header, parody footer line, and persistent entertainment disclaimer.
-3. Copy removes fantasy/game terms and keeps dry legal humor.
-4. A user can complete a full proposal and reuse it from local drafts.
+- Type/build passes.
+- Existing automated tests pass.
+- New/updated e2e checks for the revised flow pass.
+- Manual screenshot verifies updated UI renders.
 
 ## Contracts first
-
 ### Shared interfaces
-- `FlowStepId` contract (exact values):
-  - `page1-landing`
-  - `page2-basics`
-  - `page3-offer`
-  - `page4-proposal`
-  - `page5-drafts`
-- Step labels are fixed to: `Intro`, `Basics`, `Offer`, `Text`, `Drafts`.
-- `DowryForm` must include fields used by the new flow:
-  - required: `bidName`, `bidRegion`, `camelQuantity`
-  - optional drawer: `ageRange`, `occupation`, `quirkyFact`
-- Draft contract stored in local state list:
-  - `{ id: string, name: string, camels: number, summary: string, text: string, createdAt: string }`
+- `FlowStepId` remains unchanged: `'page1-landing' | 'page2-basics' | 'page3-offer' | 'page4-proposal' | 'page5-drafts'`.
+- `SavedDraft` shape remains unchanged in app state:
+  - `id: string`
+  - `name: string`
+  - `camels: number`
+  - `summary: string`
+  - `text: string`
+  - `createdAt: string`
+- New page component contracts (props-only, no global state mutation outside callbacks):
+  - `Page1Landing`: `{ uxCopy, howOpen, setHowOpen, onBegin }`
+  - `Page2Basics`: `{ uxCopy, form, regions, ageRanges, optionalOpen, setOptionalOpen, dispatchForm, suggestedCamels, onContinue, error }`
+  - `Page3Offer`: `{ uxCopy, camelQuantity, suggestedCamels, cards, onSliderChange, onSelectCard, onLockIn }`
+  - `Page4Proposal`: `{ uxCopy, proposalText, setProposalText, personalizeOpen, setPersonalizeOpen, customSentence, setCustomSentence, tone, setTone, onGenerate, onCopy, onDownloadTxt, onDownloadPdf, onShare, onDone }`
+  - `Page5Drafts`: `{ uxCopy, drafts, selectedDraftId, setSelectedDraftId, onCopyDraft, onShareDraft, onDeleteDraft, extrasOpen, setExtrasOpen, onGenerateRejection, calculationsOpen, setCalculationsOpen, onStartNew }`
 
-### UI contracts
-- Header text is always `Dowry Proposal Service`.
-- Footer text is always `This is a parody tool. Not legal advice. No actual dowries exchanged.`
-- Persistent notice text is always `For entertainment purposes only. Not enforceable.`
-- One primary CTA per page.
-
-### Stub file map
-- `src/App.tsx` (single flow implementation + page components)
-- `src/domain/flow.ts` (5-page flow ids/labels/helpers)
-- `src/content/uxCopy.ts` (all tone/copy)
-- `src/store/DowryFormContext.tsx` (new optional fields + range)
-- `src/domain/types.ts` (`DowryForm` shape update)
-- `src/app.css`, `src/design/theme.css`, `src/design/legal-theme.css` (visual system)
+### File map (stubs)
+- `src/App.tsx` (orchestration only)
+- `src/pages/Page1Landing.tsx`
+- `src/pages/Page2Basics.tsx`
+- `src/pages/Page3Offer.tsx`
+- `src/pages/Page4Proposal.tsx`
+- `src/pages/Page5Drafts.tsx`
+- `src/content/uxCopy.ts` (copy labels)
+- `src/app.css` (styles for new page structure)
+- `cypress/e2e/master-spec-flow.cy.js` (flow assertions)
 
 ## Parallel workstreams
 
-### Workstream 1 — Flow shell and page routing
-- **Agent role:** application architect
-- **File ownership:** `src/App.tsx`, `src/domain/flow.ts`
-- **Inputs:** flow-step contract from this plan
-- **Outputs:** deterministic 5-page sequence with back/start-over behavior
-- **Tasks:**
-  1. Replace legacy root-tab workflow with 5-page flow only.
-  2. Add guarded next/back actions and start-over reset.
-  3. Keep local draft list and queue actions on page 5.
-- **Success criteria:**
-  - App displays only the 5 specified pages.
-  - Back works on pages 2–5, Start over resets to page 1.
-- **Validation:**
+### Workstream 1 — App orchestration split (Agent role: Flow integrator)
+- File ownership:
+  - `src/App.tsx`
+  - `src/pages/Page1Landing.tsx`
+  - `src/pages/Page2Basics.tsx`
+  - `src/pages/Page3Offer.tsx`
+  - `src/pages/Page4Proposal.tsx`
+  - `src/pages/Page5Drafts.tsx`
+- Inputs: component prop contracts above.
+- Outputs: page components + slimmer `App.tsx` wiring.
+- Tasks:
+  1. Extract page JSX from `App.tsx` into page components.
+  2. Keep state in `App.tsx`; pass callbacks/values via props.
+  3. Add explicit “Start over” text link for pages 2–5.
+- Success criteria:
+  - App renders all 5 pages with unchanged route-less flow.
+  - `App.tsx` no longer contains large inline page markup blocks.
+  - Start-over text link visible on pages 2–5.
+- Validation:
   - `npm run build` succeeds.
-  - Manual: complete a full run from page 1 to page 5.
-- **Edge/negative tests:**
-  - Continue is blocked on page 2 without required fields.
-  - Proposal generation on page 4 requires name + camel offer.
+- Edge/negative tests:
+  - Start-over clears form and returns to page1 from page5.
 
-### Workstream 2 — Content rewrite
-- **Agent role:** UX copywriter
-- **File ownership:** `src/content/uxCopy.ts`
-- **Inputs:** master spec copy requirements
-- **Outputs:** plain dry legal tone copy for all pages/errors
-- **Tasks:**
-  1. Replace fantasy/statute-heavy copy with concise text.
-  2. Add strings for all 5 pages and global notices.
-  3. Define simple inline errors.
-- **Success criteria:**
-  - No wizard/dragon/arcane/warrior/artifact/side-quest copy in UI copy file.
-  - Required labels and CTA text match spec intent.
-- **Validation:**
-  - `rg -n "wizard|dragon|arcane|warrior|artifact|side quest|Statute|Invalid Declaration" src/content/uxCopy.ts -S` returns no matches.
-- **Edge/negative tests:**
-  - Empty required fields produce direct human-readable errors.
+### Workstream 2 — Spec behavior deltas (Agent role: UX behavior engineer)
+- File ownership:
+  - `src/App.tsx`
+  - `src/content/uxCopy.ts`
+- Inputs: shared contracts + spec deltas.
+- Outputs: behavior fixes and copy updates.
+- Tasks:
+  1. Prefill proposal text when transitioning from page3 to page4.
+  2. Make equivalent cards map to distinct camel values.
+  3. Add separate TXT and PDF download actions.
+  4. Implement functional extras (rejection letter + calculations log).
+  5. Remove fantasy/side-quest terms from user-facing copy in active flow.
+- Success criteria:
+  - Page4 textarea populated on first arrival.
+  - At least 3 equivalent cards change camel value.
+  - Both `.txt` and `.pdf` downloads available.
+  - Extras controls perform observable actions.
+- Validation:
+  - `npm run build` succeeds.
+  - `rg -n "warrior|artifact|side quest|wizard|dragon|arcane|lunar|enchanted|codex|concordat|relic" src/App.tsx src/content/uxCopy.ts` returns no matches.
+- Edge/negative tests:
+  - Empty proposal uses generated fallback for copy/share.
 
-### Workstream 3 — Form state contract update
-- **Agent role:** state management engineer
-- **File ownership:** `src/domain/types.ts`, `src/store/DowryFormContext.tsx`
-- **Inputs:** form contract in this plan
-- **Outputs:** context supports required + optional basics fields
-- **Tasks:**
-  1. Add `ageRange`, `occupation`, `quirkyFact` to `DowryForm`.
-  2. Update defaults/sanitization/reset behavior.
-  3. Update camel slider bounds to 5–100.
-- **Success criteria:**
-  - Build passes with new form fields.
-  - Reset clears optional drawer values.
-- **Validation:**
-  - `npm run build`
-- **Edge/negative tests:**
-  - malformed saved JSON should fall back safely.
+### Workstream 3 — Styling alignment (Agent role: UI polish)
+- File ownership:
+  - `src/app.css`
+- Inputs: existing color variables and component class names.
+- Outputs: style updates for start-over link, extras panels, download buttons, and calculation log list.
+- Tasks:
+  1. Add styles for page component wrappers and utility classes.
+  2. Ensure full-width mobile buttons, 48px targets, subtle cards, and spacing.
+- Success criteria:
+  - No layout regression on mobile width.
+  - New elements match existing design tokens.
+- Validation:
+  - `npm run build` succeeds.
+- Edge/negative tests:
+  - Long proposal text wraps without overflow.
 
-### Workstream 4 — Visual system simplification
-- **Agent role:** design systems engineer
-- **File ownership:** `src/app.css`, `src/design/theme.css`, `src/design/legal-theme.css`
-- **Inputs:** color/spacing/interaction contract in this plan
-- **Outputs:** clean mobile-first legal style UI
-- **Tasks:**
-  1. Set required palette tokens (navy, gray, muted gold, white).
-  2. Ensure full-width mobile buttons and >=48px controls.
-  3. Keep only subtle fade animation and minimal shadows.
-- **Success criteria:**
-  - Buttons and inputs satisfy tap-size requirement.
-  - Header/footer/notice are visually distinct and consistent.
-- **Validation:**
-  - `npm run build`
-  - Manual viewport check at ~375px.
-- **Edge/negative tests:**
-  - reduced-motion users avoid nonessential transitions.
+### Workstream 4 — E2E verification updates (Agent role: QA automation)
+- File ownership:
+  - `cypress/e2e/master-spec-flow.cy.js`
+- Inputs: expected UI text and flow behavior.
+- Outputs: updated test coverage for changed behaviors.
+- Tasks:
+  1. Assert Page4 prefilled text appears.
+  2. Assert equivalent card click changes slider value.
+  3. Assert extras actions render outputs/log.
+- Success criteria:
+  - Spec flow test passes locally.
+- Validation:
+  - `npm run test:e2e -- --spec cypress/e2e/master-spec-flow.cy.js` (or equivalent cypress command) passes.
+- Edge/negative tests:
+  - Validation errors appear for missing name/region.
 
-### Workstream 5 — QA and screenshot evidence
-- **Agent role:** release QA
-- **File ownership:** none (verification + artifacts only)
-- **Inputs:** final built app
-- **Outputs:** command logs + screenshot artifact
-- **Tasks:**
-  1. Run build/tests.
-  2. Launch app and take a screenshot of updated UI.
-- **Success criteria:**
-  - Build succeeds and screenshot is captured.
-- **Validation:**
-  - `npm test`
-  - `npm run build`
-- **Edge/negative tests:**
-  - If browser tool fails, document limitation.
-
-## Integration plan
-- Merge order to reduce shared-file conflicts: 2 → 3 → 1 → 4 → 5.
-- All workstreams can begin from contracts above without waiting.
-- Shared-file risk is limited by strict file ownership and fixed interfaces.
+## Integration plan (no blocking)
+- Use prop contracts so each page component can be developed independently after stubs exist.
+- Merge order: Workstream 1 (stubs/orchestration) → Workstream 2 (behavior) → Workstream 3 (styles) → Workstream 4 (tests).
+- Conflict prevention:
+  - Only Workstream 1/2 touch `App.tsx`; coordinate by limiting Workstream 2 to handler logic section.
+  - Other workstreams own non-overlapping files.
 
 ## Acceptance checklist
-- [ ] Exactly 5 pages in final flow.
-- [ ] Header/footer/persistent entertainment notice match required text exactly.
-- [ ] Page 2 has only required fields visible by default with optional drawer.
-- [ ] Page 3 has camel slider (5–100) plus equivalent cards.
-- [ ] Page 4 supports edit/copy/download/share actions.
-- [ ] Page 5 lists drafts with View/Copy/Share/Delete and Start New Proposal.
-- [ ] Build and tests executed; results recorded.
-- [ ] Screenshot artifact captured for visual change.
+- [x] Page 4 is prefilled when opened.
+- [x] Equivalent cards produce meaningful camel updates.
+- [x] Download supports `.txt` and `.pdf`.
+- [x] Start-over link visible on pages 2–5.
+- [x] Extras are actionable (rejection + calculations view).
+- [x] Fantasy terms removed from active simplified flow copy.
+- [x] Build passes.
+- [ ] Tests pass (unit/node + targeted e2e).
+- [x] Screenshot captured for visual changes.
 
-## Risks and mitigations
-- **Risk:** Contract drift while replacing large `App.tsx`.
-  - **Mitigation:** Keep all page copy keys centralized in `uxCopy` and map each page to one render function.
-- **Risk:** Legacy tests expect removed UI.
-  - **Mitigation:** Run suite; if failures are legacy-coupled, update only tests directly asserting old flow behavior.
-- **Risk:** Hidden coupling to old form fields.
-  - **Mitigation:** Preserve legacy fields in `DowryForm` while adding new fields to avoid broad breakage.
+## Risks + mitigations
+- Contract drift between page components and `App.tsx` props.
+  - Mitigation: define explicit prop shapes and keep all state in `App.tsx`.
+- Hidden coupling with legacy modules.
+  - Mitigation: avoid modifying legacy `src/phases/*` behavior; only adjust active simplified flow and targeted copy.
+- Browser PDF API variability.
+  - Mitigation: fallback to print-dialog based PDF generation using existing browser capabilities and a deterministic text blob fallback naming.
