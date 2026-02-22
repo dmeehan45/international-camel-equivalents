@@ -6,10 +6,7 @@ export type ProxyCategory =
   | 'Mythical and Absurd Concepts'
   | 'Other Bizarre Items and Collectives';
 
-/**
- * Keep source open-ended for UI-layer drafts while still documenting known values.
- */
-export type ProxySource = 'reference' | 'extension' | string;
+export type ProxySource = 'reference' | 'extension';
 
 export interface ProxyDefinition {
   id: string;
@@ -29,7 +26,7 @@ export interface CalculationInput {
 }
 
 export interface ProxyEquivalent {
-  proxyId?: string;
+  proxyId: string;
   proxyName: string;
   quantity: number;
 }

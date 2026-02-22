@@ -39,9 +39,14 @@ function normalizeProxyDefinition(item: unknown): ProxyDefinition {
 
 function normalizeProxyEquivalent(item: unknown): ProxyEquivalent {
   const value = item as Partial<ProxyEquivalent>;
+  const proxyId = String(value.proxyId ?? '').trim();
+
+  if (!proxyId) {
+    throw new Error('Equivalent item is missing proxyId.');
+  }
 
   return {
-    proxyId: String(value.proxyId ?? ''),
+    proxyId,
     proxyName: String(value.proxyName ?? ''),
     quantity: Number(value.quantity ?? NaN),
   };

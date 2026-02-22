@@ -1,14 +1,20 @@
-# Redux Slice Blueprint (Option B)
+# App State Blueprint (Option A migration)
 
-This folder defines the planned state slices for CCC.
+This folder documents the current minimal global-state approach used in the React + TypeScript migration.
 
-## Planned slices
-- `calculatorSlice`: bid input, ICE output, validation errors.
-- `proxyLibrarySlice`: seed proxies, custom proxies, search/sort filters.
-- `customizerSlice`: location multipliers, language setting, custom toggles.
-- `formalizerSlice`: message templates, generated message, preview theme.
-- `premiumSlice`: local premium unlock state for dev Stripe flow.
-- `leaderboardSlice`: mock global leaderboard + local submissions.
+## Implemented shared state (single reducer in `src/App.tsx`)
+- `calcInput`: Home input fields (`amount`, `unit`, `proxyId`, `camelUsdRate`).
+- `calculation`: latest camel/equivalent result.
+- `dashboardQuery` + `dashboardSort`: Home table controls.
+- `referenceFilters` + `compare`: Reference route search/filter/compare controls.
+- `customizer`: location/manual multiplier settings persisted via customizer storage core helpers.
+- `extensionProxies` + `mergedProxies`: custom proxy authoring and merged reference catalog.
+- `formalizer`, `share`, `history`: formalized message, share payload preview, archive list.
 
-## Why this exists now
-The repository started empty. This file records the agreed Option B structure so implementation can proceed in small, focused PRs.
+## Why this is intentionally minimal
+- Keeps one source of truth during migration.
+- Avoids overbuilding Redux slices before route behavior parity is complete.
+- Uses existing `src/core/*.js` modules through `src/core/typed-core.ts` for conversion/proxy behavior.
+
+## Next step after parity
+Extract this reducer into dedicated state modules only if complexity warrants it.
