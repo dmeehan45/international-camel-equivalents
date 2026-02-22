@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { uxCopy } from '../content/uxCopy';
 import { locationPresets } from '../core/customizer-settings.js';
 import { LegalCard } from '../components/LegalCard';
@@ -37,18 +38,19 @@ type Props = {
 };
 
 export function Phase1Input(props: Props) {
+  const [optionalOpen, setOptionalOpen] = useState(false);
   const bidNameRemaining = FIELD_LIMITS.bidName - props.bidName.length;
   const hobbyRemaining = FIELD_LIMITS.hobby - props.hobby.length;
   const quirksRemaining = FIELD_LIMITS.quirks - props.quirks.length;
 
   return (
     <>
-      <PhaseHeader phaseLabel="Phase 1 of 4" heading={uxCopy.phases.phase1.heading} subtitle={uxCopy.phases.phase1.subtitle} />
+      <PhaseHeader phaseLabel="Card 1 of 6" heading={uxCopy.phases.phase1.heading} subtitle={uxCopy.phases.phase1.subtitle} />
       <LegalCard>
         <div className="grid">
           <label htmlFor="phase1-bid-name" title="Required field">
             {uxCopy.phases.phase1.labels.bidName}
-            <input id="phase1-bid-name" className="ccc-input" value={props.bidName} maxLength={FIELD_LIMITS.bidName} aria-describedby="phase1-bid-name-limit" onChange={(e) => props.setBidName(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.bidName} />
+            <input id="phase1-bid-name" className="ccc-input" value={props.bidName} maxLength={FIELD_LIMITS.bidName} aria-describedby="phase1-bid-name-limit" onChange={(e) => props.setBidName(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.bidName} autoFocus />
           </label>
           <p id="phase1-bid-name-limit" className="helper">{bidNameRemaining} characters remaining.</p>
           <label htmlFor="phase1-bid-region" title="Required field">
@@ -65,19 +67,31 @@ export function Phase1Input(props: Props) {
         <p className="helper">{uxCopy.phases.phase1.helper.quantityRange(props.minCamelQuantity, props.maxCamelQuantity)}</p>
       </LegalCard>
 
-      <details className="context-card">
-        <summary>{uxCopy.phases.phase1.advancedLabel}</summary>
-        <div className="context-cards">
-          <details className="context-card"><summary>{uxCopy.phases.phase1.labels.warriorStatus}</summary><label htmlFor="phase1-warrior"><input id="phase1-warrior" type="checkbox" checked={props.isWarrior} onChange={(e) => props.setIsWarrior(e.target.checked)} /> Includes warrior context</label></details>
-          <details className="context-card"><summary>{uxCopy.phases.phase1.labels.hobby}</summary><label htmlFor="phase1-hobby">Hobby<input id="phase1-hobby" className="ccc-input" value={props.hobby} maxLength={FIELD_LIMITS.hobby} aria-describedby="phase1-hobby-limit" onChange={(e) => props.setHobby(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.hobby} /></label><p id="phase1-hobby-limit" className="helper">{hobbyRemaining} characters remaining.</p></details>
-          <details className="context-card"><summary>{uxCopy.phases.phase1.labels.courtshipYears}</summary><label htmlFor="phase1-courtship-years">Courtship years<input id="phase1-courtship-years" className="ccc-input" type="number" min="0" max="50" value={props.courtshipYears} onChange={(e) => props.setCourtshipYears(Math.min(50, Math.max(0, Number(e.target.value) || 0)))} /></label></details>
-          <details className="context-card"><summary>{uxCopy.phases.phase1.labels.artifact}</summary><label htmlFor="phase1-artifact"><input id="phase1-artifact" type="checkbox" checked={props.hasArtifact} onChange={(e) => props.setHasArtifact(e.target.checked)} /> Includes ceremonial artifact</label></details>
-          <details className="context-card"><summary>{uxCopy.phases.phase1.labels.quirks}</summary><label htmlFor="phase1-quirks">Quirks<textarea id="phase1-quirks" className="ccc-input" value={props.quirks} maxLength={FIELD_LIMITS.quirks} aria-describedby="phase1-quirks-limit" onChange={(e) => props.setQuirks(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.quirks} /></label><p id="phase1-quirks-limit" className="helper" aria-live="polite">{quirksRemaining} characters remaining.</p>{props.quirks.length >= FIELD_LIMITS.quirks && <p className="error" role="alert">Quirks reached the maximum length.</p>}</details>
-        </div>
-      </details>
+      <div className="results-drawer">
+        <button className="cta-secondary" aria-expanded={optionalOpen} onClick={() => setOptionalOpen((current) => !current)}>
+          {optionalOpen ? 'Hide details' : 'More details?'}
+        </button>
+        {optionalOpen && (
+          <div className="context-cards mobile-drawer-body">
+            <label htmlFor="phase1-warrior"><input id="phase1-warrior" type="checkbox" checked={props.isWarrior} onChange={(e) => props.setIsWarrior(e.target.checked)} /> Warrior skills included</label>
+            <label htmlFor="phase1-hobby">Hobby
+              <input id="phase1-hobby" className="ccc-input" value={props.hobby} maxLength={FIELD_LIMITS.hobby} aria-describedby="phase1-hobby-limit" onChange={(e) => props.setHobby(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.hobby} />
+            </label>
+            <p id="phase1-hobby-limit" className="helper">{hobbyRemaining} characters remaining.</p>
+            <label htmlFor="phase1-courtship-years">Years together
+              <input id="phase1-courtship-years" className="ccc-input" type="number" min="0" max="50" value={props.courtshipYears} onChange={(e) => props.setCourtshipYears(Math.min(50, Math.max(0, Number(e.target.value) || 0)))} />
+            </label>
+            <label htmlFor="phase1-artifact"><input id="phase1-artifact" type="checkbox" checked={props.hasArtifact} onChange={(e) => props.setHasArtifact(e.target.checked)} /> Ceremonial artifact included</label>
+            <label htmlFor="phase1-quirks">Anything else?
+              <textarea id="phase1-quirks" className="ccc-input" value={props.quirks} maxLength={FIELD_LIMITS.quirks} aria-describedby="phase1-quirks-limit" onChange={(e) => props.setQuirks(e.target.value)} placeholder={uxCopy.phases.phase1.placeholders.quirks} />
+            </label>
+            <p id="phase1-quirks-limit" className="helper" aria-live="polite">{quirksRemaining} characters remaining.</p>
+            {props.quirks.length >= FIELD_LIMITS.quirks && <p className="error" role="alert">Notes reached the maximum length.</p>}
+          </div>
+        )}
+      </div>
 
       <p className="helper">{uxCopy.phases.phase1.helper.requiredFields}</p>
-      <p className="helper">{uxCopy.phases.phase1.helper.examples}</p>
       <PrimaryActionBar
         primary={{ label: uxCopy.phases.phase1.cta, onClick: props.onCalculate, disabled: !props.canCalculateIce }}
         secondary={[{ label: uxCopy.phases.phase1.secondaryCta, onClick: props.onResetOptional }]}

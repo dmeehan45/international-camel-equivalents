@@ -25,6 +25,9 @@ const sideQuestModules = ['Quiz', 'Rejection Generator', 'Precedent Archive'] as
 export function Phase4Docket(props: Props) {
   const [openDocketId, setOpenDocketId] = useState<string | null>(null);
   const [openModule, setOpenModule] = useState<(typeof sideQuestModules)[number] | null>(null);
+  const [queueOpen, setQueueOpen] = useState(true);
+  const [sideQuestOpen, setSideQuestOpen] = useState(false);
+
   const dockets = useMemo(
     () => buildDocketEntries(props.history, props.docketReadIds),
     [props.history, props.docketReadIds],
@@ -46,12 +49,12 @@ export function Phase4Docket(props: Props) {
             props.onMarkDocketRead(entry.id);
           }}
         >
-          {expanded ? 'Hide Details' : 'Expand Details'}
+          {expanded ? 'Hide details' : 'Expand details'}
         </button>
         {expanded && (
           <div id={`docket-${entry.id}`}>
             <p>Amount: {entry.amount} {entry.unit}</p>
-            <p>Camel Value: {entry.camelValue.toFixed(2)}</p>
+            <p>Camel value: {entry.camelValue.toFixed(2)}</p>
           </div>
         )}
       </article>
@@ -60,7 +63,7 @@ export function Phase4Docket(props: Props) {
 
   return (
     <>
-      <PhaseHeader phaseLabel="Phase 4 of 4" heading={uxCopy.phases.phase4.heading} subtitle={uxCopy.phases.phase4.subtitle} />
+      <PhaseHeader phaseLabel="Card 6 of 6" heading={uxCopy.phases.phase4.heading} subtitle={uxCopy.phases.phase4.subtitle} />
       <LegalCard>
         <p className="hero">{props.calculation ? `${props.calculation.camelValue.toFixed(2)} camels` : uxCopy.phases.phase4.empty}</p>
         {props.shareText && <pre>{props.shareText}</pre>}
@@ -72,27 +75,41 @@ export function Phase4Docket(props: Props) {
         secondary={[{ label: uxCopy.phases.phase4.cta, onClick: props.onSaveEntry, disabled: !props.shareText }]}
       />
 
-      <h3>Docket Queue</h3>
-      <div className="grid" role="list" aria-label="Docket queue entries">
-        {docketCards}
-        {dockets.length === 0 && <p className="helper">Archive an entry to generate docket cards.</p>}
+      <div className="results-drawer">
+        <button className="cta-secondary" aria-expanded={queueOpen} onClick={() => setQueueOpen((current) => !current)}>
+          {queueOpen ? 'Hide queue' : 'Show queue'}
+        </button>
+        {queueOpen && (
+          <div className="mobile-drawer-body">
+            <h3>Your proposals</h3>
+            <div className="grid" role="list" aria-label="Docket queue entries">
+              {docketCards}
+              {dockets.length === 0 && <p className="helper">Archive an entry to generate docket cards.</p>}
+            </div>
+          </div>
+        )}
       </div>
 
-      <details className="context-card">
-        <summary>Optional side quests</summary>
-        <div className="stepper side-quests">
-          {sideQuestModules.map((moduleName) => (
-            <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
-          ))}
-        </div>
-      </details>
+      <div className="results-drawer">
+        <button className="cta-secondary" aria-expanded={sideQuestOpen} onClick={() => setSideQuestOpen((current) => !current)}>
+          {sideQuestOpen ? 'Hide side quests' : 'Bored? Try a side quest'}
+        </button>
+        {sideQuestOpen && (
+          <div className="stepper mobile-drawer-body">
+            {sideQuestModules.map((moduleName) => (
+              <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {openModule && (
         <section className="view-card overlay" role="dialog" aria-modal="true" aria-label={openModule}>
           <h3>{openModule}</h3>
           {openModule === 'Quiz' && <p>Quick compatibility quiz module: assign 1-5 scores and compare totals.</p>}
           {openModule === 'Rejection Generator' && <p>Generate diplomatic decline notes using the current share summary.</p>}
           {openModule === 'Precedent Archive' && <p>Browse prior docket cards by status and age for repeat engagement.</p>}
-          <button onClick={() => setOpenModule(null)}>Close Module</button>
+          <button onClick={() => setOpenModule(null)}>Close module</button>
         </section>
       )}
     </>
