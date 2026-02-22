@@ -1,19 +1,25 @@
 :root {
-  --ccc-ivory-mist: #ffffff;
-  --ccc-pearl-white: #ffffff;
-  --ccc-sage-mist: #f8fafc;
-  --ccc-stone-border: #d1d5db;
-  --ccc-eucalyptus-ink: #1f2937;
-  --ccc-charcoal-vow: #1E3A8A;
-  --ccc-champagne: #D4AF37;
-  --ccc-muted-rose: #6B7280;
-  --ccc-success-leaf: #1d4ed8;
-  --ccc-error-berry: #dc2626;
-  --ccc-card-radius: 12px;
+  --ccc-deep-navy: #091328;
+  --ccc-ink: #0f1b33;
+  --ccc-slate: #2a3553;
+  --ccc-steel: #58627f;
+  --ccc-cloud: #eef2fb;
+  --ccc-paper: #f8faff;
+  --ccc-white: #ffffff;
+  --ccc-line: #cbd5e7;
+  --ccc-gold: #c8a869;
+  --ccc-gold-soft: #e8dcc5;
+  --ccc-success: #2f8f6a;
+  --ccc-error: #c24141;
+
+  --ccc-card-radius: 14px;
   --ccc-pill-radius: 999px;
-  --ccc-button-radius: 10px;
+  --ccc-button-radius: 12px;
   --ccc-transition-standard: 180ms;
-  --ccc-soft-floral-fade: #ffffff;
-  --ccc-font-heading: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-  --ccc-font-body: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+
+  --ccc-font-heading: "Ivar Text", "Canela", "Times New Roman", Georgia, serif;
+  --ccc-font-body: "Inter", "Avenir Next", "Segoe UI", Arial, sans-serif;
+
+  --ccc-surface-0: radial-gradient(circle at 8% 0%, #111f3b 0%, #091328 50%, #070d1b 100%);
+  --ccc-surface-1: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
 }
