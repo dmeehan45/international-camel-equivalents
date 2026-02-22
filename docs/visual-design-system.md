@@ -1,43 +1,50 @@
-# Wedding Editorial Design System (The Knot Inspired)
+# Legal Editorial Design System (Harvey.ai Transactional Inspired)
 
-This design system extracts the **visual language** from:
-`https://www.theknot.com/us/courtney-colella-and-justin-kalusa-sep-2025`
+This design system translates the visual language from:
+`https://www.harvey.ai/solutions/transactional`
 
-It is now adapted for this project so the existing calculator UI keeps behavior but adopts a softer wedding-editorial presentation.
+Goal: keep the existing app behavior, but restyle it with a polished “legal product” look—deep navy foundations, restrained gold accents, editorial serif headings, and crisp data-first UI surfaces.
 
 ## Extracted style signals
 
-- **Typography contrast**: elevated serif display headings with clean geometric sans-serif body copy.
-- **Muted romantic palette**: ivory, eucalyptus gray-green, champagne, and dusty rose accents.
-- **Lightweight controls**: slim borders, subtle rounded corners (not heavy pills), uppercase micro-labels.
-- **Airy surfaces**: soft gradients, calm elevation, and low-contrast section cards.
+- **Premium legal tone**: dark, confident backgrounds with high-contrast ivory text.
+- **Editorial hierarchy**: serif-forward headings paired with modern sans-serif body copy.
+- **Structured surfaces**: cool white cards with subtle gradients and hard-working border lines.
+- **Selective accenting**: minimal warm gold highlights for active states and emphasis.
+- **Low-noise interactions**: soft hover/focus transitions and restrained radius values.
 
 ## Token mapping for this project
 
-Implemented in `src/design/tokens.js` and consumed in app styles via CSS variables in `src/app.css`.
+Implemented via CSS variables in `src/design/theme.css` and consumed in `src/app.css` + `src/design/legal-theme.css`.
 
-- Base background: `#F8F6F2`
-- Elevated panel: `#FFFFFF`
-- Soft neutral section: `#EEF1ED`
-- Border: `#D7DBD8`
-- Primary text: `#747675`
-- Accent tones: `#DCC8A0` (champagne), `#B89A95` (muted rose)
+- App backdrop: layered navy gradient (`--ccc-surface-0`)
+- Primary card surface: white-to-cool-white gradient (`--ccc-surface-1`)
+- Text palette:
+  - dark text (`--ccc-ink`)
+  - muted body text (`--ccc-slate` / `--ccc-steel`)
+  - inverse text on dark surfaces (`#dbe6ff`)
+- Accent palette:
+  - legal gold (`--ccc-gold`)
+  - soft gold glow (`--ccc-gold-soft`)
 
 ## Typography system
 
-- Heading: `"Cormorant Infant", "Times New Roman", Georgia, serif`
-- Body/UI: `"Josefin Sans", "Avenir Next", "Segoe UI", sans-serif`
-- Hero treatment: uppercase + wide letter spacing for ceremony-style presentation.
+- Heading: `"Ivar Text", "Canela", "Times New Roman", Georgia, serif`
+- Body/UI: `"Inter", "Avenir Next", "Segoe UI", Arial, sans-serif`
+- Usage:
+  - headings and contract-style output use serif
+  - controls, inputs, body copy stay sans-serif for readability
 
 ## Component guidance
 
-- **Buttons/step chips**: 6px radius, uppercase labels, subtle letter spacing.
-- **Cards**: 18px radius with soft border and shadow.
-- **Inputs/focus**: neutral borders with champagne-tinted focus ring.
-- **Status + error colors**: softened/desaturated tones to match muted palette.
+- **Top navigation**: translucent dark bar + subtle blur + gold-tinted divider.
+- **Progress chips/buttons**: dark by default; active state uses understated gold gradient.
+- **Cards/drawers**: cool white backgrounds, thin lines, generous but controlled shadows.
+- **Inputs/focus**: neutral border with warm gold focus ring.
+- **Persistent legal disclaimer**: dark glass effect with lighter legal-copy text.
 
 ## Accessibility notes
 
-- Focus-visible outlines remain explicit.
-- Body copy preserves readable line-height.
-- Contrast is intentionally soft but still foreground-first for key text.
+- Focus styles remain explicit on all form controls.
+- Contrast remains high for primary text and critical actions.
+- Decorative gold accents never carry meaning alone.
