@@ -798,7 +798,7 @@ function AppShell() {
   const { form, queue } = useDowryForm();
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
-  const [disclaimerDismissed, setDisclaimerDismissed] = useState(Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key)));
+  const [showDisclaimerToast, setShowDisclaimerToast] = useState(false);
   const legalPage = {
     '/fine-print': { title: 'Fine Print', summary: 'All obligations are subject to weather, whim, and committee interpretation.' },
     '/privacy-theater': { title: 'Privacy Theater', summary: 'We theatrically whisper your bid to no one in particular behind velvet curtains.' },
@@ -809,6 +809,14 @@ function AppShell() {
     writeCustomizerSettings({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier), language: state.customizer.language });
   }, [state.customizer.locationKey, state.customizer.manualMultiplier, state.customizer.language]);
 
+
+  useEffect(() => {
+    const alreadyDismissed = Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key));
+    const alreadyShownThisSession = Boolean(globalThis.sessionStorage?.getItem('ccc-shell-disclaimer-session-v1'));
+    if (alreadyDismissed || alreadyShownThisSession) return;
+    setShowDisclaimerToast(true);
+    globalThis.sessionStorage?.setItem('ccc-shell-disclaimer-session-v1', '1');
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -840,11 +848,11 @@ function AppShell() {
     <main className={`app-shell ccc-app ${state.chaosMode ? 'chaos-mode' : ''}`}>
       <FixedShellHeader state={state} dispatch={dispatch} draftSaved={draftSaved} />
 
-      {!disclaimerDismissed && (
-        <section className="shell-disclaimer" role="note" aria-label="Satirical legal disclaimer">
+      {showDisclaimerToast && (
+        <section className="shell-disclaimer" role="status" aria-live="polite" aria-label="Satirical legal disclaimer">
           <p>{uxCopy.disclaimer.text}</p>
           <button onClick={() => {
-            setDisclaimerDismissed(true);
+            setShowDisclaimerToast(false);
             globalThis.localStorage?.setItem(uxCopy.disclaimer.key, '1');
           }}>
             {uxCopy.disclaimer.dismissCta}
