@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useReducer, useState, type Dispatch } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import proxiesData from './data/proxies.json';
 import {
   applyDashboardView,
@@ -21,12 +21,20 @@ import { createHistoryEntry, formatRelativeAge, readBidHistory, readDocketReadId
 import { parseBidInput } from './core/bid-parser.js';
 import { calculateAdjudicatedCamelValue } from './core/adjudication.js';
 import type { CalculationResult, ProxyDefinition } from './domain/types';
+import {
+  FLOW_STEP_LABELS,
+  canOpenFlowStep,
+  getFlowSteps,
+  getNextFlowStep,
+  getPreviousFlowStep,
+  type FlowStepContext,
+  type FlowStepId,
+} from './domain/flow';
 import { DowryFormProvider, useDowryForm, WORKFLOW_STORAGE_KEY } from './store/DowryFormContext';
 import { uxCopy } from './content/uxCopy';
 import { ErrorMessage } from './components/ErrorMessage';
 import { LoadingFactRotator } from './components/LoadingFactRotator';
 
-type FlowStep = 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
 type TopTab = 'top' | 'all' | 'compare';
 type RootTab = 'flow' | 'library' | 'archive' | 'premium';
 
@@ -35,7 +43,7 @@ type State = {
   extensionProxies: ProxyDefinition[];
   mergedProxies: ProxyDefinition[];
   activeRootTab: RootTab;
-  flowStep: FlowStep;
+  flowStep: FlowStepId;
   showWelcome: boolean;
   guidedMode: boolean;
   chaosMode: boolean;
@@ -61,7 +69,7 @@ type State = {
 
 type Action =
   | { type: 'setRootTab'; value: RootTab }
-  | { type: 'setFlowStep'; value: FlowStep }
+  | { type: 'setFlowStep'; value: FlowStepId }
   | { type: 'toggleTools' }
   | { type: 'setCelebrateOpen'; value: boolean }
   | { type: 'setShowWelcome'; value: boolean }
@@ -86,6 +94,11 @@ type Action =
   | { type: 'setDocketReadIds'; value: string[] };
 
 const referenceProxies = proxiesData as ProxyDefinition[];
+
+function normalizeDraftFlowStep(step: unknown): FlowStepId {
+  const flowSteps = new Set<FlowStepId>(['card1-basics', 'card2-adjudication', 'card3-review', 'card4-tune', 'card5-instrument', 'card6-queue']);
+  return typeof step === 'string' && flowSteps.has(step as FlowStepId) ? (step as FlowStepId) : 'card1-basics';
+}
 function readDraft() {
   try {
     const raw = globalThis.localStorage?.getItem(WORKFLOW_STORAGE_KEY);
@@ -128,7 +141,7 @@ function buildInitialState(): State {
     extensionProxies,
     mergedProxies,
     activeRootTab: 'flow',
-    flowStep: draft?.flowStep ?? 'phase1-input',
+    flowStep: normalizeDraftFlowStep(draft?.flowStep),
     showWelcome: false,
     guidedMode: draft?.guidedMode ?? true,
     chaosMode: draft?.chaosMode ?? false,
@@ -245,7 +258,7 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
     const result = calculateIceWithModifiers({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, proxyId: state.calcInput.proxyId }, state.mergedProxies, { camelMultiplier });
     dispatch({ type: 'setCalculation', value: result });
     dispatch({ type: 'setError', value: '' });
-    dispatch({ type: 'setFlowStep', value: 'phase2-adjudication' });
+    dispatch({ type: 'setFlowStep', value: 'card2-adjudication' });
   } catch (error) {
     dispatch({ type: 'setError', value: error instanceof Error ? error.message : uxCopy.errors.calculationFailed });
   }
@@ -281,17 +294,11 @@ function computeRecommendation({ baseCalculation, regionFactor, traitBonuses }: 
   };
 }
 
-function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: (step: FlowStep) => void; canNavigateTo: (step: FlowStep) => boolean }) {
-  const steps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
-  const labels: Record<FlowStep, string> = {
-    'phase1-input': 'Petition Intake',
-    'phase2-adjudication': 'Valuation Hearing',
-    'phase3-instrument': 'Instrument Drafting',
-    'phase4-docket': 'Archival Seal',
-  };
+function Stepper({ step, flowContext, onChange }: { step: FlowStepId; flowContext: FlowStepContext; onChange: (step: FlowStepId) => void }) {
+  const steps = getFlowSteps(flowContext.includeTuneStep);
   const currentIndex = steps.indexOf(step);
-  const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
-  const nextStep = currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
+  const previousStep = getPreviousFlowStep(flowContext);
+  const nextStep = getNextFlowStep(flowContext);
 
   return (
     <div className="stepper-wrap">
@@ -300,7 +307,7 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
           const status = index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming';
           return (
             <div key={item} className="stepper-item">
-              <button className={step === item ? 'step active' : 'step'} onClick={() => onChange(item)} disabled={!canNavigateTo(item)} aria-current={status === 'current' ? 'step' : undefined}><span>{labels[item]}</span></button>
+              <button className={step === item ? 'step active' : 'step'} onClick={() => onChange(item)} disabled={!canOpenFlowStep(item, flowContext)} aria-current={status === 'current' ? 'step' : undefined}><span>{FLOW_STEP_LABELS[item]}</span></button>
               {index < steps.length - 1 && <span className="step-arrow" aria-hidden="true">→</span>}
             </div>
           );
@@ -308,20 +315,14 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
       </div>
       <div className="stepper-nav">
         <button onClick={() => previousStep && onChange(previousStep)} disabled={!previousStep}>← Back</button>
-        <button onClick={() => nextStep && onChange(nextStep)} disabled={!nextStep || !canNavigateTo(nextStep)}>Next →</button>
+        <button onClick={() => nextStep && onChange(nextStep)} disabled={!nextStep || !canOpenFlowStep(nextStep, flowContext)}>Next →</button>
       </div>
     </div>
   );
 }
 
 function FixedShellHeader({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
-  const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
-  const labels: Record<FlowStep, string> = {
-    'phase1-input': 'Phase I',
-    'phase2-adjudication': 'Phase II',
-    'phase3-instrument': 'Phase III',
-    'phase4-docket': 'Phase IV',
-  };
+  const flowSteps = getFlowSteps(false);
 
   return (
     <header className="fixed-header" role="banner">
@@ -345,8 +346,8 @@ function FixedShellHeader({ state, dispatch, draftSaved }: { state: State; dispa
               dispatch({ type: 'setFlowStep', value: flowStep });
             }}
           >
-            <span>{labels[flowStep]}</span>
-            <small>{index + 1}/4</small>
+            <span>{FLOW_STEP_LABELS[flowStep]}</span>
+            <small>{index + 1}/{flowSteps.length}</small>
           </button>
         ))}
       </nav>
@@ -367,11 +368,6 @@ function LegalPlaceholderPage({ title, summary }: { title: string; summary: stri
 
 function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
   const { form, dispatchForm, canCalculateIce, minCamelQuantity, maxCamelQuantity, clampCamelQuantity, queue } = useDowryForm();
-  const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
-  const navigate = useNavigate();
-  const location = useLocation();
-  const phasePathMap: Record<FlowStep, string> = { 'phase1-input': '/phase1', 'phase2-adjudication': '/phase2', 'phase3-instrument': '/phase3', 'phase4-docket': '/phase4' };
-  const pathPhaseMap: Record<string, FlowStep> = { '/phase1': 'phase1-input', '/phase2': 'phase2-adjudication', '/phase3': 'phase3-instrument', '/phase4': 'phase4-docket' };
   const [scanActionsOpen, setScanActionsOpen] = useState(false);
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
@@ -391,15 +387,20 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     runCalculation(state, dispatch);
   }
 
-  function canOpenFlowStep(target: FlowStep) {
-    const currentIndex = flowSteps.indexOf(state.flowStep);
-    const targetIndex = flowSteps.indexOf(target);
-    if (targetIndex <= currentIndex) return true;
-    if (target === 'phase2-adjudication') return Boolean(state.calculation);
-    if (target === 'phase3-instrument') return Boolean(state.calculation);
-    if (target === 'phase4-docket') return Boolean(state.share.text || state.formalizer.message);
-    return false;
-  }
+  const userChoseTweak = Boolean(form.regionOverride)
+    || !fiatTraitsEnabled
+    || form.advancedTrait !== 1
+    || form.traitModifiers.social !== 1
+    || form.traitModifiers.resilience !== 1
+    || form.traitModifiers.prestige !== 1
+    || form.traitModifiers.ceremony !== 1;
+
+  const flowContext: FlowStepContext = {
+    currentStep: state.flowStep,
+    hasCalculation: Boolean(state.calculation),
+    hasShareDraft: Boolean(state.share.text || state.formalizer.message),
+    includeTuneStep: userChoseTweak,
+  };
 
   const visibleEquivalents = useMemo(() => {
     if (!state.calculation) return [];
@@ -556,33 +557,16 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     dispatch({ type: 'setCalculation', value: recommendation.adjustedCalculation });
     dispatch({ type: 'setFormalizerField', field: 'message', value: '' });
     dispatch({ type: 'setShare', text: '', selectedProxyId: recommendation.adjustedCalculation.equivalents[0]?.proxyId ?? '', qrPreview: '', error: '' });
-    dispatch({ type: 'setFlowStep', value: 'phase3-instrument' });
+    dispatch({ type: 'setFlowStep', value: userChoseTweak ? 'card4-tune' : 'card5-instrument' });
   }
 
 
 
   useEffect(() => {
-    if (state.flowStep !== 'phase3-instrument') return;
+    if (state.flowStep !== 'card5-instrument') return;
     if (!state.calculation || state.formalizer.message) return;
     generateMessage();
   }, [state.flowStep, state.calculation, state.formalizer.template]);
-
-  useEffect(() => {
-    const fromPath = pathPhaseMap[location.pathname];
-    if (!fromPath) {
-      navigate(phasePathMap[state.flowStep], { replace: true });
-      return;
-    }
-    if (fromPath !== state.flowStep) {
-      if (canOpenFlowStep(fromPath)) dispatch({ type: 'setFlowStep', value: fromPath });
-      else navigate(phasePathMap[state.flowStep], { replace: true });
-    }
-  }, [location.pathname, state.flowStep]);
-
-  useEffect(() => {
-    const expectedPath = phasePathMap[state.flowStep];
-    if (location.pathname !== expectedPath) navigate(expectedPath, { replace: true });
-  }, [state.flowStep, location.pathname]);
 
   function resetToOriginalBid() {
     setLockedRecommendation(null);
@@ -600,11 +584,11 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
 
   return (
     <section className="view-card ccc-card flow-surface">
-      <Stepper step={state.flowStep} onChange={(value) => { if (canOpenFlowStep(value)) { dispatch({ type: 'setFlowStep', value }); navigate(phasePathMap[value]); } }} canNavigateTo={canOpenFlowStep} />
+      <Stepper step={state.flowStep} flowContext={flowContext} onChange={(value) => { if (canOpenFlowStep(value, flowContext)) dispatch({ type: 'setFlowStep', value }); }} />
       <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · {draftSaved ? 'Saved' : 'Saving…'}</div>
       <div className="helper" aria-live="polite">Queued shares: {queue.length}{queuedSharePreview ? ` (${queuedSharePreview})` : ''}</div>
 
-      {state.flowStep === 'phase1-input' && (
+      {state.flowStep === 'card1-basics' && (
         <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase I…</p>}>
           <Phase1Input
           bidName={form.bidName}
@@ -634,7 +618,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         </Suspense>
       )}
 
-      {state.flowStep === 'phase2-adjudication' && (
+      {state.flowStep === 'card2-adjudication' && (
         <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase II…</p>}>
           <Phase2Adjudication
           state={state}
@@ -665,7 +649,38 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         </Suspense>
       )}
 
-      {state.flowStep === 'phase3-instrument' && (
+      {(state.flowStep === 'card3-review' || state.flowStep === 'card4-tune') && (
+        <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Review…</p>}>
+          <Phase2Adjudication
+          state={state}
+          effectiveMultiplier={effectiveMultiplier}
+          recommendation={recommendation}
+          regionOverride={form.regionOverride}
+          setRegionOverride={(value) => dispatchForm({ type: 'setField', field: 'regionOverride', value })}
+          traitModifiers={form.traitModifiers}
+          setTraitModifiers={(value) => dispatchForm({ type: 'setField', field: 'traitModifiers', value: typeof value === 'function' ? value(form.traitModifiers) : value })}
+          advancedTrait={form.advancedTrait}
+          setAdvancedTrait={(value) => dispatchForm({ type: 'setField', field: 'advancedTrait', value })}
+          fiatTraitsEnabled={fiatTraitsEnabled}
+          setFiatTraitsEnabled={setFiatTraitsEnabled}
+          adjudicationLocked={Boolean(lockedRecommendation)}
+          lockedRecommendation={lockedRecommendation}
+          languagePreview={languagePreview}
+          scanActionsOpen={scanActionsOpen}
+          setScanActionsOpen={setScanActionsOpen}
+          resultsFiltersOpen={resultsFiltersOpen}
+          setResultsFiltersOpen={setResultsFiltersOpen}
+          topPicks={topPicks}
+          visibleEquivalents={visibleEquivalents}
+          runCompare={runCompare}
+          finalizeBid={() => dispatch({ type: 'setFlowStep', value: state.flowStep === 'card3-review' && userChoseTweak ? 'card4-tune' : 'card5-instrument' })}
+          resetToOriginalBid={resetToOriginalBid}
+          dispatch={dispatch}
+          />
+        </Suspense>
+      )}
+
+      {state.flowStep === 'card5-instrument' && (
         <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase III…</p>}>
           <Phase3Instrument
           state={state}
@@ -673,7 +688,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           setExportTab={setExportTab}
           generateMessage={generateMessage}
           runExportAction={runExportAction}
-          onCompleteInstrument={() => dispatch({ type: 'setFlowStep', value: 'phase4-docket' })}
+          onCompleteInstrument={() => dispatch({ type: 'setFlowStep', value: 'card6-queue' })}
           exportToast={exportToast}
           dispatch={dispatch}
             templates={templates}
@@ -685,13 +700,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         <LoadingFactRotator active={Boolean(loadingAction)} actionLabel={loadingAction ?? 'Processing'} facts={uxCopy.loadingFacts} />
       )}
 
-      {state.flowStep === 'phase4-docket' && (
+      {state.flowStep === 'card6-queue' && (
         <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase IV…</p>}>
           <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} history={state.history} docketReadIds={state.docketReadIds} onMarkDocketRead={(id) => {
             const next = Array.from(new Set([id, ...state.docketReadIds]));
             writeDocketReadIds(next);
             dispatch({ type: 'setDocketReadIds', value: next });
-          }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'phase1-input' }); navigate('/phase1'); }} />
+          }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'card1-basics' }); }} />
         </Suspense>
       )}
 
@@ -772,7 +787,7 @@ function ToolsDrawer({ state, dispatch, themeMode, setThemeMode }: { state: Stat
         <details className="tools-panel">
           <summary>Side Quests</summary>
           <p className="helper">Optional modules now open from Phase 4 docket cards.</p>
-          <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'phase4-docket' }); }}>Go to Phase 4 modules</button>
+          <button onClick={() => { dispatch({ type: 'setRootTab', value: 'flow' }); dispatch({ type: 'setFlowStep', value: 'card6-queue' }); }}>Go to Phase 4 modules</button>
         </details>
         <details className="tools-panel">
           <summary>Theme</summary>
