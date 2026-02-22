@@ -19,6 +19,7 @@ import { buildHtmlExportDocument, buildImageExportDataUrl, buildPdfExportBlob } 
 import { readCustomizerSettings, resolveCamelMultiplier, writeCustomizerSettings } from './core/customizer-settings.js';
 import { createHistoryEntry, formatRelativeAge, readBidHistory, writeBidHistory } from './core/history-archive.js';
 import { parseBidInput } from './core/bid-parser.js';
+import { calculateAdjudicatedCamelValue } from './core/adjudication.js';
 import type { CalculationResult, ProxyDefinition } from './domain/types';
 import { Phase1Input } from './phases/Phase1Input';
 import { Phase2Adjudication } from './phases/Phase2Adjudication';
@@ -251,17 +252,15 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
 type RecommendationInputs = {
   baseCalculation: CalculationResult;
   regionFactor: number;
-  traitModifiers: {
-    social: number;
-    resilience: number;
-    prestige: number;
-    ceremony: number;
-  };
+  traitBonuses: number;
 };
 
-function computeRecommendation({ baseCalculation, regionFactor, traitModifiers }: RecommendationInputs) {
-  const traitFactor = Object.values(traitModifiers).reduce((total, value) => total * value, 1);
-  const adjustedCamelValue = Number((baseCalculation.camelValue * regionFactor * traitFactor).toFixed(2));
+function computeRecommendation({ baseCalculation, regionFactor, traitBonuses }: RecommendationInputs) {
+  const { adjustedCamelValue } = calculateAdjudicatedCamelValue({
+    baseCamelValue: baseCalculation.camelValue,
+    regionFactor,
+    traitBonuses,
+  });
   const ratio = baseCalculation.camelValue === 0 ? 1 : adjustedCamelValue / baseCalculation.camelValue;
   const adjustedEquivalents = baseCalculation.equivalents
     .map((item) => ({ ...item, quantity: Number((item.quantity * ratio).toFixed(2)) }))
@@ -274,7 +273,7 @@ function computeRecommendation({ baseCalculation, regionFactor, traitModifiers }
 
   return {
     regionFactor,
-    traitFactor,
+    traitBonuses,
     adjustedCamelValue,
     adjustedCalculation,
   };
@@ -324,9 +323,12 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
   const [exportToast, setExportToast] = useState('');
+  const [fiatTraitsEnabled, setFiatTraitsEnabled] = useState(true);
+  const [lockedRecommendation, setLockedRecommendation] = useState<ReturnType<typeof computeRecommendation> | null>(null);
 
   function runStepOneCalculation() {
     if (!canCalculateIce) return;
+    setLockedRecommendation(null);
     const guardedQuantity = clampCamelQuantity(form.camelQuantity);
     if (guardedQuantity !== form.camelQuantity) dispatchForm({ type: 'setField', field: 'camelQuantity', value: guardedQuantity });
     dispatch({ type: 'setCalcField', field: 'rawBid', value: `${guardedQuantity} camels` });
@@ -354,17 +356,21 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     if (!state.calculation) return null;
     const activeRegionKey = form.regionOverride || state.customizer.locationKey;
     const regionFactor = resolveCamelMultiplier({ locationKey: activeRegionKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
+    const traitBonuses = fiatTraitsEnabled
+      ? Number((
+        (form.traitModifiers.social - 1)
+        + (form.traitModifiers.resilience - 1)
+        + (form.traitModifiers.prestige - 1)
+        + ((form.traitModifiers.ceremony * form.advancedTrait) - 1)
+      ).toFixed(2))
+      : 0;
+
     return computeRecommendation({
       baseCalculation: state.calculation,
       regionFactor,
-      traitModifiers: {
-        social: form.traitModifiers.social,
-        resilience: form.traitModifiers.resilience,
-        prestige: form.traitModifiers.prestige,
-        ceremony: Number((form.traitModifiers.ceremony * form.advancedTrait).toFixed(2)),
-      },
+      traitBonuses,
     });
-  }, [form.advancedTrait, form.regionOverride, form.traitModifiers, state.calculation, state.customizer.locationKey, state.customizer.manualMultiplier]);
+  }, [fiatTraitsEnabled, form.advancedTrait, form.regionOverride, form.traitModifiers, state.calculation, state.customizer.locationKey, state.customizer.manualMultiplier]);
   const languagePreview: Record<string, string> = {
     en: 'Preview: “This bid equals 2.4 camels.”',
     ar: 'Preview: "هذا العرض يساوي 2.4 من الإبل."',
@@ -476,6 +482,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
 
   function finalizeBid() {
     if (!recommendation) return;
+    setLockedRecommendation(recommendation);
     dispatch({ type: 'setCalculation', value: recommendation.adjustedCalculation });
     dispatch({ type: 'setFormalizerField', field: 'message', value: '' });
     dispatch({ type: 'setShare', text: '', selectedProxyId: recommendation.adjustedCalculation.equivalents[0]?.proxyId ?? '', qrPreview: '', error: '' });
@@ -501,6 +508,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   }, [state.flowStep, location.pathname]);
 
   function resetToOriginalBid() {
+    setLockedRecommendation(null);
+    setFiatTraitsEnabled(true);
     dispatchForm({ type: 'resetForOriginalBid' });
     dispatch({ type: 'setCalcField', field: 'rawBid', value: '10 camels' });
     dispatch({ type: 'setCalcField', field: 'amount', value: '10' });
@@ -557,6 +566,10 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           setTraitModifiers={(value) => dispatchForm({ type: 'setField', field: 'traitModifiers', value: typeof value === 'function' ? value(form.traitModifiers) : value })}
           advancedTrait={form.advancedTrait}
           setAdvancedTrait={(value) => dispatchForm({ type: 'setField', field: 'advancedTrait', value })}
+          fiatTraitsEnabled={fiatTraitsEnabled}
+          setFiatTraitsEnabled={setFiatTraitsEnabled}
+          adjudicationLocked={Boolean(lockedRecommendation)}
+          lockedRecommendation={lockedRecommendation}
           languagePreview={languagePreview}
           scanActionsOpen={scanActionsOpen}
           setScanActionsOpen={setScanActionsOpen}

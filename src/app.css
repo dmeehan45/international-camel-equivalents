@@ -153,6 +153,11 @@ button {
   background: var(--surface-2);
 }
 
+.adjudication-locked {
+  border: 2px solid #d4af37;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #d4af37 30%, transparent);
+}
+
 .context-card summary {
   cursor: pointer;
   font-weight: 600;
