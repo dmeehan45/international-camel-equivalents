@@ -8,8 +8,8 @@ import { applyDashboardView as applyDashboardViewUntyped, validateDashboardInput
 import {
   createProxyDefinition as createProxyDefinitionUntyped,
   mergeWithExtensions as mergeWithExtensionsUntyped,
-  readProxyExtensions,
-  writeProxyExtensions,
+  readStoredExtensions,
+  writeStoredExtensions,
 } from './proxy-library.js';
 import type {
   CalculationInput,
@@ -19,7 +19,7 @@ import type {
   ProxyEquivalent,
 } from '../domain/types';
 
-export { readProxyExtensions, validateDashboardInput, writeProxyExtensions };
+export { readStoredExtensions, validateDashboardInput, writeStoredExtensions };
 
 export type DashboardSort = 'quantity-desc' | 'quantity-asc' | 'name-asc' | 'name-desc';
 
