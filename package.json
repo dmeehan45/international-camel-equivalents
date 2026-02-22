@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "node --test",
     "test:smoke": "node --test test/release-smoke.integration.test.js",
-    "test:integration": "npm run test:smoke && node --test test/proxy-library.test.js"
+    "test:integration": "npm run test:smoke && node --test test/proxy-library.test.js",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -21,6 +23,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.9.2",
-    "vite": "^5.4.20"
+    "vite": "^5.4.20",
+    "cypress": "^13.17.0"
   }
 }
