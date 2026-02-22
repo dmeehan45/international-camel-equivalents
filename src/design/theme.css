@@ -1,34 +1,34 @@
 :root {
-  --ccc-ivory-mist: #f8f6f1;
-  --ccc-pearl-white: #fffdf8;
-  --ccc-sage-mist: #ece9df;
-  --ccc-stone-border: #c8c3b4;
-  --ccc-eucalyptus-ink: #5f6368;
-  --ccc-charcoal-vow: #15294b;
-  --ccc-champagne: #c89b3c;
+  --ccc-ivory-mist: #f9fafb;
+  --ccc-pearl-white: #ffffff;
+  --ccc-sage-mist: #eef2f7;
+  --ccc-stone-border: #6b7280;
+  --ccc-eucalyptus-ink: #0f172a;
+  --ccc-charcoal-vow: #001f3f;
+  --ccc-champagne: #d4af37;
   --ccc-muted-rose: #6b7280;
-  --ccc-success-leaf: #5e7e69;
-  --ccc-error-berry: #9f4d4d;
-  --ccc-card-radius: 18px;
+  --ccc-success-leaf: #1d4ed8;
+  --ccc-error-berry: #ef4444;
+  --ccc-card-radius: 12px;
   --ccc-pill-radius: 999px;
-  --ccc-button-radius: 6px;
-  --ccc-transition-standard: 220ms;
-  --ccc-soft-floral-fade: linear-gradient(135deg, #f8f6f1 0%, #ece9df 50%, #fffdf8 100%);
-  --ccc-font-heading: "Cormorant Infant", "Times New Roman", Georgia, serif;
-  --ccc-font-body: "Josefin Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --ccc-button-radius: 8px;
+  --ccc-transition-standard: 300ms;
+  --ccc-soft-floral-fade: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+  --ccc-font-heading: "Times New Roman", Georgia, serif;
+  --ccc-font-body: Helvetica, Arial, sans-serif;
 }
 
 [data-theme='dark'] {
-  --ccc-ivory-mist: #121a2a;
-  --ccc-pearl-white: #1a2336;
-  --ccc-sage-mist: #243047;
-  --ccc-stone-border: #58637a;
-  --ccc-eucalyptus-ink: #d0d5df;
-  --ccc-charcoal-vow: #f3f6fb;
-  --ccc-champagne: #e5b550;
-  --ccc-muted-rose: #9ea7b8;
-  --ccc-success-leaf: #83a68e;
-  --ccc-error-berry: #d68d8d;
+  --ccc-ivory-mist: #0a0a0a;
+  --ccc-pearl-white: #111827;
+  --ccc-sage-mist: #1f2937;
+  --ccc-stone-border: #94a3b8;
+  --ccc-eucalyptus-ink: #e5e7eb;
+  --ccc-charcoal-vow: #e2e8f0;
+  --ccc-champagne: #d4af37;
+  --ccc-muted-rose: #9ca3af;
+  --ccc-success-leaf: #60a5fa;
+  --ccc-error-berry: #f87171;
 }
 
 .ccc-app {
@@ -39,23 +39,22 @@
 }
 
 .ccc-card {
-  background: color-mix(in srgb, var(--ccc-pearl-white) 90%, var(--ccc-sage-mist));
-  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 75%, white);
+  background: var(--ccc-pearl-white);
+  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 40%, transparent);
   border-radius: var(--ccc-card-radius);
   padding: 16px;
 }
 
 .ccc-heading {
-  color: var(--ccc-eucalyptus-ink);
+  color: var(--ccc-charcoal-vow);
   font-family: var(--ccc-font-heading);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .ccc-button-primary {
   align-items: center;
-  background: var(--ccc-muted-rose);
-  border: 1px solid color-mix(in srgb, var(--ccc-muted-rose) 70%, black);
+  background: var(--ccc-charcoal-vow);
+  border: 1px solid color-mix(in srgb, var(--ccc-charcoal-vow) 70%, black);
   border-radius: var(--ccc-button-radius);
   color: var(--ccc-pearl-white);
   cursor: pointer;
@@ -65,28 +64,28 @@
   min-height: 44px;
   min-width: 44px;
   padding: 10px 20px;
-  transition: transform var(--ccc-transition-standard) ease, background var(--ccc-transition-standard) ease;
+  transition: background var(--ccc-transition-standard) ease, box-shadow var(--ccc-transition-standard) ease;
 }
 
 .ccc-button-primary:hover {
-  background: color-mix(in srgb, var(--ccc-muted-rose) 82%, black);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ccc-champagne) 70%, transparent);
 }
 
 .ccc-button-primary:disabled {
-  background: color-mix(in srgb, var(--ccc-muted-rose) 60%, var(--ccc-pearl-white));
-  border-color: color-mix(in srgb, var(--ccc-muted-rose) 55%, var(--ccc-stone-border));
+  background: color-mix(in srgb, var(--ccc-charcoal-vow) 45%, var(--ccc-pearl-white));
+  border-color: color-mix(in srgb, var(--ccc-stone-border) 55%, var(--ccc-pearl-white));
   color: color-mix(in srgb, var(--ccc-pearl-white) 70%, var(--ccc-eucalyptus-ink));
   cursor: not-allowed;
 }
 
-.chaos-mode .ccc-button-primary:hover,
-.chaos-mode .chaos-surface {
-  background: var(--ccc-soft-floral-fade);
-  transform: rotate(1deg) scale(1.02);
+.cta-secondary {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 50%, transparent);
+  color: var(--ccc-charcoal-vow);
 }
 
 .ccc-input {
-  border: 1px solid var(--ccc-stone-border);
+  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 45%, transparent);
   border-radius: 8px;
   color: var(--ccc-eucalyptus-ink);
   min-height: 44px;
@@ -96,9 +95,5 @@
 @media (prefers-reduced-motion: reduce) {
   .ccc-button-primary {
     transition: none;
-  }
-
-  .ccc-button-primary:hover {
-    transform: none;
   }
 }

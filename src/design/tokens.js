@@ -1,51 +1,51 @@
 export const colors = {
   light: {
-    ivoryMist: '#F8F6F1',
-    pearlWhite: '#FFFDF8',
-    sageMist: '#ECE9DF',
-    stoneBorder: '#C8C3B4',
-    eucalyptusInk: '#5F6368',
-    charcoalVow: '#15294B',
-    champagne: '#C89B3C',
+    ivoryMist: '#F9FAFB',
+    pearlWhite: '#FFFFFF',
+    sageMist: '#EEF2F7',
+    stoneBorder: '#6B7280',
+    eucalyptusInk: '#0F172A',
+    charcoalVow: '#001F3F',
+    champagne: '#D4AF37',
     mutedRose: '#6B7280',
-    successLeaf: '#5E7E69',
-    errorBerry: '#9F4D4D',
+    successLeaf: '#1D4ED8',
+    errorBerry: '#EF4444',
   },
   dark: {
-    ivoryMist: '#121A2A',
-    pearlWhite: '#1A2336',
-    sageMist: '#243047',
-    stoneBorder: '#58637A',
-    eucalyptusInk: '#D0D5DF',
-    charcoalVow: '#F3F6FB',
-    champagne: '#E5B550',
-    mutedRose: '#9EA7B8',
-    successLeaf: '#83A68E',
-    errorBerry: '#D68D8D',
+    ivoryMist: '#0A0A0A',
+    pearlWhite: '#111827',
+    sageMist: '#1F2937',
+    stoneBorder: '#94A3B8',
+    eucalyptusInk: '#E5E7EB',
+    charcoalVow: '#E2E8F0',
+    champagne: '#D4AF37',
+    mutedRose: '#9CA3AF',
+    successLeaf: '#60A5FA',
+    errorBerry: '#F87171',
   },
 };
 
 export const typography = {
-  fontFamilyHeading: '"Cormorant Infant", "Times New Roman", Georgia, serif',
-  fontFamilyBody: '"Josefin Sans", "Avenir Next", "Segoe UI", sans-serif',
-  h1Size: 'clamp(2.2rem, 4vw, 3.75rem)',
+  fontFamilyHeading: '"Times New Roman", Georgia, serif',
+  fontFamilyBody: 'Helvetica, Arial, sans-serif',
+  h1Size: 'clamp(2rem, 3.4vw, 3rem)',
   bodySize: '16px',
   lineHeight: 1.55,
-  headingLetterSpacing: '0.22em',
+  headingLetterSpacing: '0.06em',
 };
 
 export const radii = {
-  card: '18px',
+  card: '12px',
   pill: '999px',
-  button: '6px',
+  button: '8px',
 };
 
 export const motion = {
   fast: '160ms',
-  standard: '220ms',
-  gentle: '320ms',
+  standard: '300ms',
+  gentle: '300ms',
 };
 
 export const gradients = {
-  softFloralFade: 'linear-gradient(135deg, #f8f6f1 0%, #ece9df 50%, #fffdf8 100%)',
+  softFloralFade: 'linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)',
 };
