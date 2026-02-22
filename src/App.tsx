@@ -275,6 +275,7 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
 function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const flowSteps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
   const [scanActionsOpen, setScanActionsOpen] = useState(false);
+  const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
 
   function canOpenFlowStep(target: FlowStep) {
     const currentIndex = flowSteps.indexOf(state.flowStep);
@@ -299,10 +300,14 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
 
   function runCompare() {
     try {
-      const quantity = compareProxyUnits({ fromProxyId: state.compare.fromProxyId, toProxyId: state.compare.toProxyId, amount: Number(state.compare.amount) }, state.mergedProxies);
-      const from = state.mergedProxies.find((item) => item.id === state.compare.fromProxyId);
-      const to = state.mergedProxies.find((item) => item.id === state.compare.toProxyId);
+      if (state.compareSelected.length < 2) throw new Error('Select at least two proxies to compare.');
+      const [fromProxyId, toProxyId] = state.compareSelected;
+      const quantity = compareProxyUnits({ fromProxyId, toProxyId, amount: Number(state.compare.amount) }, state.mergedProxies);
+      const from = state.mergedProxies.find((item) => item.id === fromProxyId);
+      const to = state.mergedProxies.find((item) => item.id === toProxyId);
       if (!from || !to) throw new Error('Select valid proxies.');
+      dispatch({ type: 'setCompareField', field: 'fromProxyId', value: fromProxyId });
+      dispatch({ type: 'setCompareField', field: 'toProxyId', value: toProxyId });
       dispatch({ type: 'setCompareField', field: 'result', value: buildCompareSummary({ amount: Number(state.compare.amount), quantity, fromName: from.name, toName: to.name }) });
       dispatch({ type: 'setCompareField', field: 'error', value: '' });
     } catch (error) {
@@ -409,26 +414,40 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
           <h2>Step 3: Results</h2>
           {state.calculation ? <p className="hero">{state.calculation.camelValue.toFixed(2)} camels</p> : <p>Run a bid to see results.</p>}
           <p>Based on 1 camel = ${state.calcInput.camelUsdRate}</p>
-          <div className="stepper">
-            <button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button>
-            <button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'all' })}>All</button>
-            <button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button>
+          <div className="results-header">
+            <div className="stepper">
+              <button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button>
+              <button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'all' })}>All</button>
+              <button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button>
+            </div>
+            <button type="button" onClick={() => setResultsFiltersOpen((open) => !open)}>{resultsFiltersOpen ? 'Hide filters' : 'Filters & search'}</button>
           </div>
+          {resultsFiltersOpen && (
+            <section className="results-drawer" aria-label="Advanced results filters">
+              <h3>Advanced filters</h3>
+              <div className="grid">
+                <label>Search proxies<input value={state.dashboardQuery} onChange={(e) => dispatch({ type: 'setDashboardQuery', value: e.target.value })} placeholder="Search by proxy name" /></label>
+                <label>Sort order<select value={state.dashboardSort} onChange={(e) => dispatch({ type: 'setDashboardSort', value: e.target.value as State['dashboardSort'] })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label>
+              </div>
+            </section>
+          )}
           {state.topTab !== 'compare' && (
             <table><thead><tr><th>Select</th><th>Proxy</th><th>Quantity</th></tr></thead><tbody>{(state.topTab === 'top' ? topPicks : visibleEquivalents).slice(0, 20).map((item) => <tr key={item.proxyId}><td><input type="checkbox" checked={state.compareSelected.includes(item.proxyId)} onChange={() => dispatch({ type: 'toggleCompareSelected', proxyId: item.proxyId })} /></td><td>{item.proxyName}</td><td>{item.quantity}</td></tr>)}</tbody></table>
           )}
           {state.topTab === 'compare' && (
-            <div>
-              <div className="grid">
-                <label>Amount<input value={state.compare.amount} onChange={(e) => dispatch({ type: 'setCompareField', field: 'amount', value: e.target.value })} /></label>
-                <label>From<select value={state.compare.fromProxyId} onChange={(e) => dispatch({ type: 'setCompareField', field: 'fromProxyId', value: e.target.value })}>{state.mergedProxies.map((proxy) => <option key={proxy.id} value={proxy.id}>{proxy.name}</option>)}</select></label>
-                <label>To<select value={state.compare.toProxyId} onChange={(e) => dispatch({ type: 'setCompareField', field: 'toProxyId', value: e.target.value })}>{state.mergedProxies.map((proxy) => <option key={proxy.id} value={proxy.id}>{proxy.name}</option>)}</select></label>
-              </div>
-              <button onClick={runCompare}>Compare</button>
-              {state.compare.result && <p className="result">{state.compare.result}</p>}
-            </div>
+            <table><thead><tr><th>Select</th><th>Proxy</th><th>Quantity</th></tr></thead><tbody>{visibleEquivalents.slice(0, 20).map((item) => <tr key={item.proxyId}><td><input type="checkbox" checked={state.compareSelected.includes(item.proxyId)} onChange={() => dispatch({ type: 'toggleCompareSelected', proxyId: item.proxyId })} /></td><td>{item.proxyName}</td><td>{item.quantity}</td></tr>)}</tbody></table>
           )}
-          <details><summary>Celebrate</summary><p>Show parade / show chart (collapsed by default).</p></details>
+          {state.compareSelected.length > 0 && (
+            <section className="compare-panel" aria-label="Compare selected proxies">
+              <h3>Compare selected ({state.compareSelected.length})</h3>
+              <label>Amount<input value={state.compare.amount} onChange={(e) => dispatch({ type: 'setCompareField', field: 'amount', value: e.target.value })} /></label>
+              <p className="helper">Pick at least two proxies. We compare the first two selected items.</p>
+              <button onClick={runCompare} disabled={state.compareSelected.length < 2}>Compare selected</button>
+              {state.compare.result && <p className="result">{state.compare.result}</p>}
+              {state.compare.error && <p className="error">{state.compare.error}</p>}
+            </section>
+          )}
+          <details onToggle={(event) => dispatch({ type: 'setCelebrateOpen', value: (event.currentTarget as HTMLDetailsElement).open })}><summary>Celebrate</summary>{state.celebrateOpen && <p>Show parade / show chart (mounted only when expanded).</p>}</details>
           <h3>Side Quests</h3>
           <div className="stepper">{['Personality Quiz', 'Bargaining Mini-Game', 'Maiden Mood Simulator', 'Proxy Parade'].map((item) => <button key={item} className="step" onClick={() => dispatch({ type: 'setSideQuest', value: item })}>{item}</button>)}</div>
           {state.sideQuest && <p className="result">{state.sideQuest} opened as overlay (placeholder).</p>}
