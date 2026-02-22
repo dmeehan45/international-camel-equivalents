@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, type Dispatch } from 'react';
+import { useEffect, useMemo, useReducer, useState, type Dispatch } from 'react';
 import proxiesData from './data/proxies.json';
 import {
   applyDashboardView,
@@ -274,6 +274,7 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
 
 function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const flowSteps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
+  const [scanActionsOpen, setScanActionsOpen] = useState(false);
 
   function canOpenFlowStep(target: FlowStep) {
     const currentIndex = flowSteps.indexOf(state.flowStep);
@@ -289,6 +290,12 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
   }, [state.calculation, state.dashboardQuery, state.dashboardSort]);
 
   const topPicks = useMemo(() => visibleEquivalents.slice(0, 12), [visibleEquivalents]);
+  const effectiveMultiplier = resolveCamelMultiplier({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
+  const languagePreview: Record<string, string> = {
+    en: 'Preview: “This bid equals 2.4 camels.”',
+    ar: 'Preview: "هذا العرض يساوي 2.4 من الإبل."',
+    fr: 'Aperçu : « Cette offre équivaut à 2,4 chameaux. »',
+  };
 
   function runCompare() {
     try {
@@ -357,12 +364,43 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
       {state.flowStep === 'context' && (
         <>
           <h2>Step 2: Context</h2>
-          <div className="grid">
-            <label>Region & customs<select value={state.customizer.locationKey} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'locationKey', value: e.target.value })}>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
-            <label>Manual multiplier<select value={state.customizer.manualMultiplier} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}><option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option></select></label>
-            <label>Language<select value={state.customizer.language} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'language', value: e.target.value })}><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option></select></label>
+          <div className="context-cards">
+            <details className="context-card" open>
+              <summary>Region &amp; customs</summary>
+              <div className="grid">
+                <label>Preset<select value={state.customizer.locationKey} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'locationKey', value: e.target.value })}>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
+                <label>Manual multiplier<select value={state.customizer.manualMultiplier} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}><option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option></select></label>
+              </div>
+              <p className="helper">Multiplier summary: {effectiveMultiplier.toFixed(2)}x effective camel multiplier.</p>
+            </details>
+
+            <details className="context-card" open>
+              <summary>Language</summary>
+              <label>Language selector<select value={state.customizer.language} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'language', value: e.target.value })}><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option></select></label>
+              <p className="helper">{languagePreview[state.customizer.language] ?? languagePreview.en}</p>
+            </details>
+
+            <details className="context-card" open>
+              <summary>Flavor &amp; visibility</summary>
+              <label><input type="checkbox" checked={state.customizer.reducedMotion} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'reducedMotion', value: e.target.checked })} /> Reduced motion</label>
+              <label><input type="checkbox" checked={state.customizer.highContrast} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'highContrast', value: e.target.checked })} /> High contrast</label>
+              <label><input type="checkbox" checked={state.customizer.soundOn} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'soundOn', value: e.target.checked })} /> Sound on</label>
+
+              <details className="scan-panel">
+                <summary>Scan object to add as proxy</summary>
+                <p className="helper">Optional. Scanning starts only when you choose to trigger it, and you can skip this entirely.</p>
+                {!scanActionsOpen && <button type="button" onClick={() => setScanActionsOpen(true)}>Start optional scan</button>}
+                {scanActionsOpen && (
+                  <div className="stepper">
+                    <button type="button">Scan now</button>
+                    <button type="button">Upload photo</button>
+                    <button type="button">Manual add</button>
+                    <button type="button" onClick={() => setScanActionsOpen(false)}>Skip</button>
+                  </div>
+                )}
+              </details>
+            </details>
           </div>
-          <details><summary>Scan object to add proxy</summary><p>Camera scan is optional. Use photo upload or manual entry if you prefer.</p></details>
         </>
       )}
 
