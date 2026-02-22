@@ -808,7 +808,7 @@ function AppShell() {
   const { form, queue } = useDowryForm();
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
-  const [disclaimerDismissed, setDisclaimerDismissed] = useState(Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key)));
+  const [showDisclaimerToast, setShowDisclaimerToast] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
     const stored = globalThis.localStorage?.getItem('icea-theme-mode');
     return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
@@ -823,6 +823,14 @@ function AppShell() {
   useEffect(() => {
     writeCustomizerSettings({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier), language: state.customizer.language });
   }, [state.customizer.locationKey, state.customizer.manualMultiplier, state.customizer.language]);
+
+  useEffect(() => {
+    const alreadyDismissed = Boolean(globalThis.localStorage?.getItem(uxCopy.disclaimer.key));
+    const alreadyShownThisSession = Boolean(globalThis.sessionStorage?.getItem(uxCopy.disclaimer.sessionKey));
+    if (alreadyDismissed || alreadyShownThisSession) return;
+    setShowDisclaimerToast(true);
+    globalThis.sessionStorage?.setItem(uxCopy.disclaimer.sessionKey, '1');
+  }, []);
 
 
   useEffect(() => {
@@ -862,15 +870,16 @@ function AppShell() {
     <main className={`app-shell ccc-app ${state.chaosMode ? 'chaos-mode' : ''}`}>
       <FixedShellHeader state={state} dispatch={dispatch} draftSaved={draftSaved} />
 
-      {!disclaimerDismissed && (
-        <section className="shell-disclaimer" role="note" aria-label="Satirical legal disclaimer">
+      {showDisclaimerToast && (
+        <section className="shell-disclaimer shell-toast" role="status" aria-live="polite" aria-label="Playful disclaimer">
           <p>{uxCopy.disclaimer.text}</p>
           <button onClick={() => {
-            setDisclaimerDismissed(true);
+            setShowDisclaimerToast(false);
             globalThis.localStorage?.setItem(uxCopy.disclaimer.key, '1');
           }}>
             {uxCopy.disclaimer.dismissCta}
           </button>
+          <p className="helper">{uxCopy.disclaimer.footnote}</p>
         </section>
       )}
 
@@ -895,7 +904,10 @@ function AppShell() {
         <div>
           {uxCopy.legal.links.map((link) => <a key={link.href} href={link.href}>{link.label}</a>)}
         </div>
-        <p className="helper">Filed under Article 404: Seriousness Not Found.</p>
+        <details className="legal-footer-mobile-note">
+          <summary>{uxCopy.legal.mobileFootnoteSummary}</summary>
+          <p className="helper">{uxCopy.legal.mobileFootnote}</p>
+        </details>
       </footer>
 
       <ToolsDrawer state={state} dispatch={dispatch} themeMode={themeMode} setThemeMode={setThemeMode} />
