@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { buildDocketEntries } from '../core/history-archive.js';
 import { uxCopy } from '../content/uxCopy';
+import { Drawer } from '../components/Drawer';
 import { LegalCard } from '../components/LegalCard';
 import { PhaseHeader } from '../components/PhaseHeader';
 import { PrimaryActionBar } from '../components/PrimaryActionBar';
@@ -24,6 +25,7 @@ const sideQuestModules = ['Quiz', 'Rejection Generator', 'Precedent Archive'] as
 
 export function Phase4Docket(props: Props) {
   const [openDocketId, setOpenDocketId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [openModule, setOpenModule] = useState<(typeof sideQuestModules)[number] | null>(null);
   const dockets = useMemo(
     () => buildDocketEntries(props.history, props.docketReadIds),
@@ -78,23 +80,25 @@ export function Phase4Docket(props: Props) {
         {dockets.length === 0 && <p className="helper">Archive an entry to generate docket cards.</p>}
       </div>
 
-      <details className="context-card">
-        <summary>Optional side quests</summary>
+      <button type="button" className="more-details-trigger" onClick={() => setDetailsOpen(true)}>
+        More details?
+      </button>
+      <Drawer isOpen={detailsOpen} title="Optional side quests" onClose={() => { setDetailsOpen(false); setOpenModule(null); }}>
         <div className="stepper side-quests">
           {sideQuestModules.map((moduleName) => (
             <button key={moduleName} onClick={() => setOpenModule(moduleName)}>{moduleName}</button>
           ))}
         </div>
-      </details>
-      {openModule && (
-        <section className="view-card overlay" role="dialog" aria-modal="true" aria-label={openModule}>
-          <h3>{openModule}</h3>
-          {openModule === 'Quiz' && <p>Quick compatibility quiz module: assign 1-5 scores and compare totals.</p>}
-          {openModule === 'Rejection Generator' && <p>Generate diplomatic decline notes using the current share summary.</p>}
-          {openModule === 'Precedent Archive' && <p>Browse prior docket cards by status and age for repeat engagement.</p>}
-          <button onClick={() => setOpenModule(null)}>Close Module</button>
-        </section>
-      )}
+        {openModule && (
+          <section className="context-card" aria-label={openModule}>
+            <h3>{openModule}</h3>
+            {openModule === 'Quiz' && <p>Quick compatibility quiz module: assign 1-5 scores and compare totals.</p>}
+            {openModule === 'Rejection Generator' && <p>Generate diplomatic decline notes using the current share summary.</p>}
+            {openModule === 'Precedent Archive' && <p>Browse prior docket cards by status and age for repeat engagement.</p>}
+          </section>
+        )}
+      </Drawer>
+
     </>
   );
 }

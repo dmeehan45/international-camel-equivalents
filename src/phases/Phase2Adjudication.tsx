@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { uxCopy } from '../content/uxCopy';
 import { locationPresets } from '../core/customizer-settings.js';
+import { Drawer } from '../components/Drawer';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LegalCard } from '../components/LegalCard';
 import { PhaseHeader } from '../components/PhaseHeader';
@@ -39,6 +41,7 @@ type Props = {
 };
 
 export function Phase2Adjudication(props: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { state } = props;
   const displayRecommendation = props.lockedRecommendation ?? props.recommendation;
 
@@ -51,8 +54,10 @@ export function Phase2Adjudication(props: Props) {
         {props.adjudicationLocked && <p className="helper">Bid lock complete. This ruling is sealed.</p>}
       </LegalCard>
 
-      <details className="context-card">
-        <summary>{uxCopy.phases.phase2.advancedLabel}</summary>
+      <button type="button" className="more-details-trigger" onClick={() => setDetailsOpen(true)}>
+        More details?
+      </button>
+      <Drawer isOpen={detailsOpen} title={uxCopy.phases.phase2.advancedLabel} onClose={() => setDetailsOpen(false)}>
         <div className="context-cards">
           <section className="context-card">
             <h3>Jurisdiction controls · {props.effectiveMultiplier.toFixed(2)}x</h3>
@@ -81,20 +86,19 @@ export function Phase2Adjudication(props: Props) {
               <label>Advanced multiplier<input className="ccc-input" type="number" min="0.9" max="1.1" step="0.01" value={props.advancedTrait} disabled={props.adjudicationLocked} onChange={(e) => props.setAdvancedTrait(Number(e.target.value))} /></label>
             </div>
           </section>
+          <section className="context-card">
+            <h3>Result tools</h3>
+            <div className="stepper"><button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button><button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'all' })}>All</button><button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button></div>
+            <div className="grid"><label>Search<input className="ccc-input" value={state.dashboardQuery} onChange={(e) => props.dispatch({ type: 'setDashboardQuery', value: e.target.value })} /></label><label>Sort<select className="ccc-input" value={state.dashboardSort} onChange={(e) => props.dispatch({ type: 'setDashboardSort', value: e.target.value })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label></div>
+            <ul className="list">{props.visibleEquivalents.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
+          </section>
         </div>
-      </details>
+      </Drawer>
 
       <LegalCard>
         <h3>Top recommendations</h3>
         <ul className="list">{props.topPicks.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
       </LegalCard>
-
-      <details className="context-card">
-        <summary>Result tools</summary>
-        <div className="stepper"><button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button><button className={state.topTab === 'all' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'all' })}>All</button><button className={state.topTab === 'compare' ? 'step active' : 'step'} onClick={() => props.dispatch({ type: 'setTopTab', value: 'compare' })}>Compare</button></div>
-        <div className="grid"><label>Search<input className="ccc-input" value={state.dashboardQuery} onChange={(e) => props.dispatch({ type: 'setDashboardQuery', value: e.target.value })} /></label><label>Sort<select className="ccc-input" value={state.dashboardSort} onChange={(e) => props.dispatch({ type: 'setDashboardSort', value: e.target.value })}><option value="quantity-desc">Quantity (high to low)</option><option value="quantity-asc">Quantity (low to high)</option><option value="name-asc">Name (A-Z)</option><option value="name-desc">Name (Z-A)</option></select></label></div>
-        <ul className="list">{props.visibleEquivalents.map((item) => <li key={item.proxyId}>{item.proxyName}: {item.quantity}</li>)}</ul>
-      </details>
 
       <PrimaryActionBar
         primary={{ label: uxCopy.phases.phase2.cta, onClick: props.finalizeBid, disabled: props.adjudicationLocked || !state.calculation }}

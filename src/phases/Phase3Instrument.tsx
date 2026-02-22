@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { uxCopy } from '../content/uxCopy';
+import { Drawer } from '../components/Drawer';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LegalCard } from '../components/LegalCard';
 import { PhaseHeader } from '../components/PhaseHeader';
@@ -19,6 +21,7 @@ type Props = {
 };
 
 export function Phase3Instrument(props: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const messageRemaining = INSTRUMENT_TEXT_LIMIT - props.state.formalizer.message.length;
 
   return (
@@ -44,8 +47,10 @@ export function Phase3Instrument(props: Props) {
         {props.state.formalizer.message.length >= INSTRUMENT_TEXT_LIMIT && <p className="error" role="alert">Instrument text reached the maximum length.</p>}
       </LegalCard>
 
-      <details className="context-card">
-        <summary>Export options</summary>
+      <button type="button" className="more-details-trigger" onClick={() => setDetailsOpen(true)}>
+        More details?
+      </button>
+      <Drawer isOpen={detailsOpen} title="Export options" onClose={() => setDetailsOpen(false)}>
         <div className="stepper" role="tablist" aria-label="Export format">
           <button role="tab" aria-selected={props.exportTab === 'text'} className={props.exportTab === 'text' ? 'step active' : 'step'} onClick={() => props.setExportTab('text')}>Text</button>
           <button role="tab" aria-selected={props.exportTab === 'image'} className={props.exportTab === 'image' ? 'step active' : 'step'} onClick={() => props.setExportTab('image')}>Image</button>
@@ -57,7 +62,7 @@ export function Phase3Instrument(props: Props) {
           <button className="cta-secondary" onClick={() => props.runExportAction('download', 'pdf')}>PDF</button>
           <button className="cta-secondary" onClick={() => props.runExportAction('share', 'text')}>Share</button>
         </div>
-      </details>
+      </Drawer>
 
       <PrimaryActionBar
         primary={{ label: uxCopy.phases.phase3.cta, onClick: props.onCompleteInstrument }}
