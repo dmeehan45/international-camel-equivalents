@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import proxies from '../src/data/proxies.json' with { type: 'json' };
-import { calculateIceWithModifiers, toCamelValue, toEquivalents } from '../src/core/conversion.js';
+import { calculateIceWithModifiers, compareProxyUnits, toCamelValue, toEquivalents } from '../src/core/conversion.js';
 
 const canonicalCategories = new Set([
   'Mammals and Land Creatures',
@@ -71,4 +71,61 @@ test('proxy override rate is used after camel value is calculated', () => {
   assert.equal(result.camelValue, 4);
   const overriddenYak = result.equivalents.find((item) => item.proxyId === yak.id);
   assert.equal(overriddenYak.quantity, 10);
+});
+
+
+test('Reference scenario: 3 elephants equals 20 camels', () => {
+  const elephants = proxies.find((proxy) => proxy.name === 'Elephants');
+  const camelValue = toCamelValue(
+    { amount: 3, unit: 'PROXY', proxyId: elephants.id, camelUsdRate: 500 },
+    proxies,
+  );
+
+  assert.equal(camelValue, 20);
+});
+
+
+test('Unknown proxy id is rejected with a clear error', () => {
+  assert.throws(
+    () => toCamelValue({ amount: 3, unit: 'PROXY', proxyId: 'missing-proxy', camelUsdRate: 500 }, proxies),
+    /Unknown proxy selected/,
+  );
+});
+
+
+test('compare tool converts one proxy into another proxy units', () => {
+  const elephants = proxies.find((proxy) => proxy.name === 'Elephants');
+  const yaks = proxies.find((proxy) => proxy.name === 'Yaks');
+
+  const equivalentYaks = compareProxyUnits(
+    { fromProxyId: elephants.id, toProxyId: yaks.id, amount: 3 },
+    proxies,
+  );
+
+  assert.equal(equivalentYaks, 25);
+});
+
+test('compare tool rejects missing proxy ids', () => {
+  const yaks = proxies.find((proxy) => proxy.name === 'Yaks');
+
+  assert.throws(
+    () => compareProxyUnits({ fromProxyId: 'missing', toProxyId: yaks.id, amount: 1 }, proxies),
+    /Unknown proxy selected/,
+  );
+});
+
+
+test('customizer scenario applies multiplier and override together', () => {
+  const elephants = proxies.find((proxy) => proxy.name === 'Elephants');
+  const yaks = proxies.find((proxy) => proxy.name === 'Yaks');
+
+  const result = calculateIceWithModifiers(
+    { amount: 3, unit: 'PROXY', proxyId: elephants.id, camelUsdRate: 500 },
+    proxies,
+    { camelMultiplier: 1.1, proxyRateOverrides: { [yaks.id]: 2 } },
+  );
+
+  assert.equal(result.camelValue, 22);
+  const yakEquivalent = result.equivalents.find((item) => item.proxyId === yaks.id);
+  assert.equal(yakEquivalent.quantity, 44);
 });
