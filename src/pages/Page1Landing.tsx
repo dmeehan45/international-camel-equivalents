@@ -15,6 +15,7 @@ export function Page1Landing({ copy, howOpen, onToggleHow, onBegin }: Props) {
       <button className="ccc-button-primary" onClick={onBegin}>{copy.page1.begin}</button>
       <button className="cta-secondary text-link" onClick={onToggleHow}>{copy.page1.howItWorksLabel}</button>
       {howOpen && <p className="helper">{copy.page1.howItWorksText}</p>}
+      {copy.page1.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
     </div>
   );
 }

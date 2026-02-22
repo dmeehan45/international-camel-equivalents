@@ -45,6 +45,7 @@ export function Page2Basics({ copy, form, regions, ageRanges, optionalOpen, onTo
       )}
 
       <button className="ccc-button-primary" onClick={onContinue}>{copy.page2.continue}</button>
+      {copy.page2.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
     </div>
   );
 }

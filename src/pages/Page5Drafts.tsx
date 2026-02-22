@@ -51,9 +51,12 @@ export function Page5Drafts(props: Props) {
         ))}
       </div>
 
+      {!props.toolsUnlocked && <p className="helper legal-footnote">{props.copy.page5.localNote}</p>}
+
       {props.toolsUnlocked && (
         <div>
           <h3>{props.copy.page5.extras}</h3>
+          <p className="helper badge-volatility">{props.copy.page5.unlock}</p>
           <div className="cards tool-grid">
             {props.tools.map((tool) => (
               <button key={tool.id} className={`card-button ${props.activeToolId === tool.id ? 'is-selected' : ''}`} onClick={() => props.onSelectTool(tool.id)}>
@@ -62,10 +65,11 @@ export function Page5Drafts(props: Props) {
               </button>
             ))}
           </div>
+          <p className="helper">{props.copy.page5.localNote}</p>
         </div>
       )}
 
-      <p className="helper">{props.copy.page5.localNote}</p>
+      {props.copy.page5.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
       <button className="ccc-button-primary" onClick={props.onStartNew}>{props.copy.page5.startNew}</button>
     </div>
   );

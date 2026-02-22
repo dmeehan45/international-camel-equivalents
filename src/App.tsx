@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DowryFormProvider, useDowryForm } from './store/DowryFormContext';
 import { FLOW_STEP_LABELS, canOpenFlowStep, getFlowSteps, type FlowStepId } from './domain/flow';
 import { uxCopy } from './content/uxCopy';
@@ -66,15 +66,18 @@ function Shell() {
   const [proposalText, setProposalText] = useState('');
   const [drafts, setDrafts] = useState<SavedDraft[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
-  const [selectedProxyId, setSelectedProxyId] = useState(proxyLibrary[0].id);
+  const [selectedProxyId, setSelectedProxyId] = useState('');
+  const [volatilityToast, setVolatilityToast] = useState('');
+  const [hasShownEditWarning, setHasShownEditWarning] = useState(false);
   const [activeToolId, setActiveToolId] = useState('tool-1');
 
-  const advisoryDate = formatAdvisoryDate(new Date('2026-02-22'));
-  const volatilityPercent = getVolatilityPercent(new Date('2026-02-22'));
+  const advisoryNow = new Date();
+  const advisoryDate = formatAdvisoryDate(advisoryNow);
+  const volatilityPercent = getVolatilityPercent(advisoryNow);
 
   const selectedProxy = useMemo(() => proxyLibrary.find((proxy) => proxy.id === selectedProxyId) || proxyLibrary[0], [selectedProxyId]);
   const proxyQuantity = form.camelQuantity;
-  const liveRate = getLiveRate(selectedProxy.ratePerCamel, new Date('2026-02-22'));
+  const liveRate = getLiveRate(selectedProxy.ratePerCamel, advisoryNow);
   const camelEquivalent = toCamelBenchmark(proxyQuantity, liveRate);
 
   const curated = useMemo(
@@ -113,7 +116,8 @@ function Shell() {
     setTone('Formal');
     setSelectedClause('None');
     setError('');
-    setSelectedProxyId(proxyLibrary[0].id);
+    setSelectedProxyId('');
+    setHasShownEditWarning(false);
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -153,7 +157,7 @@ function Shell() {
   }
 
   function downloadPdf() {
-    const html = `<pre style="font-family:'Times New Roman',serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre>`;
+    const html = `<div style="border:1px dashed #c8a869;padding:14px;position:relative;"><div style="position:absolute;top:8px;right:12px;color:#8c7446;font-size:12px;">DBT CERTIFIED SEAL</div><pre style="font-family:'Times New Roman',serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre></div>`;
     const win = window.open('', '_blank', 'width=700,height=900');
     if (!win) return;
     win.document.write(`<html><head><title>Advisory Proposal Contract</title></head><body>${html}<script>window.print();</script></body></html>`);
@@ -180,6 +184,7 @@ function Shell() {
       setError(uxCopy.errors.proxyRequired);
       return;
     }
+    setHasShownEditWarning(false);
     const nextText = generatedProposal();
     setProposalText(nextText);
     setStep('page4-proposal');
@@ -190,8 +195,13 @@ function Shell() {
     name: proxy.name,
     category: proxy.category,
     description: proxy.description,
-    liveRate: getLiveRate(proxy.ratePerCamel, new Date('2026-02-22')),
+    liveRate: getLiveRate(proxy.ratePerCamel, advisoryNow),
   }));
+
+
+  useEffect(() => {
+    setVolatilityToast(uxCopy.page3.volatilityAlert(volatilityPercent));
+  }, [volatilityPercent]);
 
   const tools = [
     { id: 'tool-1', title: 'Proxy Personality Assessment', description: 'Match your spirit proxy for future bids.' },
@@ -242,7 +252,7 @@ function Shell() {
           <Page3Offer
             copy={uxCopy}
             selectedProxyId={selectedProxyId}
-            selectedProxyName={selectedProxy.name}
+            selectedProxyName={selectedProxyId ? selectedProxy.name : ''}
             proxyQuantity={proxyQuantity}
             camelEquivalent={camelEquivalent}
             curatedCards={curated.map((proxy) => ({
@@ -250,7 +260,7 @@ function Shell() {
               name: proxy.name,
               category: proxy.category,
               description: proxy.description,
-              liveRate: getLiveRate(proxy.ratePerCamel, new Date('2026-02-22')),
+              liveRate: getLiveRate(proxy.ratePerCamel, advisoryNow),
             }))}
             fullLibrary={libraryCards}
             isLibraryOpen={libraryOpen}
@@ -262,6 +272,7 @@ function Shell() {
             onQuantityChange={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value: Math.min(100, Math.max(1, Math.round(value))) })}
             volatilityPercent={volatilityPercent}
             selectedLiveRate={liveRate}
+            volatilityToast={volatilityToast}
             onLockIn={handleLockOffer}
           />
         )}
@@ -281,12 +292,21 @@ function Shell() {
             tones={tones}
             onSetTone={setTone}
             clauseOptions={clauseOptions}
-            onGenerate={() => setProposalText(generatedProposal())}
+            onGenerate={() => {
+              setHasShownEditWarning(false);
+              setProposalText(generatedProposal());
+            }}
             onCopy={() => copyText(proposalText || generatedProposal())}
             onDownloadTxt={downloadTxt}
             onDownloadPdf={downloadPdf}
             onShare={() => shareText(proposalText || generatedProposal())}
             onDone={saveDraft}
+            onFirstEditWarning={() => {
+              if (!hasShownEditWarning) {
+                setError(uxCopy.page4.editWarning);
+                setHasShownEditWarning(true);
+              }
+            }}
           />
         )}
 
