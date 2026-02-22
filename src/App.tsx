@@ -229,12 +229,60 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
   }
 }
 
-function Stepper({ step, onChange }: { step: FlowStep; onChange: (step: FlowStep) => void }) {
+function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: (step: FlowStep) => void; canNavigateTo: (step: FlowStep) => boolean }) {
   const steps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
-  return <div className="stepper">{steps.map((item) => <button key={item} className={step === item ? 'step active' : 'step'} onClick={() => onChange(item)}>{item}</button>)}</div>;
+  const labels: Record<FlowStep, string> = {
+    bid: 'Enter Bid',
+    context: 'Context',
+    results: 'Results',
+    message: 'Formalize',
+    share: 'Share',
+  };
+  const currentIndex = steps.indexOf(step);
+  const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
+  const nextStep = currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
+
+  return (
+    <div className="stepper-wrap">
+      <div className="stepper" aria-label="Workflow steps">
+        {steps.map((item, index) => {
+          const status = index < currentIndex ? 'completed' : index === currentIndex ? 'current' : 'upcoming';
+          const canOpen = canNavigateTo(item);
+          return (
+            <div key={item} className="stepper-item">
+              <button
+                className={step === item ? 'step active' : 'step'}
+                onClick={() => onChange(item)}
+                disabled={!canOpen}
+                aria-current={status === 'current' ? 'step' : undefined}
+              >
+                <span>{labels[item]}</span>
+                <span className={`step-status ${status}`}>{status}</span>
+              </button>
+              {index < steps.length - 1 && <span className="step-arrow" aria-hidden="true">→</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="stepper-nav">
+        <button onClick={() => previousStep && onChange(previousStep)} disabled={!previousStep}>← Back</button>
+        <button onClick={() => nextStep && onChange(nextStep)} disabled={!nextStep || !canNavigateTo(nextStep)}>Next →</button>
+      </div>
+    </div>
+  );
 }
 
 function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
+  const flowSteps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
+
+  function canOpenFlowStep(target: FlowStep) {
+    const currentIndex = flowSteps.indexOf(state.flowStep);
+    const targetIndex = flowSteps.indexOf(target);
+    if (targetIndex <= currentIndex) return true;
+    if (target === 'context') return Boolean(state.calcInput.rawBid.trim());
+    return Boolean(state.calculation);
+  }
+
   const visibleEquivalents = useMemo(() => {
     if (!state.calculation) return [];
     return applyDashboardView(state.calculation.equivalents, { query: state.dashboardQuery, sort: state.dashboardSort });
@@ -292,7 +340,7 @@ function FlowView({ state, dispatch }: { state: State; dispatch: Dispatch<Action
 
   return (
     <section className="view-card">
-      <Stepper step={state.flowStep} onChange={(value) => dispatch({ type: 'setFlowStep', value })} />
+      <Stepper step={state.flowStep} onChange={(value) => dispatch({ type: 'setFlowStep', value })} canNavigateTo={canOpenFlowStep} />
       <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · 1 camel = ${state.calcInput.camelUsdRate}</div>
 
       {state.flowStep === 'bid' && (
