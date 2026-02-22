@@ -1,4 +1,5 @@
 import { uxCopy } from '../content/uxCopy';
+import { ErrorMessage } from '../components/ErrorMessage';
 
 type Props = {
   state: any;
@@ -40,6 +41,8 @@ export function Phase3Instrument(props: Props) {
       <button onClick={props.onCompleteInstrument}>Continue to Phase IV docket</button>
       {props.state.share.text && <pre className="legal-card document-preview">{props.state.share.text}</pre>}
       {props.state.share.qrPreview && <p className="result">{props.state.share.qrPreview}</p>}
+      <ErrorMessage message={props.state.formalizer.error} statute="Statute 9" />
+      <ErrorMessage message={props.state.share.error} statute="Statute 11" />
       {props.exportToast && <p className="helper">{props.exportToast}</p>}
     </>
   );
