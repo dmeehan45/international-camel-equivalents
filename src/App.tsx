@@ -243,6 +243,38 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
   }
 }
 
+type RecommendationInputs = {
+  baseCalculation: CalculationResult;
+  regionFactor: number;
+  traitModifiers: {
+    social: number;
+    resilience: number;
+    prestige: number;
+    ceremony: number;
+  };
+};
+
+function computeRecommendation({ baseCalculation, regionFactor, traitModifiers }: RecommendationInputs) {
+  const traitFactor = Object.values(traitModifiers).reduce((total, value) => total * value, 1);
+  const adjustedCamelValue = Number((baseCalculation.camelValue * regionFactor * traitFactor).toFixed(2));
+  const ratio = baseCalculation.camelValue === 0 ? 1 : adjustedCamelValue / baseCalculation.camelValue;
+  const adjustedEquivalents = baseCalculation.equivalents
+    .map((item) => ({ ...item, quantity: Number((item.quantity * ratio).toFixed(2)) }))
+    .sort((a, b) => b.quantity - a.quantity);
+
+  const adjustedCalculation = {
+    camelValue: adjustedCamelValue,
+    equivalents: adjustedEquivalents,
+  } as CalculationResult;
+
+  return {
+    regionFactor,
+    traitFactor,
+    adjustedCamelValue,
+    adjustedCalculation,
+  };
+}
+
 function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: (step: FlowStep) => void; canNavigateTo: (step: FlowStep) => boolean }) {
   const steps: FlowStep[] = ['bid', 'context', 'results', 'message', 'share'];
   const labels: Record<FlowStep, string> = {
@@ -298,6 +330,9 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [courtshipYears, setCourtshipYears] = useState(0);
   const [hasArtifact, setHasArtifact] = useState(false);
   const [quirks, setQuirks] = useState('');
+  const [regionOverride, setRegionOverride] = useState('');
+  const [traitModifiers, setTraitModifiers] = useState({ social: 1, resilience: 1, prestige: 1, ceremony: 1 });
+  const [advancedTrait, setAdvancedTrait] = useState(1);
 
   const minCamelQuantity = 1;
   const maxCamelQuantity = 200;
@@ -333,6 +368,21 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
 
   const topPicks = useMemo(() => visibleEquivalents.slice(0, 12), [visibleEquivalents]);
   const effectiveMultiplier = resolveCamelMultiplier({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
+  const recommendation = useMemo(() => {
+    if (!state.calculation) return null;
+    const activeRegionKey = regionOverride || state.customizer.locationKey;
+    const regionFactor = resolveCamelMultiplier({ locationKey: activeRegionKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
+    return computeRecommendation({
+      baseCalculation: state.calculation,
+      regionFactor,
+      traitModifiers: {
+        social: traitModifiers.social,
+        resilience: traitModifiers.resilience,
+        prestige: traitModifiers.prestige,
+        ceremony: Number((traitModifiers.ceremony * advancedTrait).toFixed(2)),
+      },
+    });
+  }, [advancedTrait, regionOverride, state.calculation, state.customizer.locationKey, state.customizer.manualMultiplier, state.mergedProxies, traitModifiers]);
   const languagePreview: Record<string, string> = {
     en: 'Preview: “This bid equals 2.4 camels.”',
     ar: 'Preview: "هذا العرض يساوي 2.4 من الإبل."',
@@ -431,6 +481,34 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     }
   }
 
+  function finalizeBid() {
+    if (!recommendation) return;
+    dispatch({ type: 'setCalculation', value: recommendation.adjustedCalculation });
+    dispatch({ type: 'setFormalizerField', field: 'message', value: '' });
+    dispatch({ type: 'setShare', text: '', selectedProxyId: recommendation.adjustedCalculation.equivalents[0]?.proxyId ?? '', qrPreview: '', error: '' });
+    dispatch({ type: 'setFlowStep', value: 'message' });
+  }
+
+  function resetToOriginalBid() {
+    setRegionOverride('');
+    setTraitModifiers({ social: 1, resilience: 1, prestige: 1, ceremony: 1 });
+    setAdvancedTrait(1);
+    setCamelQuantity(10);
+    setIsWarrior(false);
+    setHobby('');
+    setCourtshipYears(0);
+    setHasArtifact(false);
+    setQuirks('');
+    dispatch({ type: 'setCalcField', field: 'rawBid', value: '10 camels' });
+    dispatch({ type: 'setCalcField', field: 'amount', value: '10' });
+    dispatch({ type: 'setCalcField', field: 'unit', value: 'CAMEL' });
+    runCalculation({
+      ...state,
+      calcInput: { ...state.calcInput, rawBid: '10 camels', amount: '10', unit: 'CAMEL' },
+      customizer: { ...state.customizer, locationKey: 'global-default', manualMultiplier: '1' },
+    }, dispatch);
+  }
+
   return (
     <section className="view-card ccc-card flow-surface">
       <Stepper step={state.flowStep} onChange={(value) => dispatch({ type: 'setFlowStep', value })} canNavigateTo={canOpenFlowStep} />
@@ -454,6 +532,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
             />
           </label>
           <p className="helper">Set the primary camel quantity, then calculate ICE. Guardrails keep the value between {minCamelQuantity} and {maxCamelQuantity} camels.</p>
+          <p className="helper">Examples: 2 camels, 5 yaks, 2 cows</p>
 
           <div className="context-cards">
             <details className="context-card">
@@ -495,6 +574,24 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
                 <label>Manual multiplier<select value={state.customizer.manualMultiplier} onChange={(e) => dispatch({ type: 'setCustomizerField', field: 'manualMultiplier', value: e.target.value })}><option value="0.8">0.8</option><option value="1">1.0</option><option value="1.2">1.2</option></select></label>
               </div>
             </details>
+
+            <section className="context-card">
+              <h3>Recommendation preview</h3>
+              <p className="helper">Original {state.calculation?.camelValue.toFixed(2) ?? '0.00'} camels → Adjusted {recommendation?.adjustedCamelValue.toFixed(2) ?? '0.00'} camels</p>
+              <div className="grid">
+                <label>Region override<select className="ccc-input" value={regionOverride} onChange={(e) => setRegionOverride(e.target.value)}><option value="">Use preset</option>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
+                <label>Social trait ({traitModifiers.social.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.social} onChange={(e) => setTraitModifiers((current) => ({ ...current, social: Number(e.target.value) }))} /></label>
+                <label>Resilience trait ({traitModifiers.resilience.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.resilience} onChange={(e) => setTraitModifiers((current) => ({ ...current, resilience: Number(e.target.value) }))} /></label>
+              </div>
+              <details>
+                <summary>Advanced options</summary>
+                <div className="grid">
+                  <label>Prestige trait ({traitModifiers.prestige.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.prestige} onChange={(e) => setTraitModifiers((current) => ({ ...current, prestige: Number(e.target.value) }))} /></label>
+                  <label>Ceremony trait ({traitModifiers.ceremony.toFixed(2)}x)<input className="ccc-input" type="range" min="0.8" max="1.2" step="0.05" value={traitModifiers.ceremony} onChange={(e) => setTraitModifiers((current) => ({ ...current, ceremony: Number(e.target.value) }))} /></label>
+                  <label>Advanced multiplier ({advancedTrait.toFixed(2)}x)<input className="ccc-input" type="range" min="0.9" max="1.1" step="0.01" value={advancedTrait} onChange={(e) => setAdvancedTrait(Number(e.target.value))} /></label>
+                </div>
+              </details>
+            </section>
 
             <details className="context-card">
               <summary>Language · {state.customizer.language.toUpperCase()}</summary>
@@ -555,8 +652,16 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
             </section>
           )}
 
+          {recommendation && (
+            <section className="context-card">
+              <h3>Original vs adjusted</h3>
+              <p className="helper">{state.calculation?.camelValue.toFixed(2)} → {recommendation.adjustedCamelValue.toFixed(2)} camels ({recommendation.regionFactor.toFixed(2)}x region · {recommendation.traitFactor.toFixed(2)}x traits)</p>
+              <button className="ccc-button-primary cta-primary" onClick={finalizeBid}>Finalize Bid (Continue to Message)</button>
+              <button className="cta-secondary" onClick={resetToOriginalBid}>Reset to Original</button>
+            </section>
+          )}
+
           <details className={state.chaosMode ? 'celebrate-strip chaos-surface' : 'celebrate-strip'} onToggle={(event) => dispatch({ type: 'setCelebrateOpen', value: (event.currentTarget as HTMLDetailsElement).open })}><summary>Celebrate</summary>{state.celebrateOpen && <p>Show parade / show chart.</p>}</details>
-          <button className="ccc-button-primary cta-primary" onClick={() => dispatch({ type: 'setFlowStep', value: 'message' })}>Continue to Message</button>
         </>
       )}
 
@@ -652,6 +757,7 @@ function ArchiveView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
 
 function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Action> }) {
   const filtered = useMemo(() => filterReferenceProxies(state.mergedProxies, state.referenceFilters), [state.mergedProxies, state.referenceFilters]);
+  const sideQuestReady = state.flowStep === 'message' || state.flowStep === 'share';
   return (
     <>
       <aside className={state.toolsOpen ? 'tools open desktop-tools' : 'tools desktop-tools'}>
@@ -665,8 +771,9 @@ function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Act
         </details>
         <details className="tools-panel">
           <summary>Side Quests</summary>
-          <div className="stepper side-quests">{['Personality Quiz', 'Bargaining Mini-Game', 'Maiden Mood Simulator', 'Proxy Parade'].map((item) => <button key={item} className="step" onClick={() => dispatch({ type: 'setSideQuest', value: item })}>{item}</button>)}</div>
-          {state.sideQuest && <p className="result">{state.sideQuest} opened as overlay (placeholder).</p>}
+          {!sideQuestReady && <p className="helper">Unlocks after you finalize and generate a message.</p>}
+          {sideQuestReady && <div className="stepper side-quests">{['Personality Quiz', 'Bargaining Mini-Game', 'Maiden Mood Simulator', 'Proxy Parade'].map((item) => <button key={item} className="step" onClick={() => dispatch({ type: 'setSideQuest', value: item })}>{item}</button>)}</div>}
+          {sideQuestReady && state.sideQuest && <p className="result">{state.sideQuest} opened as overlay (placeholder).</p>}
         </details>
         <details className="tools-panel">
           <summary>Accessibility</summary>
