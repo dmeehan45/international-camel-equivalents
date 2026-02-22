@@ -25,6 +25,7 @@ import { Phase2Adjudication } from './phases/Phase2Adjudication';
 import { Phase3Instrument } from './phases/Phase3Instrument';
 import { Phase4Docket } from './phases/Phase4Docket';
 import { DowryFormProvider, useDowryForm, WORKFLOW_STORAGE_KEY } from './store/DowryFormContext';
+import { uxCopy } from './content/uxCopy';
 
 type FlowStep = 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
 type TopTab = 'top' | 'all' | 'compare';
@@ -204,7 +205,7 @@ function reducer(state: State, action: Action): State {
 function runParsedBid(state: State, dispatch: Dispatch<Action>) {
   const parsed = parseBidInput(state.calcInput.rawBid);
   if (parsed.kind === 'ambiguous') {
-    const reason = parsed.reason ?? "I couldn't parse that. Try '2 camels' or '5 yaks'.";
+    const reason = parsed.reason ?? uxCopy.errors.parseUnknown;
     dispatch({ type: 'setCalcField', field: 'parseNote', value: reason });
     dispatch({ type: 'setError', value: reason });
     return false;
@@ -220,7 +221,7 @@ function runParsedBid(state: State, dispatch: Dispatch<Action>) {
 
   const match = state.mergedProxies.find((proxy) => proxy.name.toLowerCase().includes(parsed.proxyName.toLowerCase()) || parsed.proxyName.toLowerCase().includes(proxy.name.toLowerCase()));
   if (!match) {
-    dispatch({ type: 'setError', value: `Couldn't map "${parsed.proxyName}" to a known proxy.` });
+    dispatch({ type: 'setError', value: uxCopy.errors.proxyNotFound(parsed.proxyName) });
     dispatch({ type: 'setCalcField', field: 'parseNote', value: 'Use camel format like "2 camels" or a known proxy like "5 yaks".' });
     return false;
   }
@@ -243,7 +244,7 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
     dispatch({ type: 'setError', value: '' });
     dispatch({ type: 'setFlowStep', value: 'phase2-adjudication' });
   } catch (error) {
-    dispatch({ type: 'setError', value: error instanceof Error ? error.message : 'Calculation failed.' });
+    dispatch({ type: 'setError', value: error instanceof Error ? error.message : uxCopy.errors.calculationFailed });
   }
 }
 
@@ -282,10 +283,10 @@ function computeRecommendation({ baseCalculation, regionFactor, traitModifiers }
 function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: (step: FlowStep) => void; canNavigateTo: (step: FlowStep) => boolean }) {
   const steps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
   const labels: Record<FlowStep, string> = {
-    'phase1-input': 'Input',
-    'phase2-adjudication': 'Adjudication',
-    'phase3-instrument': 'Instrument',
-    'phase4-docket': 'Docket',
+    'phase1-input': 'Petition Intake',
+    'phase2-adjudication': 'Valuation Hearing',
+    'phase3-instrument': 'Instrument Drafting',
+    'phase4-docket': 'Archival Seal',
   };
   const currentIndex = steps.indexOf(step);
   const previousStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
@@ -381,7 +382,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       dispatch({ type: 'setCompareField', field: 'result', value: buildCompareSummary({ amount: Number(state.compare.amount), quantity, fromName: from.name, toName: to.name }) });
       dispatch({ type: 'setCompareField', field: 'error', value: '' });
     } catch (error) {
-      dispatch({ type: 'setCompareField', field: 'error', value: error instanceof Error ? error.message : 'Compare failed.' });
+      dispatch({ type: 'setCompareField', field: 'error', value: error instanceof Error ? error.message : uxCopy.errors.compareFailed });
     }
   }
 
@@ -393,7 +394,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       dispatch({ type: 'setFormalizerField', field: 'message', value: message });
       dispatch({ type: 'setFormalizerField', field: 'error', value: '' });
     } catch (error) {
-      dispatch({ type: 'setFormalizerField', field: 'error', value: error instanceof Error ? error.message : 'Failed to generate message.' });
+      dispatch({ type: 'setFormalizerField', field: 'error', value: error instanceof Error ? error.message : uxCopy.errors.formalizerFailed });
     }
   }
 
@@ -456,7 +457,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       const actionLabel = action === 'copy' ? 'Copied' : action === 'download' ? 'Downloaded' : 'Shared';
       setExportToast(`${actionLabel} ${exportTab.toUpperCase()} export.`);
     } catch (error) {
-      dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : 'Export failed.' });
+      dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : uxCopy.errors.exportFailed });
       setExportToast('');
     }
   }
@@ -469,7 +470,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       writeBidHistory(next);
       dispatch({ type: 'setHistory', value: next });
     } catch (error) {
-      dispatch({ type: 'setError', value: error instanceof Error ? error.message : 'Unable to archive entry.' });
+      dispatch({ type: 'setError', value: error instanceof Error ? error.message : uxCopy.errors.archiveFailed });
     }
   }
 
@@ -606,7 +607,7 @@ function LibraryView({ state, dispatch }: { state: State; dispatch: Dispatch<Act
       dispatch({ type: 'setNewProxyField', field: 'success', value: `Added ${created.name}` });
       dispatch({ type: 'setNewProxyField', field: 'error', value: '' });
     } catch (error) {
-      dispatch({ type: 'setNewProxyField', field: 'error', value: error instanceof Error ? error.message : 'Unable to create proxy.' });
+      dispatch({ type: 'setNewProxyField', field: 'error', value: error instanceof Error ? error.message : uxCopy.errors.createProxyFailed });
     }
   }
 
