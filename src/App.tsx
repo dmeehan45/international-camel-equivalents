@@ -186,8 +186,9 @@ function reducer(state: State, action: Action): State {
 function runParsedBid(state: State, dispatch: Dispatch<Action>) {
   const parsed = parseBidInput(state.calcInput.rawBid);
   if (parsed.kind === 'ambiguous') {
-    dispatch({ type: 'setCalcField', field: 'parseNote', value: parsed.reason });
-    dispatch({ type: 'setError', value: parsed.reason });
+    const reason = parsed.reason ?? "I couldn't parse that. Try '$1000' or '5 yaks'.";
+    dispatch({ type: 'setCalcField', field: 'parseNote', value: reason });
+    dispatch({ type: 'setError', value: reason });
     return false;
   }
 
