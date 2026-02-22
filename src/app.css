@@ -1,17 +1,28 @@
 :root {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --surface-0: #f7f7f8;
+  --surface-1: #ffffff;
+  --surface-2: #f2f3f5;
+  --border-muted: #d9dde3;
+  --text-main: #1f2937;
+  --text-subtle: #5b6573;
+  --accent-primary: var(--ccc-proxy-pandemonium);
 }
 
 body {
   margin: 0;
-  background: #f6f7fb;
-  color: #0f172a;
+  background: var(--surface-0);
+  color: var(--text-main);
 }
 
 .app-shell {
   max-width: 72rem;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: var(--space-6);
 }
 
 .header-row {
@@ -24,67 +35,67 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
 }
 
 .route-nav button,
 .step,
 button {
   text-decoration: none;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-muted);
   border-radius: 999px;
   padding: 0.45rem 0.8rem;
-  color: #0f172a;
-  background: #fff;
+  color: var(--text-main);
+  background: var(--surface-1);
   cursor: pointer;
 }
 
 .route-nav .active,
 .step.active {
-  background: #0f172a;
-  color: #fff;
+  background: var(--surface-2);
+  color: var(--text-main);
 }
 
 .view-card {
   position: relative;
-  background: #fff;
+  background: var(--surface-1);
   border-radius: 16px;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: var(--space-4);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 .overlay {
-  border: 2px solid #0f172a;
+  border: 1px solid var(--border-muted);
 }
 
 .sticky-chip {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #e2e8f0;
+  background: var(--surface-2);
   border-radius: 999px;
   padding: 0.4rem 0.8rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
   font-size: 0.88rem;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .context-cards {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .context-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
-  padding: 0.75rem;
-  background: #f8fafc;
+  padding: var(--space-3);
+  background: var(--surface-2);
 }
 
 .context-card summary {
@@ -95,8 +106,8 @@ button {
 
 .scan-panel {
   margin-top: 0.5rem;
-  border-top: 1px dashed #cbd5e1;
-  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border-muted);
+  padding-top: var(--space-2);
 }
 
 label {
@@ -107,11 +118,13 @@ label {
 }
 
 input,
-select {
-  border: 1px solid #cbd5e1;
+select,
+textarea {
+  border: 1px solid var(--border-muted);
   border-radius: 8px;
-  padding: 0.4rem 0.5rem;
+  padding: var(--space-2);
   font: inherit;
+  background: var(--surface-1);
 }
 
 .hero {
@@ -124,11 +137,11 @@ select {
 }
 
 .result {
-  color: #0369a1;
+  color: #374151;
 }
 
 .helper {
-  color: #475569;
+  color: var(--text-subtle);
   margin-top: 0;
 }
 
@@ -136,37 +149,37 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .results-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .results-drawer {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  background: #f8fafc;
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  background: var(--surface-2);
 }
 
 .compare-panel {
   position: sticky;
   bottom: 0;
-  margin-top: 0.75rem;
-  border: 1px solid #cbd5e1;
+  margin-top: var(--space-3);
+  border: 1px solid var(--border-muted);
   border-radius: 12px 12px 0 0;
-  background: #fff;
-  padding: 0.75rem;
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.1);
+  background: var(--surface-1);
+  padding: var(--space-3);
+  box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .stepper-wrap {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .stepper-item {
@@ -191,23 +204,23 @@ select {
   font-size: 0.74rem;
   border-radius: 999px;
   padding: 0.1rem 0.4rem;
-  background: #e2e8f0;
+  background: var(--surface-2);
 }
 
 .step-status.completed {
-  background: #dcfce7;
+  background: #e7ecef;
 }
 
 .step-status.current {
-  background: #dbeafe;
+  background: #e3e8ee;
 }
 
 .step-status.upcoming {
-  background: #f1f5f9;
+  background: var(--surface-2);
 }
 
 .step-arrow {
-  color: #64748b;
+  color: var(--text-subtle);
 }
 
 .stepper-nav {
@@ -222,7 +235,7 @@ table {
 
 th,
 td {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-muted);
   text-align: left;
   padding: 0.4rem;
 }
@@ -234,8 +247,8 @@ td {
 
 pre {
   white-space: pre-wrap;
-  background: #f1f5f9;
-  padding: 0.75rem;
+  background: var(--surface-2);
+  padding: var(--space-3);
   border-radius: 8px;
 }
 
@@ -249,7 +262,7 @@ pre {
 
 .desktop-tools {
   margin-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-muted);
   padding-top: 1rem;
 }
 
@@ -263,13 +276,45 @@ pre {
   right: 0;
   bottom: 0;
   z-index: 20;
-  background: #fff;
-  border-top: 1px solid #cbd5e1;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-muted);
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.16);
   padding: 1rem;
   max-height: 65vh;
   overflow-y: auto;
+}
+
+.cta-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
+.flow-surface {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.celebrate-strip,
+.side-quests {
+  border: 1px dashed var(--border-muted);
+  border-radius: 12px;
+  padding: var(--space-3);
+}
+
+.chaos-surface {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--surface-1));
+}
+
+.chaos-mode .chaos-surface {
+  animation: chaos-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes chaos-pulse {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2px); }
 }
 
 @media (min-width: 768px) {
