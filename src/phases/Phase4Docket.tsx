@@ -27,6 +27,34 @@ export function Phase4Docket(props: Props) {
     [props.history, props.docketReadIds],
   );
 
+  const docketCards = useMemo(() => dockets.map((entry: DocketEntry) => {
+    const expanded = openDocketId === entry.id;
+    return (
+      <article key={entry.id} className="context-card">
+        <p><strong>{entry.docketNumber}</strong> {entry.unread ? <span className="step-status current">Unread</span> : <span className="step-status completed">Seen</span>}</p>
+        <p>{entry.summary}</p>
+        <p className="helper">{entry.ageText} · {entry.timerText}</p>
+        <p><span className="step-status">{entry.status}</span></p>
+        <button
+          aria-expanded={expanded}
+          aria-controls={`docket-${entry.id}`}
+          onClick={() => {
+            setOpenDocketId(expanded ? null : entry.id);
+            props.onMarkDocketRead(entry.id);
+          }}
+        >
+          {expanded ? 'Hide Details' : 'Expand Details'}
+        </button>
+        {expanded && (
+          <div id={`docket-${entry.id}`}>
+            <p>Amount: {entry.amount} {entry.unit}</p>
+            <p>Camel Value: {entry.camelValue.toFixed(2)}</p>
+          </div>
+        )}
+      </article>
+    );
+  }), [dockets, openDocketId, props]);
+
   return (
     <>
       <h2>{uxCopy.phases.phase4.heading}</h2>
@@ -40,32 +68,8 @@ export function Phase4Docket(props: Props) {
       </div>
 
       <h3>Docket Queue</h3>
-      <div className="grid">
-        {dockets.map((entry: DocketEntry) => {
-          const expanded = openDocketId === entry.id;
-          return (
-            <article key={entry.id} className="context-card">
-              <p><strong>{entry.docketNumber}</strong> {entry.unread ? <span className="step-status current">Unread</span> : <span className="step-status completed">Seen</span>}</p>
-              <p>{entry.summary}</p>
-              <p className="helper">{entry.ageText} · {entry.timerText}</p>
-              <p><span className="step-status">{entry.status}</span></p>
-              <button
-                onClick={() => {
-                  setOpenDocketId(expanded ? null : entry.id);
-                  props.onMarkDocketRead(entry.id);
-                }}
-              >
-                {expanded ? 'Hide Details' : 'Expand Details'}
-              </button>
-              {expanded && (
-                <div>
-                  <p>Amount: {entry.amount} {entry.unit}</p>
-                  <p>Camel Value: {entry.camelValue.toFixed(2)}</p>
-                </div>
-              )}
-            </article>
-          );
-        })}
+      <div className="grid" role="list" aria-label="Docket queue entries">
+        {docketCards}
         {dockets.length === 0 && <p className="helper">Archive an entry to generate docket cards.</p>}
       </div>
 
@@ -76,7 +80,7 @@ export function Phase4Docket(props: Props) {
         ))}
       </div>
       {openModule && (
-        <section className="view-card overlay">
+        <section className="view-card overlay" role="dialog" aria-modal="true" aria-label={openModule}>
           <h3>{openModule}</h3>
           {openModule === 'Quiz' && <p>Quick compatibility quiz module: assign 1-5 scores and compare totals.</p>}
           {openModule === 'Rejection Generator' && <p>Generate diplomatic decline notes using the current share summary.</p>}

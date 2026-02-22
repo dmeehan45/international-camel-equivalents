@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState, type Dispatch } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useReducer, useState, type Dispatch } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import proxiesData from './data/proxies.json';
 import {
@@ -21,10 +21,6 @@ import { createHistoryEntry, formatRelativeAge, readBidHistory, readDocketReadId
 import { parseBidInput } from './core/bid-parser.js';
 import { calculateAdjudicatedCamelValue } from './core/adjudication.js';
 import type { CalculationResult, ProxyDefinition } from './domain/types';
-import { Phase1Input } from './phases/Phase1Input';
-import { Phase2Adjudication } from './phases/Phase2Adjudication';
-import { Phase3Instrument } from './phases/Phase3Instrument';
-import { Phase4Docket } from './phases/Phase4Docket';
 import { DowryFormProvider, useDowryForm, WORKFLOW_STORAGE_KEY } from './store/DowryFormContext';
 import { uxCopy } from './content/uxCopy';
 import { ErrorMessage } from './components/ErrorMessage';
@@ -383,6 +379,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [fiatTraitsEnabled, setFiatTraitsEnabled] = useState(true);
   const [lockedRecommendation, setLockedRecommendation] = useState<ReturnType<typeof computeRecommendation> | null>(null);
+  const templates = useMemo(() => listTemplates(), []);
+  const queuedSharePreview = useMemo(() => queue.slice(0, 3).map((item) => item.channel || item.id).join(', '), [queue]);
 
   function runStepOneCalculation() {
     if (!canCalculateIce) return;
@@ -604,10 +602,11 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     <section className="view-card ccc-card flow-surface">
       <Stepper step={state.flowStep} onChange={(value) => { if (canOpenFlowStep(value)) { dispatch({ type: 'setFlowStep', value }); navigate(phasePathMap[value]); } }} canNavigateTo={canOpenFlowStep} />
       <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · {draftSaved ? 'Saved' : 'Saving…'}</div>
-      <div className="helper">Queued shares: {queue.length}</div>
+      <div className="helper" aria-live="polite">Queued shares: {queue.length}{queuedSharePreview ? ` (${queuedSharePreview})` : ''}</div>
 
       {state.flowStep === 'phase1-input' && (
-        <Phase1Input
+        <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase I…</p>}>
+          <Phase1Input
           bidName={form.bidName}
           bidRegion={form.bidRegion}
           camelQuantity={form.camelQuantity}
@@ -631,11 +630,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           setQuirks={(value) => dispatchForm({ type: 'setField', field: 'quirks', value })}
           onCalculate={runStepOneCalculation}
           onResetOptional={() => dispatchForm({ type: 'resetOptional' })}
-        />
+          />
+        </Suspense>
       )}
 
       {state.flowStep === 'phase2-adjudication' && (
-        <Phase2Adjudication
+        <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase II…</p>}>
+          <Phase2Adjudication
           state={state}
           effectiveMultiplier={effectiveMultiplier}
           recommendation={recommendation}
@@ -660,11 +661,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           finalizeBid={finalizeBid}
           resetToOriginalBid={resetToOriginalBid}
           dispatch={dispatch}
-        />
+          />
+        </Suspense>
       )}
 
       {state.flowStep === 'phase3-instrument' && (
-        <Phase3Instrument
+        <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase III…</p>}>
+          <Phase3Instrument
           state={state}
           exportTab={exportTab}
           setExportTab={setExportTab}
@@ -673,8 +676,9 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           onCompleteInstrument={() => dispatch({ type: 'setFlowStep', value: 'phase4-docket' })}
           exportToast={exportToast}
           dispatch={dispatch}
-          templates={listTemplates()}
-        />
+            templates={templates}
+          />
+        </Suspense>
       )}
 
       {state.showLoadingFacts && (
@@ -682,11 +686,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       )}
 
       {state.flowStep === 'phase4-docket' && (
-        <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} history={state.history} docketReadIds={state.docketReadIds} onMarkDocketRead={(id) => {
-          const next = Array.from(new Set([id, ...state.docketReadIds]));
-          writeDocketReadIds(next);
-          dispatch({ type: 'setDocketReadIds', value: next });
-        }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'phase1-input' }); navigate('/phase1'); }} />
+        <Suspense fallback={<p className="helper" role="status" aria-live="polite">Loading Phase IV…</p>}>
+          <Phase4Docket calculation={state.calculation} shareText={state.share.text || state.formalizer.message} exportToast={exportToast} onSaveEntry={saveEntry} history={state.history} docketReadIds={state.docketReadIds} onMarkDocketRead={(id) => {
+            const next = Array.from(new Set([id, ...state.docketReadIds]));
+            writeDocketReadIds(next);
+            dispatch({ type: 'setDocketReadIds', value: next });
+          }} onInitiateProceeding={() => { dispatch({ type: 'setFlowStep', value: 'phase1-input' }); navigate('/phase1'); }} />
+        </Suspense>
       )}
 
       <ErrorMessage message={state.error} statute="Statute 15" />
@@ -805,6 +811,16 @@ function AppShell() {
   }, [state.customizer.locationKey, state.customizer.manualMultiplier, state.customizer.language]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('reduced-motion-enabled', state.customizer.reducedMotion);
+    root.classList.toggle('high-contrast-enabled', state.customizer.highContrast);
+    return () => {
+      root.classList.remove('reduced-motion-enabled');
+      root.classList.remove('high-contrast-enabled');
+    };
+  }, [state.customizer.reducedMotion, state.customizer.highContrast]);
+
+  useEffect(() => {
     setDraftSaved(false);
     const timeoutId = globalThis.setTimeout(() => {
       globalThis.localStorage?.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify({
@@ -872,3 +888,7 @@ export function App() {
     </DowryFormProvider>
   );
 }
+const Phase1Input = lazy(async () => import('./phases/Phase1Input').then((module) => ({ default: module.Phase1Input })));
+const Phase2Adjudication = lazy(async () => import('./phases/Phase2Adjudication').then((module) => ({ default: module.Phase2Adjudication })));
+const Phase3Instrument = lazy(async () => import('./phases/Phase3Instrument').then((module) => ({ default: module.Phase3Instrument })));
+const Phase4Docket = lazy(async () => import('./phases/Phase4Docket').then((module) => ({ default: module.Phase4Docket })));
