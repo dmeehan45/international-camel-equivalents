@@ -290,6 +290,30 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
   const [exportToast, setExportToast] = useState('');
+  const [bidName, setBidName] = useState('');
+  const [bidRegion, setBidRegion] = useState('');
+  const [camelQuantity, setCamelQuantity] = useState(10);
+  const [isWarrior, setIsWarrior] = useState(false);
+  const [hobby, setHobby] = useState('');
+  const [courtshipYears, setCourtshipYears] = useState(0);
+  const [hasArtifact, setHasArtifact] = useState(false);
+  const [quirks, setQuirks] = useState('');
+
+  const minCamelQuantity = 1;
+  const maxCamelQuantity = 200;
+  const canCalculateIce = Boolean(bidName.trim() && bidRegion.trim());
+
+  function clampCamelQuantity(value: number) {
+    return Math.min(maxCamelQuantity, Math.max(minCamelQuantity, value));
+  }
+
+  function runStepOneCalculation() {
+    if (!canCalculateIce) return;
+    const guardedQuantity = clampCamelQuantity(camelQuantity);
+    if (guardedQuantity !== camelQuantity) setCamelQuantity(guardedQuantity);
+    dispatch({ type: 'setCalcField', field: 'rawBid', value: `${guardedQuantity} camels` });
+    runCalculation(state, dispatch);
+  }
 
   function canOpenFlowStep(target: FlowStep) {
     const currentIndex = flowSteps.indexOf(state.flowStep);
@@ -415,9 +439,47 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       {state.flowStep === 'bid' && (
         <>
           <h2>Step 1: Enter camel bid</h2>
-          <label>What&apos;s the bid?<input className="ccc-input" value={state.calcInput.rawBid} onChange={(e) => dispatch({ type: 'setCalcField', field: 'rawBid', value: e.target.value })} placeholder="2 camels, 5 yaks, 3 cows" /></label>
-          <p className="helper">Examples: 2 camels, 5 yaks, 2 cows. ICE is the camel amount that matches your bid value.</p>
-          <button className="ccc-button-primary cta-primary" onClick={() => runCalculation(state, dispatch)}>Calculate ICE</button>
+          <div className="grid">
+            <label>Name<input className="ccc-input" value={bidName} onChange={(e) => setBidName(e.target.value)} placeholder="e.g. Layla" /></label>
+            <label>Region<select className="ccc-input" value={bidRegion} onChange={(e) => setBidRegion(e.target.value)}><option value="">Choose region</option>{Object.entries(locationPresets).map(([key, preset]) => <option key={key} value={key}>{preset.label}</option>)}</select></label>
+          </div>
+          <label>Camel quantity: {camelQuantity}
+            <input
+              className="ccc-input"
+              type="range"
+              min={minCamelQuantity}
+              max={maxCamelQuantity}
+              value={camelQuantity}
+              onChange={(e) => setCamelQuantity(clampCamelQuantity(Number(e.target.value)))}
+            />
+          </label>
+          <p className="helper">Set the primary camel quantity, then calculate ICE. Guardrails keep the value between {minCamelQuantity} and {maxCamelQuantity} camels.</p>
+
+          <div className="context-cards">
+            <details className="context-card">
+              <summary>Warrior status (optional)</summary>
+              <label><input type="checkbox" checked={isWarrior} onChange={(e) => setIsWarrior(e.target.checked)} /> Includes warrior context</label>
+            </details>
+            <details className="context-card">
+              <summary>Hobby (optional)</summary>
+              <label>Hobby<input className="ccc-input" value={hobby} onChange={(e) => setHobby(e.target.value)} placeholder="e.g. falconry" /></label>
+            </details>
+            <details className="context-card">
+              <summary>Courtship length (optional)</summary>
+              <label>Courtship years<input className="ccc-input" type="number" min="0" max="50" value={courtshipYears} onChange={(e) => setCourtshipYears(Math.min(50, Math.max(0, Number(e.target.value) || 0)))} /></label>
+            </details>
+            <details className="context-card">
+              <summary>Artifact included (optional)</summary>
+              <label><input type="checkbox" checked={hasArtifact} onChange={(e) => setHasArtifact(e.target.checked)} /> Includes ceremonial artifact</label>
+            </details>
+            <details className="context-card">
+              <summary>Quirks (optional)</summary>
+              <label>Quirks<textarea className="ccc-input" value={quirks} onChange={(e) => setQuirks(e.target.value)} placeholder="Add any notable details" /></label>
+            </details>
+          </div>
+
+          <button className="ccc-button-primary cta-primary" onClick={runStepOneCalculation} disabled={!canCalculateIce}>Calculate ICE</button>
+          <button className="cta-secondary" type="button" onClick={() => { setCamelQuantity(10); setIsWarrior(false); setHobby(''); setCourtshipYears(0); setHasArtifact(false); setQuirks(''); }}>Reset optional details</button>
           {state.calcInput.parseSource && <p className="result">{state.calcInput.parseSource}</p>}
         </>
       )}
