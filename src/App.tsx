@@ -24,6 +24,7 @@ import { Phase1Input } from './phases/Phase1Input';
 import { Phase2Adjudication } from './phases/Phase2Adjudication';
 import { Phase3Instrument } from './phases/Phase3Instrument';
 import { Phase4Docket } from './phases/Phase4Docket';
+import { DowryFormProvider, useDowryForm, WORKFLOW_STORAGE_KEY } from './store/DowryFormContext';
 
 type FlowStep = 'phase1-input' | 'phase2-adjudication' | 'phase3-instrument' | 'phase4-docket';
 type TopTab = 'top' | 'all' | 'compare';
@@ -83,11 +84,9 @@ type Action =
   | { type: 'setHistory'; value: State['history'] };
 
 const referenceProxies = proxiesData as ProxyDefinition[];
-const DRAFT_KEY = 'ccc-workflow-draft-v1';
-
 function readDraft() {
   try {
-    const raw = globalThis.localStorage?.getItem(DRAFT_KEY);
+    const raw = globalThis.localStorage?.getItem(WORKFLOW_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as Partial<State>;
   } catch {
@@ -314,6 +313,7 @@ function Stepper({ step, onChange, canNavigateTo }: { step: FlowStep; onChange: 
 }
 
 function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dispatch<Action>; draftSaved: boolean }) {
+  const { form, dispatchForm, canCalculateIce, minCamelQuantity, maxCamelQuantity, clampCamelQuantity, queue } = useDowryForm();
   const flowSteps: FlowStep[] = ['phase1-input', 'phase2-adjudication', 'phase3-instrument', 'phase4-docket'];
   const navigate = useNavigate();
   const location = useLocation();
@@ -323,30 +323,11 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const [resultsFiltersOpen, setResultsFiltersOpen] = useState(false);
   const [exportTab, setExportTab] = useState<'text' | 'image' | 'pdf' | 'html'>('text');
   const [exportToast, setExportToast] = useState('');
-  const [bidName, setBidName] = useState('');
-  const [bidRegion, setBidRegion] = useState('');
-  const [camelQuantity, setCamelQuantity] = useState(10);
-  const [isWarrior, setIsWarrior] = useState(false);
-  const [hobby, setHobby] = useState('');
-  const [courtshipYears, setCourtshipYears] = useState(0);
-  const [hasArtifact, setHasArtifact] = useState(false);
-  const [quirks, setQuirks] = useState('');
-  const [regionOverride, setRegionOverride] = useState('');
-  const [traitModifiers, setTraitModifiers] = useState({ social: 1, resilience: 1, prestige: 1, ceremony: 1 });
-  const [advancedTrait, setAdvancedTrait] = useState(1);
-
-  const minCamelQuantity = 1;
-  const maxCamelQuantity = 200;
-  const canCalculateIce = Boolean(bidName.trim() && bidRegion.trim());
-
-  function clampCamelQuantity(value: number) {
-    return Math.min(maxCamelQuantity, Math.max(minCamelQuantity, value));
-  }
 
   function runStepOneCalculation() {
     if (!canCalculateIce) return;
-    const guardedQuantity = clampCamelQuantity(camelQuantity);
-    if (guardedQuantity !== camelQuantity) setCamelQuantity(guardedQuantity);
+    const guardedQuantity = clampCamelQuantity(form.camelQuantity);
+    if (guardedQuantity !== form.camelQuantity) dispatchForm({ type: 'setField', field: 'camelQuantity', value: guardedQuantity });
     dispatch({ type: 'setCalcField', field: 'rawBid', value: `${guardedQuantity} camels` });
     runCalculation(state, dispatch);
   }
@@ -370,19 +351,19 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   const effectiveMultiplier = resolveCamelMultiplier({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
   const recommendation = useMemo(() => {
     if (!state.calculation) return null;
-    const activeRegionKey = regionOverride || state.customizer.locationKey;
+    const activeRegionKey = form.regionOverride || state.customizer.locationKey;
     const regionFactor = resolveCamelMultiplier({ locationKey: activeRegionKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
     return computeRecommendation({
       baseCalculation: state.calculation,
       regionFactor,
       traitModifiers: {
-        social: traitModifiers.social,
-        resilience: traitModifiers.resilience,
-        prestige: traitModifiers.prestige,
-        ceremony: Number((traitModifiers.ceremony * advancedTrait).toFixed(2)),
+        social: form.traitModifiers.social,
+        resilience: form.traitModifiers.resilience,
+        prestige: form.traitModifiers.prestige,
+        ceremony: Number((form.traitModifiers.ceremony * form.advancedTrait).toFixed(2)),
       },
     });
-  }, [advancedTrait, regionOverride, state.calculation, state.customizer.locationKey, state.customizer.manualMultiplier, state.mergedProxies, traitModifiers]);
+  }, [form.advancedTrait, form.regionOverride, form.traitModifiers, state.calculation, state.customizer.locationKey, state.customizer.manualMultiplier]);
   const languagePreview: Record<string, string> = {
     en: 'Preview: “This bid equals 2.4 camels.”',
     ar: 'Preview: "هذا العرض يساوي 2.4 من الإبل."',
@@ -461,6 +442,17 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         await navigator.share({ text: payload.shareText, title: 'Camel Courtship Calculator' });
       }
 
+      dispatchForm({
+        type: 'enqueueQueue',
+        value: {
+          id: `share-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          shareText: payload.shareText,
+          channel: action,
+          status: action === 'share' ? 'sent' : 'pending',
+        },
+      });
+
       const actionLabel = action === 'copy' ? 'Copied' : action === 'download' ? 'Downloaded' : 'Shared';
       setExportToast(`${actionLabel} ${exportTab.toUpperCase()} export.`);
     } catch (error) {
@@ -508,15 +500,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   }, [state.flowStep, location.pathname]);
 
   function resetToOriginalBid() {
-    setRegionOverride('');
-    setTraitModifiers({ social: 1, resilience: 1, prestige: 1, ceremony: 1 });
-    setAdvancedTrait(1);
-    setCamelQuantity(10);
-    setIsWarrior(false);
-    setHobby('');
-    setCourtshipYears(0);
-    setHasArtifact(false);
-    setQuirks('');
+    dispatchForm({ type: 'resetForOriginalBid' });
     dispatch({ type: 'setCalcField', field: 'rawBid', value: '10 camels' });
     dispatch({ type: 'setCalcField', field: 'amount', value: '10' });
     dispatch({ type: 'setCalcField', field: 'unit', value: 'CAMEL' });
@@ -531,32 +515,33 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     <section className="view-card ccc-card flow-surface">
       <Stepper step={state.flowStep} onChange={(value) => { if (canOpenFlowStep(value)) { dispatch({ type: 'setFlowStep', value }); navigate(phasePathMap[value]); } }} canNavigateTo={canOpenFlowStep} />
       <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · {draftSaved ? 'Saved' : 'Saving…'}</div>
+      <div className="helper">Queued shares: {queue.length}</div>
 
       {state.flowStep === 'phase1-input' && (
         <Phase1Input
-          bidName={bidName}
-          bidRegion={bidRegion}
-          camelQuantity={camelQuantity}
+          bidName={form.bidName}
+          bidRegion={form.bidRegion}
+          camelQuantity={form.camelQuantity}
           minCamelQuantity={minCamelQuantity}
           maxCamelQuantity={maxCamelQuantity}
           canCalculateIce={canCalculateIce}
-          isWarrior={isWarrior}
-          hobby={hobby}
-          courtshipYears={courtshipYears}
-          hasArtifact={hasArtifact}
-          quirks={quirks}
+          isWarrior={form.isWarrior}
+          hobby={form.hobby}
+          courtshipYears={form.courtshipYears}
+          hasArtifact={form.hasArtifact}
+          quirks={form.quirks}
           parseSource={state.calcInput.parseSource}
-          setBidName={setBidName}
-          setBidRegion={setBidRegion}
-          setCamelQuantity={setCamelQuantity}
+          setBidName={(value) => dispatchForm({ type: 'setField', field: 'bidName', value })}
+          setBidRegion={(value) => dispatchForm({ type: 'setField', field: 'bidRegion', value })}
+          setCamelQuantity={(value) => dispatchForm({ type: 'setField', field: 'camelQuantity', value })}
           clampCamelQuantity={clampCamelQuantity}
-          setIsWarrior={setIsWarrior}
-          setHobby={setHobby}
-          setCourtshipYears={setCourtshipYears}
-          setHasArtifact={setHasArtifact}
-          setQuirks={setQuirks}
+          setIsWarrior={(value) => dispatchForm({ type: 'setField', field: 'isWarrior', value })}
+          setHobby={(value) => dispatchForm({ type: 'setField', field: 'hobby', value })}
+          setCourtshipYears={(value) => dispatchForm({ type: 'setField', field: 'courtshipYears', value })}
+          setHasArtifact={(value) => dispatchForm({ type: 'setField', field: 'hasArtifact', value })}
+          setQuirks={(value) => dispatchForm({ type: 'setField', field: 'quirks', value })}
           onCalculate={runStepOneCalculation}
-          onResetOptional={() => { setCamelQuantity(10); setIsWarrior(false); setHobby(''); setCourtshipYears(0); setHasArtifact(false); setQuirks(''); }}
+          onResetOptional={() => dispatchForm({ type: 'resetOptional' })}
         />
       )}
 
@@ -565,12 +550,12 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           state={state}
           effectiveMultiplier={effectiveMultiplier}
           recommendation={recommendation}
-          regionOverride={regionOverride}
-          setRegionOverride={setRegionOverride}
-          traitModifiers={traitModifiers}
-          setTraitModifiers={setTraitModifiers}
-          advancedTrait={advancedTrait}
-          setAdvancedTrait={setAdvancedTrait}
+          regionOverride={form.regionOverride}
+          setRegionOverride={(value) => dispatchForm({ type: 'setField', field: 'regionOverride', value })}
+          traitModifiers={form.traitModifiers}
+          setTraitModifiers={(value) => dispatchForm({ type: 'setField', field: 'traitModifiers', value: typeof value === 'function' ? value(form.traitModifiers) : value })}
+          advancedTrait={form.advancedTrait}
+          setAdvancedTrait={(value) => dispatchForm({ type: 'setField', field: 'advancedTrait', value })}
           languagePreview={languagePreview}
           scanActionsOpen={scanActionsOpen}
           setScanActionsOpen={setScanActionsOpen}
@@ -701,7 +686,8 @@ function ToolsDrawer({ state, dispatch }: { state: State; dispatch: Dispatch<Act
   );
 }
 
-export function App() {
+function AppShell() {
+  const { form, queue } = useDowryForm();
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState);
   const [draftSaved, setDraftSaved] = useState(true);
 
@@ -711,15 +697,19 @@ export function App() {
 
   useEffect(() => {
     setDraftSaved(false);
-    globalThis.localStorage?.setItem(DRAFT_KEY, JSON.stringify({
-      flowStep: state.flowStep,
-      guidedMode: state.guidedMode,
-      chaosMode: state.chaosMode,
-      calcInput: { rawBid: state.calcInput.rawBid, amount: state.calcInput.amount, unit: state.calcInput.unit, proxyId: state.calcInput.proxyId },
-    }));
-    const timeoutId = globalThis.setTimeout(() => setDraftSaved(true), 200);
+    const timeoutId = globalThis.setTimeout(() => {
+      globalThis.localStorage?.setItem(WORKFLOW_STORAGE_KEY, JSON.stringify({
+        flowStep: state.flowStep,
+        guidedMode: state.guidedMode,
+        chaosMode: state.chaosMode,
+        calcInput: { rawBid: state.calcInput.rawBid, amount: state.calcInput.amount, unit: state.calcInput.unit, proxyId: state.calcInput.proxyId },
+        dowryForm: form,
+        queue,
+      }));
+      setDraftSaved(true);
+    }, 350);
     return () => globalThis.clearTimeout(timeoutId);
-  }, [state.flowStep, state.guidedMode, state.chaosMode, state.calcInput]);
+  }, [state.flowStep, state.guidedMode, state.chaosMode, state.calcInput, form, queue]);
 
   return (
     <main className={`app-shell ccc-app ${state.chaosMode ? 'chaos-mode' : ''}`}>
@@ -727,6 +717,7 @@ export function App() {
         <div>
           <h1>International Camel Equivalents</h1>
           <p>Courtship workflow experience</p>
+          <p className="helper">Autosave: {draftSaved ? 'All changes saved' : 'Saving changes…'}</p>
         </div>
         <div>
           <button onClick={() => dispatch({ type: 'toggleTools' })}>Tools</button>
@@ -750,5 +741,13 @@ export function App() {
 
       <ToolsDrawer state={state} dispatch={dispatch} />
     </main>
+  );
+}
+
+export function App() {
+  return (
+    <DowryFormProvider>
+      <AppShell />
+    </DowryFormProvider>
   );
 }
