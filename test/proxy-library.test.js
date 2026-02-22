@@ -31,6 +31,38 @@ test('mergeWithExtensions keeps base proxies and adds non-conflicting extensions
   assert.equal(merged[1].source, 'extension');
 });
 
+test('mergeWithExtensions preserves seeded proxies when extension collides by id', () => {
+  const base = [
+    { id: 'yak', name: 'Yaks', ratePerCamel: 1.25, source: 'reference', isExtension: false },
+    { id: 'alpaca', name: 'Alpacas', ratePerCamel: 1.8, source: 'reference', isExtension: false },
+  ];
+
+  const merged = mergeWithExtensions(base, [
+    { id: 'yak', name: 'Override yak', ratePerCamel: 999, source: 'extension', isExtension: true },
+    { id: 'ext-cloud-whales', name: 'Cloud Whales', ratePerCamel: 4.2 },
+  ]);
+
+  assert.equal(merged.length, 3);
+  assert.deepEqual(merged[0], base[0]);
+  assert.deepEqual(merged[1], base[1]);
+  assert.equal(merged[2].id, 'ext-cloud-whales');
+});
+
+test('mergeWithExtensions normalizes metadata for added extensions', () => {
+  const merged = mergeWithExtensions([{ id: 'yak', name: 'Yaks', ratePerCamel: 1.25 }], [
+    {
+      id: 'ext-river-phoenixes',
+      name: 'River Phoenixes',
+      ratePerCamel: 2.3,
+      source: 'reference',
+      isExtension: false,
+    },
+  ]);
+
+  assert.equal(merged[1].source, 'extension');
+  assert.equal(merged[1].isExtension, true);
+});
+
 test('read/write extension storage round-trips JSON payload', () => {
   const memoryStorage = {
     data: new Map(),
