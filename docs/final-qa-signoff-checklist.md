@@ -25,3 +25,18 @@ Expected result:
 - Smoke integration passes in `npm run test:smoke`.
 - Production build succeeds in `npm run build`.
 - Cypress e2e runs `master-spec-flow.cy.js` and `accessibility-smoke.cy.js` with green checks (when browser environment is available).
+
+## Absurdity UX sweep signoff (High-priority)
+
+- [ ] `visual.seal` — Page 4 contract preview and PDF include DBT certified seal treatment.
+- [ ] `visual.serif_contract_only` — contract text is serif; non-contract UI remains sans-serif.
+- [ ] `visual.white_space_mobile_grid` — 375px viewport has no horizontal scroll.
+- [ ] `visual.tooltips_proxy` — proxy cards expose descriptive hover/tap tooltip and accessible label.
+- [ ] `copy.advisory_phrasing_each_page` — each page has legalese/pseudo-bureaucratic phrasing.
+- [ ] `copy.footnotes_each_page` — each page renders at least one legal footnote.
+- [ ] `copy.contract_clauses_absurd` — generated contract contains clause block with absurd legal content.
+- [ ] `flow.live_rate_updates` — Page 3 volatility badge shows date-driven update text.
+- [ ] `flow.proxy_selection_sync` — changing proxy/quantity immediately updates formula and camel benchmark.
+- [ ] `flow.drawer_discoverability` — full DBT drawer path is obvious and functional.
+- [ ] `flow.post_bid_unlock` — advisory tools hidden before first saved bid and shown afterward with unlock message.
+- [ ] `feature.camel_benchmark_only` — no dollar-denominated bid fields exist in flow.

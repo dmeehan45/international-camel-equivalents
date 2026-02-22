@@ -22,13 +22,24 @@ type Props = {
   onDownloadPdf: () => void;
   onShare: () => void;
   onDone: () => void;
+  onFirstEditWarning: () => void;
 };
 
 export function Page4Proposal(props: Props) {
   return (
     <div>
       <h2>{props.copy.page4.title}</h2>
-      <textarea className="contract-text" rows={14} value={props.proposalText} onChange={(e) => props.onSetProposalText(e.target.value)} />
+      <div className="legal-shell-contract">
+        <textarea
+          className="contract-text"
+          rows={14}
+          value={props.proposalText}
+          onChange={(e) => {
+            props.onFirstEditWarning();
+            props.onSetProposalText(e.target.value);
+          }}
+        />
+      </div>
 
       <button className="cta-secondary text-link" onClick={props.onTogglePersonalize}>{props.copy.page4.personalizeLabel}</button>
       {props.personalizeOpen && (
@@ -59,6 +70,7 @@ export function Page4Proposal(props: Props) {
         <button className="cta-secondary" onClick={props.onDownloadPdf}>{props.copy.page4.downloadPdf}</button>
       </div>
       <button className="ccc-button-primary" onClick={props.onDone}>{props.copy.page4.done}</button>
+      {props.copy.page4.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
     </div>
   );
 }

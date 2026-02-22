@@ -21,9 +21,37 @@
   backdrop-filter: blur(6px);
 }
 
+.legal-shell-contract {
+  border: 1px dashed rgba(200, 168, 105, 0.95);
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+  position: relative;
+}
+
+.legal-shell-contract::after {
+  content: 'DBT CERTIFIED SEAL';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: #8c7446;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
 .contract-text {
-  font-family: var(--ccc-font-heading);
+  font-family: 'Times New Roman', Times, serif;
   color: var(--ccc-ink);
   line-height: 1.6;
   letter-spacing: 0.01em;
+}
+
+@media (prefers-contrast: more) {
+  .legal-shell-contract {
+    border-color: #6f6f6f;
+  }
+
+  .legal-shell-contract::after {
+    color: #4e4e4e;
+  }
 }

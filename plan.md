@@ -1,229 +1,238 @@
-# Parallel Plan: Option B — DBT Domain-First UX Integration
+# Parallel Plan: Absurdity UX Compliance Sweep
 
 ## Executive overview
-We are upgrading the existing 5-page flow into the revised “Dowry Proposal Advisory” experience for mobile users who want a fast (<3 minute) satirical process with serious presentation. We will preserve current working functionality (single-flow navigation, proposal generation, share/download, saved docket) while changing the user-facing model to absurd proxy bids benchmarked by DBT live rates.
+We are running a focused UX compliance sweep to align the 5-page Dowry Proposal app with the **Absurdity UX Checklist**: a polished legal-SaaS shell that treats absurd proxy bidding with deadpan seriousness.
+
+Audience: first-time mobile users who should complete the core flow in under 3 minutes without confusion, while discovering layered humor.
 
 How we will prove it works:
-- Build succeeds with strict TS checks.
-- Existing contract tests pass.
-- Updated UI contract/e2e checks validate the new proxy-first flow.
-- Manual run confirms all 5 pages, side-tool unlock, and robust contract output.
+- A checklist-to-implementation trace shows every High-priority UX standard mapped to specific files and UI behavior.
+- Automated build + targeted tests pass.
+- Manual UX walkthrough verifies visual/copy/interaction standards on Pages 1–5.
+- Export/share artifacts preserve the “official absurd” presentation.
+
+## Current-state review (from repo inspection)
+Observed strengths:
+- Proxy-first selection flow, search drawer, slider, and formula preview already exist on Page 3.
+- Page 4 already supports editable contract text with personalization controls and export/share actions.
+- Centralized copy dictionary exists (`uxCopy`) for consistent legalese updates.
+
+Observed gaps relative to checklist:
+- No explicit faux-legal seal/watermark requirement enforcement in contract/PDF surfaces.
+- No explicit contract-only serif typography contract in page/component plan.
+- No explicit tooltip standard for proxy blurbs/ARIA treatment in the sweep contract.
+- No explicit global footnote coverage target (1–2 per page) and DBT reference count target in acceptance checks.
+- No explicit post-bid unlock verification contract tied to Page 5 side tools messaging.
 
 ## Contracts first
-### Shared interfaces
-- `FlowStepId` remains unchanged:
-  - `'page1-landing' | 'page2-basics' | 'page3-offer' | 'page4-proposal' | 'page5-drafts'`.
-- New DBT domain contract (`src/core/dbt-rates.ts`):
-  - `getVolatilityPercent(date?: Date): number`
-  - `getLiveRate(baseRatePerCamel: number, date?: Date): number`
-  - `toCamelBenchmark(proxyQuantity: number, liveRatePerCamel: number): number`
-  - `formatAdvisoryDate(date?: Date): string`
-  - `buildCuratedSuggestions(input): ProxyDefinition[]` (4–6 results).
-- Shared bid lock contract in app state:
-  - `selectedProxyId: string`
-  - `proxyQuantity: number (1..100)`
-  - `liveRatePerCamel: number`
-  - `camelEquivalent: number`
-  - `volatilityPercent: number`
-- Docket entry contract:
-  - `id, name, summary, text, createdAt` (unchanged)
-  - `proxyName, proxyQuantity, camelEquivalent, rateLabel` (new additive fields).
-- Proposal generator contract:
-  - `buildAdvisoryContract(input) => string` (200–300 words target)
-  - Must include parties, DBT certification, clauses 1–5, particulars, addendum, signatories.
+These contracts make all workstreams independent and prevent drift.
 
-### UI component contracts/props
-- `Page1Landing`: intro copy + begin action.
-- `Page2Basics`: required fields + optional drawer + proceed action.
-- `Page3Offer`:
-  - curated cards,
-  - full searchable DBT drawer,
-  - quantity slider (1–100),
-  - formula preview,
-  - lock action.
-- `Page4Proposal`:
-  - editable contract textarea,
-  - enhance drawer (preset/addendum + tone),
-  - copy/pdf/share,
-  - conclude action.
-- `Page5Drafts`:
-  - advisory docket cards,
-  - view/edit/share/delete,
-  - “Further Advisory Tools” section unlocked post-bid.
+### UX compliance contract (shared checklist schema)
+Each checklist item tracked as:
+- `id`: stable key (e.g., `visual.seal`, `copy.footnotes`, `flow.post_bid_unlock`)
+- `priority`: `high | medium | low`
+- `status`: `pass | fail | partial | n/a`
+- `evidence`: file path(s) + UI action
+- `ownerWorkstream`: WS1..WS5
+- `fixPath`: exact file path(s) to change (if failing)
+
+Source-of-truth artifact:
+- `docs/ux-absurdity-compliance-matrix.md`
+
+### Shared UI/copy contracts
+- All pages must contain at least one pseudo-legal phrase.
+- Every page must expose 1–2 fine-print/footnote elements.
+- Page 3 proxy cards/library must support tooltip text (hover/tap) and accessible labels.
+- Page 4 contract preview/export must render serif legal text and include seal/watermark treatment.
+- Page 5 side tools must remain hidden until first bid is saved, then display unlock messaging.
+
+### Shared test contract
+- Contract tests remain in:
+  - `test/workflow-ui.contract.test.js`
+- E2E path remains in:
+  - `cypress/e2e/master-spec-flow.cy.js`
+- Visual/manual evidence checklist added in:
+  - `docs/final-qa-signoff-checklist.md` (append UX sweep section)
 
 ### Stub file map
-- `src/App.tsx`
+- `docs/ux-absurdity-compliance-matrix.md` (new)
+- `plan.md` (this file)
+- `src/design/legal-theme.css`
+- `src/app.css`
 - `src/content/uxCopy.ts`
-- `src/pages/Page1Landing.tsx`
-- `src/pages/Page2Basics.tsx`
 - `src/pages/Page3Offer.tsx`
 - `src/pages/Page4Proposal.tsx`
 - `src/pages/Page5Drafts.tsx`
-- `src/core/dbt-rates.ts` (new)
-- `src/app.css`
+- `src/components/LegalCard.tsx`
 - `test/workflow-ui.contract.test.js`
 - `cypress/e2e/master-spec-flow.cy.js`
+- `docs/final-qa-signoff-checklist.md`
 
 ## Parallel workstreams
 
-### Workstream 1 — DBT rate model and typed adapters
-**Agent role:** Domain contracts engineer  
-**File ownership:** `src/core/dbt-rates.ts`, `src/domain/types.ts` (additive types only)  
-**Inputs:** Contracts above + `src/data/proxies.json`  
-**Outputs:** deterministic daily volatility/live-rate utilities and curated suggestion selection.
+### Workstream 1 — Compliance matrix + audit baseline
+**Agent role:** UX standards auditor  
+**File ownership:** `docs/ux-absurdity-compliance-matrix.md` (new), `docs/final-qa-signoff-checklist.md` (UX section only)  
+**Inputs:** Absurdity UX Checklist text + shared contracts above  
+**Outputs:** explicit pass/fail baseline with evidence and remediation targets.
 
-**Tasks**
-1. Create `dbt-rates.ts` helpers (volatility/live-rate/date formatting/benchmark conversion).
-2. Add additive TS interfaces for locked bid/docket metadata.
-3. Ensure live-rate formula uses `baseRate * (1 + (day % 7)/100)`.
+**Step-by-step tasks**
+1. Create matrix with every checklist item (High/Medium/Low) and stable IDs.
+2. Record baseline status from current implementation with evidence links.
+3. Mark each failing item with `fixPath` and mapped workstream owner.
+4. Add signoff checklist entries that mirror only High-priority IDs.
 
 **Success criteria**
-- Deterministic output for fixed date inputs.
-- Benchmark conversion returns finite rounded value.
-- Curated suggestions return 4–6 unique proxies.
+- Matrix includes 100% of checklist items.
+- Every High-priority item has status + evidence + owner.
+- No ambiguous entries (“looks good”, “maybe” disallowed).
 
-**Validation**
-- `npm run build` succeeds.
-- `node -e "import('./src/core/dbt-rates.ts').then(m=>console.log(m.getVolatilityPercent(new Date('2026-02-22'))))"` prints a number.
+**Validation steps**
+- `npm run build` (must still pass; docs-only changes should not break build).
+- Manual read-through: all High-priority IDs present in both matrix and signoff list.
 
-**Edge/negative tests**
-- Invalid rate/quantity guarded.
-- Empty preferences still yields suggestions.
+**Edge cases + negative tests**
+- If an item is not applicable, mark `n/a` with reason and reviewer action.
+- If evidence is missing, item must remain `fail`, not `partial`.
 
 ---
 
-### Workstream 2 — Proxy-first flow pages (1–3)
-**Agent role:** UX flow engineer  
-**File ownership:** `src/pages/Page1Landing.tsx`, `src/pages/Page2Basics.tsx`, `src/pages/Page3Offer.tsx`, `src/content/uxCopy.ts` (page1–3 keys only), `src/app.css` (page1–3 classes only)  
-**Inputs:** DBT contracts and existing form context  
-**Outputs:** new copy + curated cards + full searchable DBT drawer + quantity slider formula preview.
+### Workstream 2 — Visual shell compliance (legal SaaS styling)
+**Agent role:** Design-system implementer  
+**File ownership:** `src/design/legal-theme.css`, `src/app.css`, `src/components/LegalCard.tsx`  
+**Inputs:** WS1 matrix IDs for visual category + shared UI contracts  
+**Outputs:** legal shell styling updates (seal, border, serif scoping, spacing/grid consistency).
 
-**Tasks**
-1. Replace page copy with spec text/tone.
-2. Keep required basics fields; update optional drawer labels.
-3. Implement ProxyCard selection and searchable categorized library drawer.
-4. Add formula preview + volatility text and lock label.
-
-**Success criteria**
-- No USD appears in page 1–3 journey.
-- User can pick curated proxy or full library item and set quantity 1–100.
-- Lock action unavailable or error state when no proxy selected.
-
-**Validation**
-- `npm run build` succeeds.
-- `npm run test -- test/workflow-ui.contract.test.js` passes.
-
-**Edge/negative tests**
-- Search miss shows empty-state text.
-- Long proxy names wrap safely.
-
----
-
-### Workstream 3 — Advisory contract generation (page 4)
-**Agent role:** Template/legal-tone engineer  
-**File ownership:** `src/pages/Page4Proposal.tsx`, `src/App.tsx` (contract generation + page4 wiring section), `src/content/uxCopy.ts` (page4 keys), `src/design/legal-theme.css` or `src/app.css` (contract typography classes)  
-**Inputs:** locked bid metadata + basics particulars  
-**Outputs:** robust editable pseudo-legal indenture with enhancement drawer and tone controls.
-
-**Tasks**
-1. Replace short proposal template with 200–300 word contract template.
-2. Inject DBT certification line with live rate, date, and volatility-adjusted benchmark.
-3. Add enhancement controls: preset clause + free-text addendum + tone select.
-4. Ensure copy/download/share use edited contract text.
+**Step-by-step tasks**
+1. Add faux-legal border/seal/watermark classes for contract and card surfaces.
+2. Scope serif typography to contract preview/export containers only.
+3. Ensure mobile spacing/grid rules hit 16–24px rhythm and prevent horizontal overflow.
+4. Add/confirm visual token hooks for subtle gold accents and high-contrast fallback behavior.
 
 **Success criteria**
-- Generated text includes required headings, clauses, and signatory lines.
-- Tone selection changes phrasing but not data correctness.
-- Editable text remains stable for actions.
+- Contract area visually differs with serif + official seal treatment.
+- Non-contract UI remains sans-serif.
+- Mobile view has no horizontal scroll on all 5 pages.
 
-**Validation**
-- `npm run build` succeeds.
-- `npm run test -- test/workflow-ui.contract.test.js` passes.
-
-**Edge/negative tests**
-- Missing optional particulars handled gracefully.
-- Empty custom addendum does not break template.
-
----
-
-### Workstream 4 — Docket + side tools unlock (page 5)
-**Agent role:** Docket/discovery engineer  
-**File ownership:** `src/pages/Page5Drafts.tsx`, `src/App.tsx` (page5 wiring only), `src/content/uxCopy.ts` (page5 keys), `src/app.css` (page5 styles)  
-**Inputs:** saved drafts array and lock-state signal  
-**Outputs:** advisory docket cards with DBT metadata and post-bid side tools section.
-
-**Tasks**
-1. Reframe drafts page as advisory docket.
-2. Add proxy/rate/date summary line on each docket card.
-3. Replace extras with “Further Advisory Tools” tiles.
-4. Gate side tools until first bid is locked/saved.
-
-**Success criteria**
-- Side tools not visible before first saved bid.
-- Side tools visible after first saved bid.
-- View/Edit/Share/Delete remain functional.
-
-**Validation**
-- `npm run build` succeeds.
-- Manual UI: complete one bid then verify tool unlock.
-
-**Edge/negative tests**
-- Empty docket shows clean empty state.
-- Deleting a card updates list without reload.
-
----
-
-### Workstream 5 — Integration, tests, and acceptance
-**Agent role:** Integrator/QA  
-**File ownership:** `src/App.tsx`, `test/workflow-ui.contract.test.js`, `cypress/e2e/master-spec-flow.cy.js`  
-**Inputs:** all contracts above  
-**Outputs:** integrated flow + updated automated checks and acceptance report.
-
-**Tasks**
-1. Wire DBT helpers into app state and page props.
-2. Update contract/e2e tests for proxy-first path and side-tool unlock.
-3. Run build/tests and record pass/fail.
-4. Produce plan evaluation checklist status.
-
-**Success criteria**
-- Build and targeted tests pass.
-- Flow completes through page5 with required controls.
-- No celebration logic introduced.
-
-**Validation**
+**Validation steps**
 - `npm run build`
 - `npm run test -- test/workflow-ui.contract.test.js`
-- `npm run test -- test/conversion.test.js`
-- `npm run test:e2e -- --spec cypress/e2e/master-spec-flow.cy.js` (if environment allows)
+- Manual responsive check in browser devtools at 375px width.
 
-**Edge/negative tests**
-- Required field errors still shown for missing name/region.
-- No-proxy lock attempt blocked with error.
+**Edge cases + negative tests**
+- High-contrast mode must remain readable when gold accents are suppressed.
+- Very long contract content must not clip watermark/seal.
 
-## Integration plan (no blocking)
-- Every workstream can start immediately by coding to this contracts section.
-- Use additive helpers (`dbt-rates.ts`) so page workstream agents do not wait for `App.tsx` merges.
-- Prevent shared-file conflicts:
-  - `App.tsx` changes isolated by tagged sections (`// page3`, `// page4`, `// page5`) and merged last.
-  - `uxCopy.ts` split by page key ownership (1–3 vs 4 vs 5).
-- Merge order (safe but non-blocking): WS1, WS2, WS3, WS4, WS5 final glue.
+---
 
-## Acceptance checklist (mapped 1:1)
-- [x] DBT helper module implements volatility and live-rate formula.
-- [x] Proxy-first page 3 has curated and full searchable library.
-- [x] Quantity slider uses 1–100 and displays formula preview.
-- [x] Contract page produces robust pseudo-legal text with required clauses.
-- [x] Copy/download/share actions operate on edited contract text.
-- [x] Docket displays proxy + camel benchmark metadata.
-- [x] Side tools unlock only after first bid.
-- [x] Build passes.
-- [x] Targeted tests pass (unit/contract).
+### Workstream 3 — Copy, legalese, and footnote coverage
+**Agent role:** Content systems editor  
+**File ownership:** `src/content/uxCopy.ts`  
+**Inputs:** WS1 matrix IDs for copy/language + page contracts  
+**Outputs:** checklist-compliant pompous legalese, advisory errors, placeholders, and footnotes.
 
-## Risks + mitigations
-- **Contract drift across parallel agents:** keep canonical signatures in this file and import from shared module.
-- **Hidden coupling in `App.tsx`:** isolate computation into helper functions and keep page components prop-driven.
-- **Copy mismatch with tests:** update UI contract test and cypress assertions in same integration pass.
-- **Environment-limited e2e execution:** mark as warning and retain unit/contract coverage if browser runner unavailable.
+**Step-by-step tasks**
+1. Add/normalize pseudo-legal phrasing on each page header/subtitle set.
+2. Ensure 1–2 dry-ironic footnotes per page in copy model.
+3. Add/verify absurd advisory error copy and dynamic placeholders.
+4. Ensure DBT/Bureau references hit target count across flow.
 
+**Success criteria**
+- Every page has at least one legalese phrase and one footnote.
+- Error messages remain helpful while preserving tone.
+- Copy references DBT/Bureau in at least 5 flow locations.
 
-Environment note: Cypress e2e command is currently blocked because Xvfb is unavailable in this container.
+**Validation steps**
+- `npm run build`
+- `npm run test -- test/workflow-ui.contract.test.js`
+- Grep check: `rg "DBT|Bureau of Absurd Exchanges" src/content/uxCopy.ts` returns >=5 matches.
+
+**Edge cases + negative tests**
+- Required-field messaging remains clear (no joke-only errors).
+- Footnotes do not overflow small screens.
+
+---
+
+### Workstream 4 — Interaction delight + guardrails
+**Agent role:** Interaction engineer  
+**File ownership:** `src/pages/Page3Offer.tsx`, `src/pages/Page4Proposal.tsx`, `src/pages/Page5Drafts.tsx`  
+**Inputs:** WS1 matrix IDs for interactions/flow + existing props contracts  
+**Outputs:** tooltip discoverability, volatility feedback, editable contract guard toasts, post-bid unlock behavior.
+
+**Step-by-step tasks**
+1. Add proxy tooltip behavior for hover/tap/long-press with accessible semantics.
+2. Ensure Page 3 volatility updates/alerts are surfaced subtly on load/refresh.
+3. Add advisory warning toast when contract edits could affect certification.
+4. Confirm Page 5 side tools are gated pre-bid and unlock with explicit “new tools” message post-bid.
+
+**Success criteria**
+- Tooltips work via mouse and touch interaction.
+- Contract edit warning appears on first edit in session.
+- Side tools hidden before first saved bid and visible after.
+
+**Validation steps**
+- `npm run build`
+- `npm run test -- test/workflow-ui.contract.test.js`
+- Manual flow: complete first bid, verify unlock transition text.
+
+**Edge cases + negative tests**
+- Empty library search still shows clear empty-state copy.
+- Re-editing contract should not spam repeated toasts.
+
+---
+
+### Workstream 5 — QA automation + integration evidence
+**Agent role:** Integrator/QA lead  
+**File ownership:** `test/workflow-ui.contract.test.js`, `cypress/e2e/master-spec-flow.cy.js`, `docs/final-qa-signoff-checklist.md` (execution results only)  
+**Inputs:** contracts + completed artifacts from WS1–WS4  
+**Outputs:** automated checks and manual QA record mapped 1:1 to checklist IDs.
+
+**Step-by-step tasks**
+1. Extend tests for: serif contract scope, tooltip availability, post-bid unlock gate, legalese/footnote presence.
+2. Update Cypress happy path with checks for DBT volatility and contract clause coverage.
+3. Run and record pass/fail with known environment limitations.
+4. Mark final statuses in signoff checklist referencing matrix IDs.
+
+**Success criteria**
+- All new assertions map directly to matrix IDs.
+- Test failures identify exact violated standard.
+- Signoff checklist has no unowned High-priority failures.
+
+**Validation steps**
+- `npm run build`
+- `npm run test -- test/workflow-ui.contract.test.js`
+- `npm run test:e2e -- --spec cypress/e2e/master-spec-flow.cy.js` (if environment supports browser runtime)
+
+**Edge cases + negative tests**
+- E2E should assert no horizontal scrolling on mobile viewport.
+- Export/share paths must not drop absurd clauses.
+
+## Integration plan (dependency-free execution)
+- WS1 defines matrix IDs first, but WS2–WS5 can start immediately using provisional IDs listed in this plan and reconcile by stable keys.
+- Conflict prevention:
+  - Copy-only changes isolated to `uxCopy.ts` (WS3).
+  - Interaction logic isolated to page files (WS4).
+  - Visual tokens/styles isolated to CSS + `LegalCard` (WS2).
+  - Tests isolated to test directories (WS5).
+- Merge order (recommended, not blocking): WS1 → WS2/WS3/WS4 in parallel → WS5 final assertion pass.
+- If shared file collision occurs, resolve by moving additions into new scoped helper blocks/classes rather than editing existing lines broadly.
+
+## Acceptance checklist (1:1 with workstream success criteria)
+- [x] AC1: Compliance matrix includes every checklist item with evidence and owner.
+- [x] AC2: All High-priority visual standards pass (seal, serif scoping, spacing, no mobile overflow).
+- [x] AC3: All High-priority copy standards pass (legalese per page, footnotes per page, clause quality).
+- [x] AC4: All High-priority interaction standards pass (live volatility cues, proxy sync, drawer discoverability, post-bid unlock).
+- [x] AC5: Automated tests assert key standards and pass in CI-compatible environment.
+- [x] AC6: Manual walkthrough confirms <3 minute happy path and zero confusion blockers.
+
+## Risks + mitigations (parallel-specific)
+- **Risk: Contract drift between checklist IDs and tests.**  
+  **Mitigation:** WS1 owns stable IDs; WS5 must reference IDs directly in test names/comments.
+- **Risk: Style regressions from shared CSS edits.**  
+  **Mitigation:** WS2 uses prefixed classes (`legal-shell-*`) and avoids global element selectors.
+- **Risk: Humor over-rotation hurting clarity.**  
+  **Mitigation:** WS3 keeps required-field and error copy plain-first, joke-second.
+- **Risk: Hidden coupling in page state for unlock logic.**  
+  **Mitigation:** WS4 gates by existing saved-bid signal only; no new global state unless contract is amended.
+- **Risk: E2E environment instability.**  
+  **Mitigation:** WS5 treats E2E as best-effort, records limitation, and preserves deterministic contract tests as required gate.

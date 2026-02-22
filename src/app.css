@@ -86,7 +86,7 @@ button:hover {
   border: 1px solid rgba(9, 19, 40, 0.12);
   border-radius: var(--ccc-card-radius);
   box-shadow: 0 14px 34px rgba(3, 8, 20, 0.35);
-  padding: 22px;
+  padding: 20px;
   animation: fade-in 180ms ease;
   color: var(--ccc-ink);
 }
@@ -242,4 +242,30 @@ pre {
 
 .tool-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+
+.legal-footnote {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.badge-volatility {
+  display: inline-block;
+  border: 1px solid rgba(140, 116, 70, 0.35);
+  background: rgba(140, 116, 70, 0.08);
+  color: #5e4a2a;
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 767px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .view-card {
+    padding: 16px;
+  }
 }
