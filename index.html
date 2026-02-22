@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>International Camel Equivalents</title>
     <link rel="stylesheet" href="/src/design/theme.css" />
     <style>
@@ -69,6 +71,20 @@
       .meta {
         color: #475569;
         margin-top: 0.5rem;
+      }
+      .update-banner {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: #dbeafe;
+        color: #1e3a8a;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .update-banner button {
+        background: #1d4ed8;
       }
     </style>
   </head>
@@ -199,6 +215,11 @@
         <ul id="archive-list"></ul>
       </section>
 
+      <div id="update-banner" class="update-banner" role="status" aria-live="polite">
+        <span>A new offline-ready version is available.</span>
+        <button id="refresh-app" type="button">Refresh app</button>
+      </div>
+
       <div id="error" class="error" aria-live="polite"></div>
       <div id="result" aria-live="polite"></div>
     </main>
@@ -282,6 +303,8 @@
       const archiveBidButton = document.getElementById('archive-bid');
       const archiveStatus = document.getElementById('archive-status');
       const archiveList = document.getElementById('archive-list');
+      const updateBanner = document.getElementById('update-banner');
+      const refreshAppButton = document.getElementById('refresh-app');
       const button = document.getElementById('calculate');
       const camelUsdRate = 500;
       const maxRows = 25;
@@ -677,6 +700,51 @@
         }
       }
 
+
+      function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+
+        let waitingWorker = null;
+
+        const promptRefresh = (registration) => {
+          waitingWorker = registration.waiting;
+          if (!waitingWorker) return;
+          updateBanner.style.display = 'flex';
+        };
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+
+        navigator.serviceWorker
+          .register('/service-worker.js')
+          .then((registration) => {
+            if (registration.waiting) {
+              promptRefresh(registration);
+            }
+
+            registration.addEventListener('updatefound', () => {
+              const installing = registration.installing;
+              if (!installing) return;
+
+              installing.addEventListener('statechange', () => {
+                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                  promptRefresh(registration);
+                }
+              });
+            });
+          })
+          .catch((error) => {
+            console.error('Service worker registration failed:', error);
+          });
+
+        refreshAppButton.addEventListener('click', () => {
+          if (waitingWorker) {
+            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      }
+
       hydratePresetOptions();
       hydrateMessageTemplates();
       loadCustomizerSettings();
@@ -689,6 +757,7 @@
       render();
       renderCompare();
       renderReferenceLibrary();
+      registerServiceWorker();
 
       unitInput.addEventListener('change', () => {
         updateProxyVisibility();
