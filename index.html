@@ -89,9 +89,17 @@
 
       <section aria-label="Bid customizer" style="margin-top: 1rem;">
         <h2 style="margin-bottom: 0.25rem;">Bid customizer</h2>
-        <p class="meta" style="margin-top: 0;">Apply local multipliers or override one proxy rate.</p>
+        <p class="meta" style="margin-top: 0;">Apply location presets, language flavor, and optional proxy override.</p>
         <div class="row">
-          <input id="camel-multiplier" type="number" min="0.01" step="0.01" value="1" aria-label="Camel multiplier" />
+          <select id="location-preset" aria-label="Location preset"></select>
+          <select id="language" aria-label="Language">
+            <option value="en">English</option>
+            <option value="ar">Arabic</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+            <option value="sw">Swahili</option>
+          </select>
+          <input id="camel-multiplier" type="number" min="0.01" step="0.01" value="1" aria-label="Manual camel multiplier" />
           <select id="override-proxy" aria-label="Override proxy"></select>
           <input id="override-rate" type="number" min="0" step="0.01" value="" placeholder="Override rate per camel (optional)" aria-label="Override rate" />
         </div>
@@ -107,6 +115,19 @@
         </select>
       </div>
 
+      <section aria-label="Proxy generator" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Proxy generator</h2>
+        <p class="meta" style="margin-top: 0;">Add your own bizarre proxy and keep it saved in this browser.</p>
+        <div class="row">
+          <input id="new-proxy-name" type="text" placeholder="Proxy name" aria-label="New proxy name" />
+          <input id="new-proxy-rate" type="number" min="0.01" step="0.01" placeholder="Rate per camel" aria-label="New proxy rate per camel" />
+          <input id="new-proxy-category" type="text" placeholder="Category" aria-label="New proxy category" />
+          <input id="new-proxy-description" type="text" placeholder="Description" aria-label="New proxy description" />
+          <button id="add-proxy" type="button">Unleash the Proxy Pandemonium!</button>
+        </div>
+        <div id="generator-status" class="meta" aria-live="polite"></div>
+      </section>
+
       <section aria-label="Reference compare tool" style="margin-top: 1rem;">
         <h2 style="margin-bottom: 0.25rem;">Compare proxies</h2>
         <p class="meta" style="margin-top: 0;">How many of proxy B are in proxy A?</p>
@@ -118,6 +139,42 @@
         <div id="compare-result" class="meta" aria-live="polite"></div>
       </section>
 
+
+      <section aria-label="Message formalizer" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Message formalizer</h2>
+        <p class="meta" style="margin-top: 0;">Generate a courtship-ready message from your latest result.</p>
+        <div class="row">
+          <select id="message-template" aria-label="Message template"></select>
+          <select id="message-proxy" aria-label="Message proxy"></select>
+          <button id="generate-message" type="button">Formalize message</button>
+        </div>
+        <textarea id="message-output" rows="4" aria-label="Generated message" style="width: 100%; margin-top: 0.75rem;"></textarea>
+      </section>
+
+
+      <section aria-label="Sharing and export" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Sharing and export</h2>
+        <p class="meta" style="margin-top: 0;">Build share text, copy it, or open messaging apps.</p>
+        <div class="row">
+          <button id="build-share" type="button">Build share text</button>
+          <button id="copy-share" type="button">Copy share text</button>
+          <button id="open-mail" type="button">Open mail draft</button>
+          <button id="open-sms" type="button">Open SMS draft</button>
+        </div>
+        <textarea id="share-output" rows="4" aria-label="Share output" style="width: 100%; margin-top: 0.75rem;"></textarea>
+      </section>
+
+
+      <section aria-label="Historical bid archive" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Historical bid archive</h2>
+        <p class="meta" style="margin-top: 0;">Save recent bids into your local time capsule.</p>
+        <div class="row">
+          <button id="archive-bid" type="button">Archive this bid</button>
+        </div>
+        <div id="archive-status" class="meta" aria-live="polite"></div>
+        <ul id="archive-list"></ul>
+      </section>
+
       <div id="error" class="error" aria-live="polite"></div>
       <div id="result" aria-live="polite"></div>
     </main>
@@ -127,14 +184,35 @@
         calculateIceWithModifiers,
         compareProxyUnits,
         toCamelValue,
-        toEquivalents,
       } from '/src/core/conversion.js';
+      import {
+        createProxyDefinition,
+        mergeWithExtensions,
+        readStoredExtensions,
+        writeStoredExtensions,
+      } from '/src/core/proxy-library.js';
+      import {
+        locationPresets,
+        readCustomizerSettings,
+        resolveCamelMultiplier,
+        writeCustomizerSettings,
+      } from '/src/core/customizer-settings.js';
+      import { generateFormalizedMessage, listTemplates } from '/src/core/formalizer.js';
+      import { buildShareText, buildShareUrls } from '/src/core/share-export.js';
+      import {
+        createHistoryEntry,
+        formatRelativeAge,
+        readBidHistory,
+        writeBidHistory,
+      } from '/src/core/history-archive.js';
 
       const result = document.getElementById('result');
       const errorMessage = document.getElementById('error');
       const amountInput = document.getElementById('amount');
       const unitInput = document.getElementById('unit');
       const proxyInput = document.getElementById('proxy');
+      const locationPresetInput = document.getElementById('location-preset');
+      const languageInput = document.getElementById('language');
       const camelMultiplierInput = document.getElementById('camel-multiplier');
       const overrideProxyInput = document.getElementById('override-proxy');
       const overrideRateInput = document.getElementById('override-rate');
@@ -144,14 +222,56 @@
       const compareFromInput = document.getElementById('compare-from');
       const compareToInput = document.getElementById('compare-to');
       const compareResult = document.getElementById('compare-result');
+      const newProxyNameInput = document.getElementById('new-proxy-name');
+      const newProxyRateInput = document.getElementById('new-proxy-rate');
+      const newProxyCategoryInput = document.getElementById('new-proxy-category');
+      const newProxyDescriptionInput = document.getElementById('new-proxy-description');
+      const addProxyButton = document.getElementById('add-proxy');
+      const generatorStatus = document.getElementById('generator-status');
+      const messageTemplateInput = document.getElementById('message-template');
+      const messageProxyInput = document.getElementById('message-proxy');
+      const generateMessageButton = document.getElementById('generate-message');
+      const messageOutput = document.getElementById('message-output');
+      const buildShareButton = document.getElementById('build-share');
+      const copyShareButton = document.getElementById('copy-share');
+      const openMailButton = document.getElementById('open-mail');
+      const openSmsButton = document.getElementById('open-sms');
+      const shareOutput = document.getElementById('share-output');
+      const archiveBidButton = document.getElementById('archive-bid');
+      const archiveStatus = document.getElementById('archive-status');
+      const archiveList = document.getElementById('archive-list');
       const button = document.getElementById('calculate');
       const camelUsdRate = 500;
       const maxRows = 25;
       let proxies = [];
+      let lastResult = null;
+      let archiveEntries = [];
 
-      async function loadProxies() {
-        const response = await fetch('/src/data/proxies.json');
-        proxies = await response.json();
+
+      function hydratePresetOptions() {
+        for (const [key, preset] of Object.entries(locationPresets)) {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = `${preset.label} (${preset.camelMultiplier}x)`;
+          locationPresetInput.append(option);
+        }
+      }
+
+      function hydrateMessageTemplates() {
+        for (const template of listTemplates()) {
+          const option = document.createElement('option');
+          option.value = template;
+          option.textContent = template[0].toUpperCase() + template.slice(1);
+          messageTemplateInput.append(option);
+        }
+      }
+
+      function renderProxySelects() {
+        proxyInput.replaceChildren();
+        overrideProxyInput.replaceChildren();
+        compareFromInput.replaceChildren();
+        compareToInput.replaceChildren();
+        messageProxyInput.replaceChildren();
 
         for (const proxy of proxies) {
           const option = document.createElement('option');
@@ -166,11 +286,22 @@
           const compareToOption = option.cloneNode(true);
           compareFromInput.append(compareFromOption);
           compareToInput.append(compareToOption);
+
+          const messageProxyOption = option.cloneNode(true);
+          messageProxyInput.append(messageProxyOption);
         }
 
         if (proxies.length > 1) {
           compareToInput.value = proxies[1].id;
         }
+      }
+
+      async function loadProxies() {
+        const response = await fetch('/src/data/proxies.json');
+        const baseProxies = await response.json();
+        const extensions = readStoredExtensions();
+        proxies = mergeWithExtensions(baseProxies, extensions);
+        renderProxySelects();
       }
 
       function updateProxyVisibility() {
@@ -186,7 +317,10 @@
       }
 
       function buildModifiers() {
-        const camelMultiplier = Number(camelMultiplierInput.value);
+        const camelMultiplier = resolveCamelMultiplier({
+          locationKey: locationPresetInput.value,
+          manualMultiplier: Number(camelMultiplierInput.value),
+        });
         const modifiers = {
           camelMultiplier,
           proxyRateOverrides: {},
@@ -202,6 +336,153 @@
         }
 
         return modifiers;
+      }
+
+      function addProxy() {
+        try {
+          const newProxy = createProxyDefinition(
+            {
+              name: newProxyNameInput.value,
+              ratePerCamel: newProxyRateInput.value,
+              category: newProxyCategoryInput.value,
+              description: newProxyDescriptionInput.value,
+            },
+            proxies,
+          );
+
+          const extensions = readStoredExtensions();
+          const updatedExtensions = [...extensions, newProxy];
+          writeStoredExtensions(updatedExtensions);
+          proxies = [...proxies, newProxy];
+          renderProxySelects();
+          render();
+          renderCompare();
+          generatorStatus.textContent = `${newProxy.name} added to your local proxy library.`;
+
+          newProxyNameInput.value = '';
+          newProxyRateInput.value = '';
+          newProxyCategoryInput.value = '';
+          newProxyDescriptionInput.value = '';
+        } catch (error) {
+          generatorStatus.textContent = error.message;
+        }
+      }
+
+      function renderFormalizedMessage() {
+        if (!lastResult) {
+          messageOutput.value = 'Run a valid conversion first to generate a message.';
+          return;
+        }
+
+        const selectedProxy = lastResult.equivalents.find((item) => item.proxyId === messageProxyInput.value) ?? lastResult.equivalents[0];
+
+        try {
+          messageOutput.value = generateFormalizedMessage({
+            template: messageTemplateInput.value,
+            camelValue: lastResult.camelValue,
+            proxyName: selectedProxy.proxyName,
+            proxyQuantity: selectedProxy.quantity,
+          });
+        } catch (error) {
+          messageOutput.value = error.message;
+        }
+      }
+
+      function renderArchive() {
+        archiveList.replaceChildren();
+        const recent = archiveEntries.slice(0, 10);
+
+        for (const entry of recent) {
+          const li = document.createElement('li');
+          li.textContent = `${entry.summary} (${formatRelativeAge(entry.createdAt)})`;
+          archiveList.append(li);
+        }
+      }
+
+      function archiveCurrentBid() {
+        if (!lastResult) {
+          archiveStatus.textContent = 'Run a valid conversion first to archive a bid.';
+          return;
+        }
+
+        try {
+          const topProxy = lastResult.equivalents[0];
+          const entry = createHistoryEntry({
+            amount: lastResult.amount,
+            unit: lastResult.unit,
+            camelValue: lastResult.camelValue,
+            summary: `${lastResult.camelValue} camels • top proxy ${topProxy.proxyName} (${topProxy.quantity})`,
+          });
+
+          archiveEntries = [entry, ...archiveEntries];
+          writeBidHistory(archiveEntries);
+          archiveStatus.textContent = 'Bid archived in your local time capsule.';
+          renderArchive();
+        } catch (error) {
+          archiveStatus.textContent = error.message;
+        }
+      }
+
+      function buildSharePayload() {
+        if (!lastResult) {
+          shareOutput.value = 'Run a valid conversion first to build share text.';
+          return null;
+        }
+
+        const selectedProxy = lastResult.equivalents.find((item) => item.proxyId === messageProxyInput.value) ?? lastResult.equivalents[0];
+        const shareText = buildShareText({
+          camelValue: lastResult.camelValue,
+          proxyName: selectedProxy.proxyName,
+          proxyQuantity: selectedProxy.quantity,
+          message: messageOutput.value,
+        });
+
+        shareOutput.value = shareText;
+        return { shareText, urls: buildShareUrls(shareText) };
+      }
+
+      async function copyShareText() {
+        const payload = buildSharePayload();
+        if (!payload) return;
+
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(payload.shareText);
+          return;
+        }
+
+        shareOutput.select();
+        document.execCommand('copy');
+      }
+
+      function openMailDraft() {
+        const payload = buildSharePayload();
+        if (!payload) return;
+        window.open(payload.urls.mailto, '_blank');
+      }
+
+      function openSmsDraft() {
+        const payload = buildSharePayload();
+        if (!payload) return;
+        window.open(payload.urls.sms, '_blank');
+      }
+
+      function saveCustomizerSettings() {
+        writeCustomizerSettings({
+          locationKey: locationPresetInput.value,
+          manualMultiplier: Number(camelMultiplierInput.value),
+          language: languageInput.value,
+        });
+      }
+
+      function loadCustomizerSettings() {
+        const saved = readCustomizerSettings();
+        if (locationPresets[saved.locationKey]) {
+          locationPresetInput.value = saved.locationKey;
+        }
+        if (Number.isFinite(saved.manualMultiplier) && saved.manualMultiplier > 0) {
+          camelMultiplierInput.value = String(saved.manualMultiplier);
+        }
+        languageInput.value = saved.language;
       }
 
       function renderCompare() {
@@ -237,6 +518,7 @@
           const sorted = sortEquivalents([...filtered], sortInput.value);
           const visible = sorted.slice(0, maxRows);
 
+          lastResult = { amount, unit, camelValue, equivalents: sorted };
           errorMessage.textContent = '';
           result.innerHTML = `
             <p><strong>${amount} ${unit}</strong> equals <strong>${camelValue} camels</strong>.</p>
@@ -254,12 +536,18 @@
             </table>
           `;
         } catch (error) {
+          lastResult = null;
           result.innerHTML = '';
           errorMessage.textContent = error.message;
         }
       }
 
+      hydratePresetOptions();
+      hydrateMessageTemplates();
+      loadCustomizerSettings();
       await loadProxies();
+      archiveEntries = readBidHistory();
+      renderArchive();
       updateProxyVisibility();
       render();
       renderCompare();
@@ -271,10 +559,25 @@
       filterInput.addEventListener('input', render);
       sortInput.addEventListener('change', render);
       proxyInput.addEventListener('change', render);
-      camelMultiplierInput.addEventListener('input', render);
+      camelMultiplierInput.addEventListener('input', () => {
+        saveCustomizerSettings();
+        render();
+      });
+      locationPresetInput.addEventListener('change', () => {
+        saveCustomizerSettings();
+        render();
+      });
+      languageInput.addEventListener('change', saveCustomizerSettings);
       overrideProxyInput.addEventListener('change', render);
       overrideRateInput.addEventListener('input', render);
       button.addEventListener('click', render);
+      addProxyButton.addEventListener('click', addProxy);
+      generateMessageButton.addEventListener('click', renderFormalizedMessage);
+      buildShareButton.addEventListener('click', buildSharePayload);
+      copyShareButton.addEventListener('click', () => { copyShareText().catch((error) => { shareOutput.value = error.message; }); });
+      openMailButton.addEventListener('click', openMailDraft);
+      openSmsButton.addEventListener('click', openSmsDraft);
+      archiveBidButton.addEventListener('click', archiveCurrentBid);
       compareAmountInput.addEventListener('input', renderCompare);
       compareFromInput.addEventListener('change', renderCompare);
       compareToInput.addEventListener('change', renderCompare);
