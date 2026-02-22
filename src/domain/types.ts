@@ -56,6 +56,9 @@ export interface DowryForm {
   courtshipYears: number;
   hasArtifact: boolean;
   quirks: string;
+  ageRange: string;
+  occupation: string;
+  quirkyFact: string;
   regionOverride: string;
   traitModifiers: {
     social: number;

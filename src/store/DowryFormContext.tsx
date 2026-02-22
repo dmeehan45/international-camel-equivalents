@@ -1,29 +1,16 @@
-import { createContext, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 import type { DowryForm, QueueItem } from '../domain/types';
 
-export const WORKFLOW_STORAGE_KEY = 'ccc-workflow-draft-v1';
+export const WORKFLOW_STORAGE_KEY = 'icea-workflow-state-v2';
 
-const DEFAULT_FORM: DowryForm = {
-  bidName: '',
-  bidRegion: '',
-  camelQuantity: 10,
-  isWarrior: false,
-  hobby: '',
-  courtshipYears: 0,
-  hasArtifact: false,
-  quirks: '',
-  regionOverride: '',
-  traitModifiers: { social: 1, resilience: 1, prestige: 1, ceremony: 1 },
-  advancedTrait: 1,
+type DowryFormState = {
+  form: DowryForm;
+  queue: QueueItem[];
 };
 
 type DowryFormAction =
   | { type: 'setField'; field: keyof DowryForm; value: string | number | boolean | DowryForm['traitModifiers'] }
-  | { type: 'setTraitModifier'; field: keyof DowryForm['traitModifiers']; value: number }
   | { type: 'resetOptional' }
-  | { type: 'resetRecommendation' }
-  | { type: 'resetForOriginalBid' }
-  | { type: 'hydrate'; value: Partial<DowryForm> }
   | { type: 'setQueue'; value: QueueItem[] }
   | { type: 'enqueueQueue'; value: QueueItem };
 
@@ -33,76 +20,77 @@ type DowryFormContextValue = {
   canCalculateIce: boolean;
   minCamelQuantity: number;
   maxCamelQuantity: number;
-  clampCamelQuantity: (value: number) => number;
-  dispatchForm: (action: DowryFormAction) => void;
+  clampCamelQuantity: (input: number) => number;
+  dispatchForm: Dispatch<DowryFormAction>;
 };
 
-type DowryFormState = {
-  form: DowryForm;
-  queue: QueueItem[];
+const DEFAULT_FORM: DowryForm = {
+  bidName: '',
+  bidRegion: '',
+  camelQuantity: 18,
+  isWarrior: false,
+  hobby: '',
+  courtshipYears: 0,
+  hasArtifact: false,
+  quirks: '',
+  ageRange: '',
+  occupation: '',
+  quirkyFact: '',
+  regionOverride: '',
+  traitModifiers: {
+    social: 1,
+    resilience: 1,
+    prestige: 1,
+    ceremony: 1,
+  },
+  advancedTrait: 1,
 };
 
 const DowryFormContext = createContext<DowryFormContextValue | null>(null);
 
-function sanitizeCamelQuantity(value: unknown) {
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric)) return DEFAULT_FORM.camelQuantity;
-  return Math.min(200, Math.max(1, Math.round(numeric)));
-}
-
-function sanitizeTrait(value: unknown) {
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric)) return 1;
-  return Math.min(1.2, Math.max(0.8, numeric));
-}
-
-function sanitizeAdvancedTrait(value: unknown) {
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric)) return 1;
-  return Math.min(1.1, Math.max(0.9, numeric));
-}
-
-function sanitizeCourtshipYears(value: unknown) {
-  const numeric = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numeric)) return 0;
-  return Math.min(50, Math.max(0, Math.round(numeric)));
+function sanitizeCamelQuantity(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_FORM.camelQuantity;
+  return Math.min(100, Math.max(5, Math.round(n)));
 }
 
 function sanitizeForm(value: Partial<DowryForm> | undefined): DowryForm {
   const traitSource = value?.traitModifiers ?? DEFAULT_FORM.traitModifiers;
   return {
+    ...DEFAULT_FORM,
+    ...value,
     bidName: typeof value?.bidName === 'string' ? value.bidName : DEFAULT_FORM.bidName,
     bidRegion: typeof value?.bidRegion === 'string' ? value.bidRegion : DEFAULT_FORM.bidRegion,
     camelQuantity: sanitizeCamelQuantity(value?.camelQuantity),
-    isWarrior: Boolean(value?.isWarrior),
     hobby: typeof value?.hobby === 'string' ? value.hobby : DEFAULT_FORM.hobby,
-    courtshipYears: sanitizeCourtshipYears(value?.courtshipYears),
-    hasArtifact: Boolean(value?.hasArtifact),
     quirks: typeof value?.quirks === 'string' ? value.quirks : DEFAULT_FORM.quirks,
+    ageRange: typeof value?.ageRange === 'string' ? value.ageRange : DEFAULT_FORM.ageRange,
+    occupation: typeof value?.occupation === 'string' ? value.occupation : DEFAULT_FORM.occupation,
+    quirkyFact: typeof value?.quirkyFact === 'string' ? value.quirkyFact : DEFAULT_FORM.quirkyFact,
     regionOverride: typeof value?.regionOverride === 'string' ? value.regionOverride : DEFAULT_FORM.regionOverride,
     traitModifiers: {
-      social: sanitizeTrait(traitSource.social),
-      resilience: sanitizeTrait(traitSource.resilience),
-      prestige: sanitizeTrait(traitSource.prestige),
-      ceremony: sanitizeTrait(traitSource.ceremony),
+      social: Number(traitSource.social) || 1,
+      resilience: Number(traitSource.resilience) || 1,
+      prestige: Number(traitSource.prestige) || 1,
+      ceremony: Number(traitSource.ceremony) || 1,
     },
-    advancedTrait: sanitizeAdvancedTrait(value?.advancedTrait),
+    advancedTrait: Number(value?.advancedTrait) || 1,
+    courtshipYears: Number(value?.courtshipYears) || 0,
+    isWarrior: Boolean(value?.isWarrior),
+    hasArtifact: Boolean(value?.hasArtifact),
   };
 }
 
 function sanitizeQueue(value: unknown): QueueItem[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item): QueueItem => {
-      const status: QueueItem['status'] = item?.status === 'sent' ? 'sent' : 'pending';
-      return {
-        id: typeof item?.id === 'string' ? item.id : `share-${Date.now()}`,
-        createdAt: typeof item?.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
-        shareText: typeof item?.shareText === 'string' ? item.shareText : '',
-        channel: typeof item?.channel === 'string' ? item.channel : 'unknown',
-        status,
-      };
-    })
+    .map((item): QueueItem => ({
+      id: typeof item?.id === 'string' ? item.id : `share-${Date.now()}`,
+      createdAt: typeof item?.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+      shareText: typeof item?.shareText === 'string' ? item.shareText : '',
+      channel: typeof item?.channel === 'string' ? item.channel : 'unknown',
+      status: item?.status === 'sent' ? 'sent' : 'pending',
+    }))
     .slice(0, 50);
 }
 
@@ -124,16 +112,16 @@ function reducer(state: DowryFormState, action: DowryFormAction): DowryFormState
   switch (action.type) {
     case 'setField':
       return { ...state, form: { ...state.form, [action.field]: action.value } as DowryForm };
-    case 'setTraitModifier':
-      return { ...state, form: { ...state.form, traitModifiers: { ...state.form.traitModifiers, [action.field]: sanitizeTrait(action.value) } } };
     case 'resetOptional':
-      return { ...state, form: { ...state.form, camelQuantity: 10, isWarrior: false, hobby: '', courtshipYears: 0, hasArtifact: false, quirks: '' } };
-    case 'resetRecommendation':
-      return { ...state, form: { ...state.form, regionOverride: '', traitModifiers: { social: 1, resilience: 1, prestige: 1, ceremony: 1 }, advancedTrait: 1 } };
-    case 'resetForOriginalBid':
-      return { ...state, form: { ...state.form, camelQuantity: 10, isWarrior: false, hobby: '', courtshipYears: 0, hasArtifact: false, quirks: '', regionOverride: '', traitModifiers: { social: 1, resilience: 1, prestige: 1, ceremony: 1 }, advancedTrait: 1 } };
-    case 'hydrate':
-      return { ...state, form: sanitizeForm({ ...state.form, ...action.value }) };
+      return {
+        ...state,
+        form: {
+          ...state.form,
+          ageRange: '',
+          occupation: '',
+          quirkyFact: '',
+        },
+      };
     case 'setQueue':
       return { ...state, queue: sanitizeQueue(action.value) };
     case 'enqueueQueue':
@@ -149,8 +137,8 @@ export function DowryFormProvider({ children }: { children: ReactNode }) {
     form: state.form,
     queue: state.queue,
     canCalculateIce: Boolean(state.form.bidName.trim() && state.form.bidRegion.trim()),
-    minCamelQuantity: 1,
-    maxCamelQuantity: 200,
+    minCamelQuantity: 5,
+    maxCamelQuantity: 100,
     clampCamelQuantity: (input: number) => sanitizeCamelQuantity(input),
     dispatchForm,
   }), [state.form, state.queue]);
