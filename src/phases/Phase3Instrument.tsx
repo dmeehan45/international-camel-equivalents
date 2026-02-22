@@ -17,7 +17,7 @@ export function Phase3Instrument(props: Props) {
       <h2>{uxCopy.phases.phase3.heading}</h2>
       <label>Template<select className="ccc-input" value={props.state.formalizer.template} onChange={(e) => props.dispatch({ type: 'setFormalizerField', field: 'template', value: e.target.value })}>{props.templates.map((template) => <option key={template} value={template}>{template}</option>)}</select></label>
       <button onClick={props.generateMessage}>Generate message</button>
-      {props.state.formalizer.message && <pre>{props.state.formalizer.message}</pre>}
+      {props.state.formalizer.message && <pre className="legal-card document-preview">{props.state.formalizer.message}</pre>}
       <div className="stepper">
         <button className={props.exportTab === 'text' ? 'step active' : 'step'} onClick={() => props.setExportTab('text')}>Text</button>
         <button className={props.exportTab === 'image' ? 'step active' : 'step'} onClick={() => props.setExportTab('image')}>Image</button>
@@ -27,7 +27,7 @@ export function Phase3Instrument(props: Props) {
       <button className="ccc-button-primary cta-primary" onClick={() => props.runExportAction('copy')}>{uxCopy.phases.phase3.cta}</button>
       <button onClick={() => props.runExportAction('download')}>Download</button>
       <button onClick={() => props.runExportAction('share')}>Share</button>
-      {props.state.share.text && <pre>{props.state.share.text}</pre>}
+      {props.state.share.text && <pre className="legal-card document-preview">{props.state.share.text}</pre>}
       {props.state.share.qrPreview && <p className="result">{props.state.share.qrPreview}</p>}
       {props.exportToast && <p className="helper">{props.exportToast}</p>}
     </>

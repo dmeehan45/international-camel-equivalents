@@ -1,34 +1,34 @@
 :root {
-  --ccc-ivory-mist: #f8f6f2;
-  --ccc-pearl-white: #ffffff;
-  --ccc-sage-mist: #eef1ed;
-  --ccc-stone-border: #d7dbd8;
-  --ccc-eucalyptus-ink: #747675;
-  --ccc-charcoal-vow: #2f3331;
-  --ccc-champagne: #dcc8a0;
-  --ccc-muted-rose: #b89a95;
+  --ccc-ivory-mist: #f8f6f1;
+  --ccc-pearl-white: #fffdf8;
+  --ccc-sage-mist: #ece9df;
+  --ccc-stone-border: #c8c3b4;
+  --ccc-eucalyptus-ink: #5f6368;
+  --ccc-charcoal-vow: #15294b;
+  --ccc-champagne: #c89b3c;
+  --ccc-muted-rose: #6b7280;
   --ccc-success-leaf: #5e7e69;
-  --ccc-error-berry: #9c5454;
+  --ccc-error-berry: #9f4d4d;
   --ccc-card-radius: 18px;
   --ccc-pill-radius: 999px;
   --ccc-button-radius: 6px;
   --ccc-transition-standard: 220ms;
-  --ccc-soft-floral-fade: linear-gradient(135deg, #f8f6f2 0%, #eef1ed 45%, #f3ece8 100%);
+  --ccc-soft-floral-fade: linear-gradient(135deg, #f8f6f1 0%, #ece9df 50%, #fffdf8 100%);
   --ccc-font-heading: "Cormorant Infant", "Times New Roman", Georgia, serif;
   --ccc-font-body: "Josefin Sans", "Avenir Next", "Segoe UI", sans-serif;
 }
 
 [data-theme='dark'] {
-  --ccc-ivory-mist: #1e2220;
-  --ccc-pearl-white: #252a28;
-  --ccc-sage-mist: #2d3430;
-  --ccc-stone-border: #4a514d;
-  --ccc-eucalyptus-ink: #d4d8d5;
-  --ccc-charcoal-vow: #eff3f0;
-  --ccc-champagne: #bdaa83;
-  --ccc-muted-rose: #a4837e;
+  --ccc-ivory-mist: #121a2a;
+  --ccc-pearl-white: #1a2336;
+  --ccc-sage-mist: #243047;
+  --ccc-stone-border: #58637a;
+  --ccc-eucalyptus-ink: #d0d5df;
+  --ccc-charcoal-vow: #f3f6fb;
+  --ccc-champagne: #e5b550;
+  --ccc-muted-rose: #9ea7b8;
   --ccc-success-leaf: #83a68e;
-  --ccc-error-berry: #cf8585;
+  --ccc-error-berry: #d68d8d;
 }
 
 .ccc-app {
@@ -69,7 +69,14 @@
 }
 
 .ccc-button-primary:hover {
-  background: color-mix(in srgb, var(--ccc-muted-rose) 86%, black);
+  background: color-mix(in srgb, var(--ccc-muted-rose) 82%, black);
+}
+
+.ccc-button-primary:disabled {
+  background: color-mix(in srgb, var(--ccc-muted-rose) 60%, var(--ccc-pearl-white));
+  border-color: color-mix(in srgb, var(--ccc-muted-rose) 55%, var(--ccc-stone-border));
+  color: color-mix(in srgb, var(--ccc-pearl-white) 70%, var(--ccc-eucalyptus-ink));
+  cursor: not-allowed;
 }
 
 .chaos-mode .ccc-button-primary:hover,
