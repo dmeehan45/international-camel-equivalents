@@ -70,6 +70,11 @@
         color: #475569;
         margin-top: 0.5rem;
       }
+      .gated {
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 0.75rem;
+      }
     </style>
   </head>
   <body>
@@ -86,6 +91,12 @@
         <select id="proxy" aria-label="Proxy" hidden></select>
         <button id="calculate">Convert</button>
       </div>
+
+      <section aria-label="Premium controls" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Premium</h2>
+        <p id="premium-status" class="meta" style="margin-top: 0;">Premium disabled.</p>
+        <button id="toggle-premium" type="button">Enable premium</button>
+      </section>
 
       <section aria-label="Bid customizer" style="margin-top: 1rem;">
         <h2 style="margin-bottom: 0.25rem;">Bid customizer</h2>
@@ -193,6 +204,22 @@
         <ul id="archive-list"></ul>
       </section>
 
+      <section aria-label="AI negotiation panel" style="margin-top: 1rem;" class="gated">
+        <h2 style="margin-bottom: 0.25rem;">AI negotiation coach (mock)</h2>
+        <p id="ai-panel-status" class="meta" style="margin-top: 0;">Run a conversion to see suggestions.</p>
+        <ul id="ai-suggestions"></ul>
+      </section>
+
+      <section aria-label="Leaderboard" style="margin-top: 1rem;" class="gated">
+        <h2 style="margin-bottom: 0.25rem;">Leaderboard</h2>
+        <p id="leaderboard-status" class="meta" style="margin-top: 0;">Top negotiators in this browser.</p>
+        <div class="row">
+          <input id="leaderboard-name" type="text" placeholder="Display name" aria-label="Leaderboard display name" />
+          <button id="submit-score" type="button">Submit current rank</button>
+        </div>
+        <ol id="leaderboard-list"></ol>
+      </section>
+
       <div id="error" class="error" aria-live="polite"></div>
       <div id="result" aria-live="polite"></div>
     </main>
@@ -225,6 +252,19 @@
         readBidHistory,
         writeBidHistory,
       } from '/src/core/history-archive.js';
+      import {
+        getPremiumGateMessage,
+        isPremiumEnabled,
+        readPremiumState,
+        writePremiumState,
+      } from '/src/core/premium-state.js';
+      import { buildNegotiationSuggestions } from '/src/core/ai-negotiation.js';
+      import {
+        createLeaderboardEntry,
+        readLeaderboard,
+        submitLeaderboardEntry,
+        writeLeaderboard,
+      } from '/src/core/leaderboard.js';
 
       const result = document.getElementById('result');
       const errorMessage = document.getElementById('error');
@@ -267,12 +307,22 @@
       const archiveBidButton = document.getElementById('archive-bid');
       const archiveStatus = document.getElementById('archive-status');
       const archiveList = document.getElementById('archive-list');
+      const premiumStatus = document.getElementById('premium-status');
+      const togglePremiumButton = document.getElementById('toggle-premium');
+      const aiPanelStatus = document.getElementById('ai-panel-status');
+      const aiSuggestions = document.getElementById('ai-suggestions');
+      const leaderboardStatus = document.getElementById('leaderboard-status');
+      const leaderboardNameInput = document.getElementById('leaderboard-name');
+      const submitScoreButton = document.getElementById('submit-score');
+      const leaderboardList = document.getElementById('leaderboard-list');
       const button = document.getElementById('calculate');
       const camelUsdRate = 500;
       const maxRows = 25;
       let proxies = [];
       let lastResult = null;
       let archiveEntries = [];
+      let premiumState = { subscribed: false };
+      let leaderboardEntries = [];
 
 
       function hydratePresetOptions() {
@@ -412,7 +462,6 @@
           renderProxySelects();
           render();
           renderCompare();
-      renderReferenceLibrary();
           renderReferenceLibrary();
           generatorStatus.textContent = `${newProxy.name} added to your local proxy library.`;
 
@@ -453,6 +502,92 @@
           const li = document.createElement('li');
           li.textContent = `${entry.summary} (${formatRelativeAge(entry.createdAt)})`;
           archiveList.append(li);
+        }
+      }
+
+
+      function renderPremiumStatus() {
+        const enabled = isPremiumEnabled(premiumState);
+        premiumStatus.textContent = enabled ? 'Premium enabled. Advanced features unlocked.' : 'Premium disabled.';
+        togglePremiumButton.textContent = enabled ? 'Disable premium' : 'Enable premium';
+      }
+
+      function renderNegotiationPanel() {
+        aiSuggestions.replaceChildren();
+
+        if (!isPremiumEnabled(premiumState)) {
+          aiPanelStatus.textContent = getPremiumGateMessage('AI negotiation coach');
+          return;
+        }
+
+        if (!lastResult) {
+          aiPanelStatus.textContent = 'Run a valid conversion to generate deterministic negotiation suggestions.';
+          return;
+        }
+
+        const suggestions = buildNegotiationSuggestions({
+          camelValue: lastResult.camelValue,
+          topProxy: lastResult.equivalents[0],
+        });
+
+        for (const suggestion of suggestions) {
+          const item = document.createElement('li');
+          item.textContent = suggestion;
+          aiSuggestions.append(item);
+        }
+
+        aiPanelStatus.textContent = 'Rule-based suggestions generated from your latest conversion.';
+      }
+
+      function renderLeaderboard() {
+        leaderboardList.replaceChildren();
+
+        if (!isPremiumEnabled(premiumState)) {
+          leaderboardStatus.textContent = getPremiumGateMessage('Leaderboard submissions');
+          return;
+        }
+
+        leaderboardStatus.textContent = 'Top negotiators in this browser.';
+        const topEntries = leaderboardEntries.slice(0, 10);
+        for (const entry of topEntries) {
+          const item = document.createElement('li');
+          item.textContent = `${entry.name} — ${entry.score} pts (${entry.camelValue} camels)`;
+          leaderboardList.append(item);
+        }
+      }
+
+      function togglePremium() {
+        premiumState = { subscribed: !isPremiumEnabled(premiumState) };
+        writePremiumState(premiumState);
+        renderPremiumStatus();
+        renderNegotiationPanel();
+        renderLeaderboard();
+      }
+
+      function submitRank() {
+        if (!isPremiumEnabled(premiumState)) {
+          leaderboardStatus.textContent = getPremiumGateMessage('Leaderboard submissions');
+          return;
+        }
+
+        if (!lastResult) {
+          leaderboardStatus.textContent = 'Run a valid conversion first, then submit your rank.';
+          return;
+        }
+
+        try {
+          const entry = createLeaderboardEntry({
+            name: leaderboardNameInput.value,
+            camelValue: lastResult.camelValue,
+          });
+
+          leaderboardEntries = submitLeaderboardEntry(leaderboardEntries, entry);
+          writeLeaderboard(leaderboardEntries);
+          leaderboardStatus.textContent = `${entry.name} entered the leaderboard with ${entry.score} points.`;
+          leaderboardNameInput.value = '';
+          renderLeaderboard();
+        } catch (error) {
+          leaderboardStatus.textContent = error.message;
         }
       }
 
@@ -602,10 +737,12 @@
               </tbody>
             </table>
           `;
+          renderNegotiationPanel();
         } catch (error) {
           lastResult = null;
           result.innerHTML = '';
           errorMessage.textContent = error.message;
+          renderNegotiationPanel();
         }
       }
 
@@ -614,11 +751,16 @@
       loadCustomizerSettings();
       await loadProxies();
       archiveEntries = readBidHistory();
+      premiumState = readPremiumState();
+      leaderboardEntries = readLeaderboard();
       renderArchive();
+      renderPremiumStatus();
       updateProxyVisibility();
       render();
       renderCompare();
       renderReferenceLibrary();
+      renderNegotiationPanel();
+      renderLeaderboard();
 
       unitInput.addEventListener('change', () => {
         updateProxyVisibility();
@@ -648,6 +790,8 @@
       openTwitterButton.addEventListener('click', openTwitterDraft);
       openWhatsappButton.addEventListener('click', openWhatsappDraft);
       archiveBidButton.addEventListener('click', archiveCurrentBid);
+      togglePremiumButton.addEventListener('click', togglePremium);
+      submitScoreButton.addEventListener('click', submitRank);
       compareAmountInput.addEventListener('input', renderCompare);
       compareFromInput.addEventListener('change', renderCompare);
       compareToInput.addEventListener('change', renderCompare);
