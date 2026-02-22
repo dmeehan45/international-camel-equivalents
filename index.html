@@ -115,6 +115,22 @@
         </select>
       </div>
 
+      <section aria-label="Reference library" style="margin-top: 1rem;">
+        <h2 style="margin-bottom: 0.25rem;">Reference library</h2>
+        <p class="meta" style="margin-top: 0;">Search canonical and custom proxies by name, category, and source.</p>
+        <div class="row">
+          <input id="reference-query" type="search" placeholder="Search reference proxies" aria-label="Reference query" />
+          <select id="reference-category" aria-label="Reference category"></select>
+          <select id="reference-source" aria-label="Reference source">
+            <option value="all">All sources</option>
+            <option value="reference">Reference only</option>
+            <option value="extension">Extensions only</option>
+          </select>
+        </div>
+        <div id="reference-meta" class="meta" aria-live="polite"></div>
+        <ul id="reference-list"></ul>
+      </section>
+
       <section aria-label="Proxy generator" style="margin-top: 1rem;">
         <h2 style="margin-bottom: 0.25rem;">Proxy generator</h2>
         <p class="meta" style="margin-top: 0;">Add your own bizarre proxy and keep it saved in this browser.</p>
@@ -160,6 +176,8 @@
           <button id="copy-share" type="button">Copy share text</button>
           <button id="open-mail" type="button">Open mail draft</button>
           <button id="open-sms" type="button">Open SMS draft</button>
+          <button id="open-twitter" type="button">Open Twitter draft</button>
+          <button id="open-whatsapp" type="button">Open WhatsApp draft</button>
         </div>
         <textarea id="share-output" rows="4" aria-label="Share output" style="width: 100%; margin-top: 0.75rem;"></textarea>
       </section>
@@ -198,7 +216,9 @@
         writeCustomizerSettings,
       } from '/src/core/customizer-settings.js';
       import { generateFormalizedMessage, listTemplates } from '/src/core/formalizer.js';
-      import { buildShareText, buildShareUrls } from '/src/core/share-export.js';
+      import { buildSharePayload } from '/src/core/share-export.js';
+      import { applyDashboardView, validateDashboardInput } from '/src/core/dashboard-view.js';
+      import { buildCompareSummary, filterReferenceProxies, validateReferenceCatalog } from '/src/core/reference-library.js';
       import {
         createHistoryEntry,
         formatRelativeAge,
@@ -218,6 +238,11 @@
       const overrideRateInput = document.getElementById('override-rate');
       const filterInput = document.getElementById('filter');
       const sortInput = document.getElementById('sort');
+      const referenceQueryInput = document.getElementById('reference-query');
+      const referenceCategoryInput = document.getElementById('reference-category');
+      const referenceSourceInput = document.getElementById('reference-source');
+      const referenceMeta = document.getElementById('reference-meta');
+      const referenceList = document.getElementById('reference-list');
       const compareAmountInput = document.getElementById('compare-amount');
       const compareFromInput = document.getElementById('compare-from');
       const compareToInput = document.getElementById('compare-to');
@@ -236,6 +261,8 @@
       const copyShareButton = document.getElementById('copy-share');
       const openMailButton = document.getElementById('open-mail');
       const openSmsButton = document.getElementById('open-sms');
+      const openTwitterButton = document.getElementById('open-twitter');
+      const openWhatsappButton = document.getElementById('open-whatsapp');
       const shareOutput = document.getElementById('share-output');
       const archiveBidButton = document.getElementById('archive-bid');
       const archiveStatus = document.getElementById('archive-status');
@@ -264,6 +291,40 @@
           option.textContent = template[0].toUpperCase() + template.slice(1);
           messageTemplateInput.append(option);
         }
+      }
+
+      function hydrateReferenceCategories() {
+        referenceCategoryInput.replaceChildren();
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = 'All categories';
+        referenceCategoryInput.append(allOption);
+
+        const categories = [...new Set(proxies.map((proxy) => proxy.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        for (const category of categories) {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          referenceCategoryInput.append(option);
+        }
+      }
+
+      function renderReferenceLibrary() {
+        const visible = filterReferenceProxies(proxies, {
+          query: referenceQueryInput.value,
+          category: referenceCategoryInput.value,
+          source: referenceSourceInput.value,
+        });
+
+        referenceList.replaceChildren();
+        const rows = visible.slice(0, 20);
+        for (const proxy of rows) {
+          const item = document.createElement('li');
+          item.textContent = `${proxy.name} — ${proxy.category} (${proxy.source ?? 'reference'})`;
+          referenceList.append(item);
+        }
+
+        referenceMeta.textContent = `Showing ${rows.length} of ${visible.length} proxies.`;
       }
 
       function renderProxySelects() {
@@ -299,21 +360,15 @@
       async function loadProxies() {
         const response = await fetch('/src/data/proxies.json');
         const baseProxies = await response.json();
+        validateReferenceCatalog(baseProxies);
         const extensions = readStoredExtensions();
         proxies = mergeWithExtensions(baseProxies, extensions);
         renderProxySelects();
+        hydrateReferenceCategories();
       }
 
       function updateProxyVisibility() {
         proxyInput.hidden = unitInput.value !== 'PROXY';
-      }
-
-      function sortEquivalents(items, sortValue) {
-        if (sortValue === 'quantity-asc') return items.sort((a, b) => a.quantity - b.quantity);
-        if (sortValue === 'name-asc') return items.sort((a, b) => a.proxyName.localeCompare(b.proxyName));
-        if (sortValue === 'name-desc') return items.sort((a, b) => b.proxyName.localeCompare(a.proxyName));
-
-        return items.sort((a, b) => b.quantity - a.quantity);
       }
 
       function buildModifiers() {
@@ -357,6 +412,8 @@
           renderProxySelects();
           render();
           renderCompare();
+      renderReferenceLibrary();
+          renderReferenceLibrary();
           generatorStatus.textContent = `${newProxy.name} added to your local proxy library.`;
 
           newProxyNameInput.value = '';
@@ -423,26 +480,22 @@
         }
       }
 
-      function buildSharePayload() {
-        if (!lastResult) {
-          shareOutput.value = 'Run a valid conversion first to build share text.';
+      function buildShareState() {
+        try {
+          const payload = buildSharePayload(lastResult, {
+            proxyId: messageProxyInput.value,
+            message: messageOutput.value,
+          });
+          shareOutput.value = payload.shareText;
+          return payload;
+        } catch (error) {
+          shareOutput.value = error.message;
           return null;
         }
-
-        const selectedProxy = lastResult.equivalents.find((item) => item.proxyId === messageProxyInput.value) ?? lastResult.equivalents[0];
-        const shareText = buildShareText({
-          camelValue: lastResult.camelValue,
-          proxyName: selectedProxy.proxyName,
-          proxyQuantity: selectedProxy.quantity,
-          message: messageOutput.value,
-        });
-
-        shareOutput.value = shareText;
-        return { shareText, urls: buildShareUrls(shareText) };
       }
 
       async function copyShareText() {
-        const payload = buildSharePayload();
+        const payload = buildShareState();
         if (!payload) return;
 
         if (navigator.clipboard?.writeText) {
@@ -455,15 +508,27 @@
       }
 
       function openMailDraft() {
-        const payload = buildSharePayload();
+        const payload = buildShareState();
         if (!payload) return;
         window.open(payload.urls.mailto, '_blank');
       }
 
       function openSmsDraft() {
-        const payload = buildSharePayload();
+        const payload = buildShareState();
         if (!payload) return;
         window.open(payload.urls.sms, '_blank');
+      }
+
+      function openTwitterDraft() {
+        const payload = buildShareState();
+        if (!payload) return;
+        window.open(payload.urls.twitter, '_blank');
+      }
+
+      function openWhatsappDraft() {
+        const payload = buildShareState();
+        if (!payload) return;
+        window.open(payload.urls.whatsapp, '_blank');
       }
 
       function saveCustomizerSettings() {
@@ -494,7 +559,7 @@
           const quantity = compareProxyUnits({ amount, fromProxyId, toProxyId }, proxies);
           const fromName = compareFromInput.options[compareFromInput.selectedIndex]?.textContent ?? 'Proxy A';
           const toName = compareToInput.options[compareToInput.selectedIndex]?.textContent ?? 'Proxy B';
-          compareResult.textContent = `${amount} ${fromName} equals ${quantity} ${toName}.`;
+          compareResult.textContent = buildCompareSummary({ amount, fromName, toName, quantity });
         } catch (error) {
           compareResult.textContent = error.message;
         }
@@ -506,6 +571,7 @@
         const proxyId = proxyInput.value;
 
         try {
+          validateDashboardInput({ amount, unit, proxyId });
           const modifiers = buildModifiers();
           const baseCamelValue = toCamelValue({ amount, unit, proxyId, camelUsdRate }, proxies);
           const { camelValue, equivalents } = calculateIceWithModifiers(
@@ -513,9 +579,10 @@
             proxies,
             modifiers,
           );
-          const query = filterInput.value.trim().toLowerCase();
-          const filtered = equivalents.filter((item) => item.proxyName.toLowerCase().includes(query));
-          const sorted = sortEquivalents([...filtered], sortInput.value);
+          const sorted = applyDashboardView(equivalents, {
+            query: filterInput.value,
+            sort: sortInput.value,
+          });
           const visible = sorted.slice(0, maxRows);
 
           lastResult = { amount, unit, camelValue, equivalents: sorted };
@@ -551,6 +618,7 @@
       updateProxyVisibility();
       render();
       renderCompare();
+      renderReferenceLibrary();
 
       unitInput.addEventListener('change', () => {
         updateProxyVisibility();
@@ -573,14 +641,19 @@
       button.addEventListener('click', render);
       addProxyButton.addEventListener('click', addProxy);
       generateMessageButton.addEventListener('click', renderFormalizedMessage);
-      buildShareButton.addEventListener('click', buildSharePayload);
+      buildShareButton.addEventListener('click', buildShareState);
       copyShareButton.addEventListener('click', () => { copyShareText().catch((error) => { shareOutput.value = error.message; }); });
       openMailButton.addEventListener('click', openMailDraft);
       openSmsButton.addEventListener('click', openSmsDraft);
+      openTwitterButton.addEventListener('click', openTwitterDraft);
+      openWhatsappButton.addEventListener('click', openWhatsappDraft);
       archiveBidButton.addEventListener('click', archiveCurrentBid);
       compareAmountInput.addEventListener('input', renderCompare);
       compareFromInput.addEventListener('change', renderCompare);
       compareToInput.addEventListener('change', renderCompare);
+      referenceQueryInput.addEventListener('input', renderReferenceLibrary);
+      referenceCategoryInput.addEventListener('change', renderReferenceLibrary);
+      referenceSourceInput.addEventListener('change', renderReferenceLibrary);
     </script>
   </body>
 </html>

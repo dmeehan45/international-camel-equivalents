@@ -29,11 +29,24 @@ export function toCamelValue(input, proxies) {
  * @param {ProxyDefinition[]} proxies
  */
 export function toEquivalents(camelValue, proxies) {
-  return proxies.map((proxy) => ({
-    proxyId: proxy.id,
-    proxyName: proxy.name,
-    quantity: round2(camelValue * proxy.ratePerCamel),
-  }));
+  if (!Number.isFinite(camelValue)) {
+    throw new Error('Camel value must be a finite number.');
+  }
+  if (camelValue < 0) {
+    throw new Error("That's worth negative camels—time to up your game!");
+  }
+
+  return proxies.map((proxy) => {
+    if (!Number.isFinite(proxy.ratePerCamel) || proxy.ratePerCamel <= 0) {
+      throw new Error('Proxy rate must be greater than zero.');
+    }
+
+    return {
+      proxyId: proxy.id,
+      proxyName: proxy.name,
+      quantity: round2(camelValue * proxy.ratePerCamel),
+    };
+  });
 }
 
 /**
