@@ -36,3 +36,8 @@ export function generateFormalizedMessage(input) {
 
   return format({ camelValue, proxyName, proxyQuantity });
 }
+
+export function generateEditableInstrument(input) {
+  const message = generateFormalizedMessage(input);
+  return `${message}\n\n[Insert family witness details]\n[Insert filing date]\n[Insert officiant signature]`;
+}
