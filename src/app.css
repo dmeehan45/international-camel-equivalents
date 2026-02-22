@@ -144,6 +144,7 @@ button {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.73rem;
+  min-height: 48px;
 }
 
 .route-nav .active,
@@ -180,7 +181,7 @@ button {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
 }
@@ -229,6 +230,12 @@ textarea {
   padding: var(--space-2);
   font: inherit;
   background: var(--surface-1);
+}
+
+input,
+select,
+button {
+  min-height: 48px;
 }
 
 input:focus,
@@ -455,6 +462,12 @@ pre {
 @media (min-width: 768px) {
   .mobile-tools {
     display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 }
 

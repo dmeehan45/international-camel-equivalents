@@ -25,8 +25,6 @@ export function Phase3Instrument(props: Props) {
     <>
       <PhaseHeader phaseLabel="Phase 3 of 4" heading={uxCopy.phases.phase3.heading} subtitle={uxCopy.phases.phase3.subtitle} />
       <LegalCard>
-        <label htmlFor="phase3-template">Template<select id="phase3-template" className="ccc-input" value={props.state.formalizer.template} onChange={(e) => props.dispatch({ type: 'setFormalizerField', field: 'template', value: e.target.value })}>{props.templates.map((template) => <option key={template} value={template}>{template}</option>)}</select></label>
-        <button className="cta-secondary" onClick={props.generateMessage}>Refresh draft</button>
         <label htmlFor="phase3-instrument-text">
           Instrument text
           <textarea
@@ -43,6 +41,14 @@ export function Phase3Instrument(props: Props) {
         <p id="phase3-instrument-limit" className="helper" aria-live="polite">{messageRemaining} characters remaining.</p>
         {props.state.formalizer.message.length >= INSTRUMENT_TEXT_LIMIT && <p className="error" role="alert">Instrument text reached the maximum length.</p>}
       </LegalCard>
+
+      <details className="context-card">
+        <summary>Draft controls</summary>
+        <div className="grid">
+          <label htmlFor="phase3-template">Template<select id="phase3-template" className="ccc-input" value={props.state.formalizer.template} onChange={(e) => props.dispatch({ type: 'setFormalizerField', field: 'template', value: e.target.value })}>{props.templates.map((template) => <option key={template} value={template}>{template}</option>)}</select></label>
+          <button className="cta-secondary" onClick={props.generateMessage}>Refresh draft</button>
+        </div>
+      </details>
 
       <details className="context-card">
         <summary>Export options</summary>
