@@ -4,17 +4,14 @@
 
 /**
  * Convert an input amount into camel value.
- * @param {{amount:number, unit:'USD'|'CAMEL'|'PROXY', camelUsdRate:number, proxyId?:string}} input
+ * @param {{amount:number, unit:'CAMEL'|'PROXY', proxyId?:string}} input
  * @param {ProxyDefinition[]} proxies
  * @returns {number}
  */
 export function toCamelValue(input, proxies) {
   if (!Number.isFinite(input.amount)) throw new Error('Input amount must be a finite number.');
   if (input.amount < 0) throw new Error("That's worth negative camels—time to up your game!");
-  if (input.camelUsdRate <= 0) throw new Error('Camel USD rate must be greater than zero.');
-
   if (input.unit === 'CAMEL') return round2(input.amount);
-  if (input.unit === 'USD') return round2(input.amount / input.camelUsdRate);
 
   const proxy = proxies.find((item) => item.id === input.proxyId);
   if (!proxy) throw new Error('Unknown proxy selected.');
@@ -55,7 +52,7 @@ export function toEquivalents(camelValue, proxies) {
  * 2) camel multiplier
  * 3) proxy rate overrides
  * 4) equivalent projection
- * @param {{amount:number, unit:'USD'|'CAMEL'|'PROXY', camelUsdRate:number, proxyId?:string}} input
+ * @param {{amount:number, unit:'CAMEL'|'PROXY', proxyId?:string}} input
  * @param {ProxyDefinition[]} proxies
  * @param {{camelMultiplier?:number, proxyRateOverrides?:Record<string, number>}} [modifiers]
  */

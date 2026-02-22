@@ -8,7 +8,7 @@ import { createHistoryEntry, readBidHistory, writeBidHistory } from '../src/core
 
 test('release smoke flow: calculate → formalize → share → archive', () => {
   const calculation = calculateIceWithModifiers(
-    { amount: 1000, unit: 'USD', camelUsdRate: 500 },
+    { amount: 2, unit: 'CAMEL' },
     proxies,
     { camelMultiplier: 1.2 },
   );
@@ -44,8 +44,8 @@ test('release smoke flow: calculate → formalize → share → archive', () => 
   };
 
   const entry = createHistoryEntry({
-    amount: 1000,
-    unit: 'USD',
+    amount: 2,
+    unit: 'CAMEL',
     camelValue: calculation.camelValue,
     summary: sharePayload.shareText,
   });

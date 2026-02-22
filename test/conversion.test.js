@@ -12,15 +12,15 @@ const canonicalCategories = new Set([
   'Other Bizarre Items and Collectives',
 ]);
 
-test('USD converts to camels at configured rate', () => {
-  const camelValue = toCamelValue({ amount: 1000, unit: 'USD', camelUsdRate: 500 }, proxies);
+test('CAMEL input returns camel amount directly', () => {
+  const camelValue = toCamelValue({ amount: 2, unit: 'CAMEL' }, proxies);
   assert.equal(camelValue, 2);
 });
 
 test('Proxy amount converts to camel value', () => {
   const yak = proxies.find((proxy) => proxy.name === 'Yaks');
   const camelValue = toCamelValue(
-    { amount: 5, unit: 'PROXY', proxyId: yak.id, camelUsdRate: 500 },
+    { amount: 5, unit: 'PROXY', proxyId: yak.id },
     proxies,
   );
 
@@ -35,7 +35,7 @@ test('Equivalent quantities are rounded to two decimals', () => {
 
 test('Negative values throw whimsical validation error', () => {
   assert.throws(
-    () => toCamelValue({ amount: -1, unit: 'CAMEL', camelUsdRate: 500 }, proxies),
+    () => toCamelValue({ amount: -1, unit: 'CAMEL' }, proxies),
     /negative camels/,
   );
 });
@@ -50,7 +50,7 @@ test('proxy categories are canonical and extension metadata is explicit', () => 
 
 test('modifier pipeline applies camel multiplier before equivalents', () => {
   const result = calculateIceWithModifiers(
-    { amount: 1000, unit: 'USD', camelUsdRate: 500 },
+    { amount: 2, unit: 'CAMEL' },
     proxies,
     { camelMultiplier: 1.5 },
   );
@@ -63,7 +63,7 @@ test('modifier pipeline applies camel multiplier before equivalents', () => {
 test('proxy override rate is used after camel value is calculated', () => {
   const yak = proxies.find((proxy) => proxy.name === 'Yaks');
   const result = calculateIceWithModifiers(
-    { amount: 5, unit: 'PROXY', proxyId: yak.id, camelUsdRate: 500 },
+    { amount: 5, unit: 'PROXY', proxyId: yak.id },
     proxies,
     { proxyRateOverrides: { [yak.id]: 2.5 } },
   );
@@ -77,7 +77,7 @@ test('proxy override rate is used after camel value is calculated', () => {
 test('Reference scenario: 3 elephants equals 20 camels', () => {
   const elephants = proxies.find((proxy) => proxy.name === 'Elephants');
   const camelValue = toCamelValue(
-    { amount: 3, unit: 'PROXY', proxyId: elephants.id, camelUsdRate: 500 },
+    { amount: 3, unit: 'PROXY', proxyId: elephants.id },
     proxies,
   );
 
@@ -87,7 +87,7 @@ test('Reference scenario: 3 elephants equals 20 camels', () => {
 
 test('Unknown proxy id is rejected with a clear error', () => {
   assert.throws(
-    () => toCamelValue({ amount: 3, unit: 'PROXY', proxyId: 'missing-proxy', camelUsdRate: 500 }, proxies),
+    () => toCamelValue({ amount: 3, unit: 'PROXY', proxyId: 'missing-proxy' }, proxies),
     /Unknown proxy selected/,
   );
 });
@@ -120,7 +120,7 @@ test('customizer scenario applies multiplier and override together', () => {
   const yaks = proxies.find((proxy) => proxy.name === 'Yaks');
 
   const result = calculateIceWithModifiers(
-    { amount: 3, unit: 'PROXY', proxyId: elephants.id, camelUsdRate: 500 },
+    { amount: 3, unit: 'PROXY', proxyId: elephants.id },
     proxies,
     { camelMultiplier: 1.1, proxyRateOverrides: { [yaks.id]: 2 } },
   );

@@ -20,9 +20,8 @@ export interface ProxyDefinition {
 
 export interface CalculationInput {
   amount: number;
-  unit: 'USD' | 'CAMEL' | 'PROXY';
+  unit: 'CAMEL' | 'PROXY';
   proxyId?: string;
-  camelUsdRate: number;
 }
 
 export interface ProxyEquivalent {

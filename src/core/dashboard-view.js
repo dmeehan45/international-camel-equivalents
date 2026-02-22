@@ -1,10 +1,14 @@
 /**
  * Validate dashboard calculator input before conversion.
- * @param {{amount:number, unit:'USD'|'CAMEL'|'PROXY', proxyId?:string}} input
+ * @param {{amount:number, unit:'CAMEL'|'PROXY', proxyId?:string}} input
  */
 export function validateDashboardInput(input) {
   if (!Number.isFinite(input.amount)) {
     throw new Error('Input amount must be a finite number.');
+  }
+
+  if (input.unit !== 'CAMEL' && input.unit !== 'PROXY') {
+    throw new Error('Input unit must be camel or proxy.');
   }
 
   if (input.unit === 'PROXY' && !input.proxyId) {
