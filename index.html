@@ -170,16 +170,22 @@
 
       <section aria-label="Sharing and export" style="margin-top: 1rem;">
         <h2 style="margin-bottom: 0.25rem;">Sharing and export</h2>
-        <p class="meta" style="margin-top: 0;">Build share text, copy it, or open messaging apps.</p>
+        <p class="meta" style="margin-top: 0;">Build share text, copy it, queue offline intents, or export as image/PDF.</p>
         <div class="row">
           <button id="build-share" type="button">Build share text</button>
           <button id="copy-share" type="button">Copy share text</button>
+          <button id="queue-share" type="button">Queue offline share</button>
           <button id="open-mail" type="button">Open mail draft</button>
           <button id="open-sms" type="button">Open SMS draft</button>
           <button id="open-twitter" type="button">Open Twitter draft</button>
           <button id="open-whatsapp" type="button">Open WhatsApp draft</button>
+          <button id="download-image" type="button">Download image</button>
+          <button id="download-pdf" type="button">Download PDF</button>
+          <button id="preview-qr" type="button">Preview QR payload</button>
         </div>
         <textarea id="share-output" rows="4" aria-label="Share output" style="width: 100%; margin-top: 0.75rem;"></textarea>
+        <div id="queue-status" class="meta" aria-live="polite"></div>
+        <div id="qr-preview" class="meta" aria-live="polite"></div>
       </section>
 
 
@@ -217,6 +223,9 @@
       } from '/src/core/customizer-settings.js';
       import { generateFormalizedMessage, listTemplates } from '/src/core/formalizer.js';
       import { buildSharePayload } from '/src/core/share-export.js';
+      import { buildImageExportDataUrl, buildPdfExportBlob } from '/src/core/export-artifacts.js';
+      import { buildQrPayload } from '/src/core/share-qr.js';
+      import { enqueueShareIntent, readShareQueue } from '/src/core/share-queue.js';
       import { applyDashboardView, validateDashboardInput } from '/src/core/dashboard-view.js';
       import { buildCompareSummary, filterReferenceProxies, validateReferenceCatalog } from '/src/core/reference-library.js';
       import {
@@ -259,11 +268,17 @@
       const messageOutput = document.getElementById('message-output');
       const buildShareButton = document.getElementById('build-share');
       const copyShareButton = document.getElementById('copy-share');
+      const queueShareButton = document.getElementById('queue-share');
       const openMailButton = document.getElementById('open-mail');
       const openSmsButton = document.getElementById('open-sms');
       const openTwitterButton = document.getElementById('open-twitter');
       const openWhatsappButton = document.getElementById('open-whatsapp');
+      const downloadImageButton = document.getElementById('download-image');
+      const downloadPdfButton = document.getElementById('download-pdf');
+      const previewQrButton = document.getElementById('preview-qr');
       const shareOutput = document.getElementById('share-output');
+      const queueStatus = document.getElementById('queue-status');
+      const qrPreview = document.getElementById('qr-preview');
       const archiveBidButton = document.getElementById('archive-bid');
       const archiveStatus = document.getElementById('archive-status');
       const archiveList = document.getElementById('archive-list');
@@ -273,6 +288,7 @@
       let proxies = [];
       let lastResult = null;
       let archiveEntries = [];
+      let queuedShareIntents = [];
 
 
       function hydratePresetOptions() {
@@ -531,6 +547,58 @@
         window.open(payload.urls.whatsapp, '_blank');
       }
 
+      function buildExportInput(payload) {
+        const selectedProxy = payload.selectedProxy;
+        return {
+          camelValue: lastResult.camelValue,
+          proxyName: selectedProxy.proxyName,
+          proxyQuantity: selectedProxy.quantity,
+          message: messageOutput.value,
+        };
+      }
+
+      function triggerDownload({ href, filename }) {
+        const anchor = document.createElement('a');
+        anchor.href = href;
+        anchor.download = filename;
+        anchor.click();
+      }
+
+      function downloadImageExport() {
+        const payload = buildShareState();
+        if (!payload) return;
+        const dataUrl = buildImageExportDataUrl(buildExportInput(payload));
+        triggerDownload({ href: dataUrl, filename: 'camel-courtship-share.svg' });
+      }
+
+      function downloadPdfExport() {
+        const payload = buildShareState();
+        if (!payload) return;
+        const blob = buildPdfExportBlob(buildExportInput(payload));
+        const href = URL.createObjectURL(blob);
+        triggerDownload({ href, filename: 'camel-courtship-share.pdf' });
+        setTimeout(() => URL.revokeObjectURL(href), 0);
+      }
+
+      function previewQrPayload() {
+        const payload = buildShareState();
+        if (!payload) return;
+        const qr = buildQrPayload({ mode: 'text', shareText: payload.shareText });
+        qrPreview.textContent = qr.preview;
+      }
+
+      function queueShareForLater() {
+        const payload = buildShareState();
+        if (!payload) return;
+        const queued = enqueueShareIntent({
+          shareText: payload.shareText,
+          channel: 'manual',
+          status: 'pending',
+        });
+        queuedShareIntents = readShareQueue();
+        queueStatus.textContent = `Queued ${queued.channel} share intent. Pending items: ${queuedShareIntents.length}.`;
+      }
+
       function saveCustomizerSettings() {
         writeCustomizerSettings({
           locationKey: locationPresetInput.value,
@@ -614,6 +682,8 @@
       loadCustomizerSettings();
       await loadProxies();
       archiveEntries = readBidHistory();
+      queuedShareIntents = readShareQueue();
+      queueStatus.textContent = `Pending offline share intents: ${queuedShareIntents.length}.`;
       renderArchive();
       updateProxyVisibility();
       render();
@@ -643,10 +713,14 @@
       generateMessageButton.addEventListener('click', renderFormalizedMessage);
       buildShareButton.addEventListener('click', buildShareState);
       copyShareButton.addEventListener('click', () => { copyShareText().catch((error) => { shareOutput.value = error.message; }); });
+      queueShareButton.addEventListener('click', queueShareForLater);
       openMailButton.addEventListener('click', openMailDraft);
       openSmsButton.addEventListener('click', openSmsDraft);
       openTwitterButton.addEventListener('click', openTwitterDraft);
       openWhatsappButton.addEventListener('click', openWhatsappDraft);
+      downloadImageButton.addEventListener('click', downloadImageExport);
+      downloadPdfButton.addEventListener('click', downloadPdfExport);
+      previewQrButton.addEventListener('click', previewQrPayload);
       archiveBidButton.addEventListener('click', archiveCurrentBid);
       compareAmountInput.addEventListener('input', renderCompare);
       compareFromInput.addEventListener('change', renderCompare);
