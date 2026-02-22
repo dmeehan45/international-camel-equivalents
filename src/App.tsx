@@ -12,7 +12,7 @@ import {
   writeStoredExtensions,
 } from './core/typed-core';
 import { buildCompareSummary, CANONICAL_PROXY_CATEGORIES, filterReferenceProxies } from './core/reference-library.js';
-import { listTemplates, generateFormalizedMessage } from './core/formalizer.js';
+import { listTemplates, generateEditableInstrument } from './core/formalizer.js';
 import { buildSharePayload } from './core/share-export.js';
 import { buildQrPayload } from './core/share-qr.js';
 import { buildHtmlExportDocument, buildImageExportDataUrl, buildPdfExportBlob } from './core/export-artifacts.js';
@@ -396,7 +396,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     try {
       if (!state.calculation) throw new Error('Run a calculation first.');
       const top = state.calculation.equivalents[0];
-      const message = generateFormalizedMessage({ template: state.formalizer.template, camelValue: state.calculation.camelValue, proxyQuantity: top.quantity, proxyName: top.proxyName });
+      const message = generateEditableInstrument({ template: state.formalizer.template, camelValue: state.calculation.camelValue, proxyQuantity: top.quantity, proxyName: top.proxyName });
       dispatch({ type: 'setFormalizerField', field: 'message', value: message });
       dispatch({ type: 'setFormalizerField', field: 'error', value: '' });
     } catch (error) {
@@ -413,6 +413,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
       proxyQuantity: payload.selectedProxy.quantity,
       proxyName: payload.selectedProxy.proxyName,
       message: state.formalizer.message,
+      qrLabel: qr.preview,
+      barcodeLabel: `BID-${Math.round(state.calculation.camelValue * 100)}-${payload.selectedProxy.proxyId.toUpperCase()}`,
     };
     return {
       payload,
@@ -423,30 +425,36 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     };
   }
 
-  async function runExportAction(action: 'copy' | 'download' | 'share') {
+  async function runExportAction(action: 'copy' | 'download' | 'share', forcedTab?: 'text' | 'image' | 'pdf' | 'html') {
     try {
       const { payload, qr, imageDataUrl, pdfBlob, htmlDocument } = buildExportArtifacts();
       dispatch({ type: 'setShare', text: payload.shareText, selectedProxyId: payload.selectedProxy.proxyId, qrPreview: qr.preview, error: '' });
+      const activeTab = forcedTab ?? exportTab;
       if (action === 'copy') {
-        const copyValue = exportTab === 'text' ? payload.shareText : exportTab === 'image' ? imageDataUrl : exportTab === 'html' ? htmlDocument : payload.shareText;
+        const copyValue = activeTab === 'text' ? payload.shareText : activeTab === 'image' ? imageDataUrl : activeTab === 'html' ? htmlDocument : payload.shareText;
         await navigator.clipboard.writeText(copyValue);
       }
 
       if (action === 'download') {
-        const href = exportTab === 'image'
+        const href = activeTab === 'image'
           ? imageDataUrl
-          : URL.createObjectURL(exportTab === 'pdf' ? pdfBlob : new Blob([exportTab === 'html' ? htmlDocument : payload.shareText], { type: exportTab === 'html' ? 'text/html' : 'text/plain' }));
-        const ext = exportTab === 'text' ? 'txt' : exportTab;
+          : URL.createObjectURL(activeTab === 'pdf' ? pdfBlob : new Blob([activeTab === 'html' ? htmlDocument : payload.shareText], { type: activeTab === 'html' ? 'text/html' : 'text/plain' }));
+        const ext = activeTab === 'text' ? 'txt' : activeTab;
         const link = document.createElement('a');
         link.href = href;
         link.download = `camel-export.${ext}`;
         link.click();
-        if (exportTab !== 'image') URL.revokeObjectURL(href);
+        if (activeTab !== 'image') URL.revokeObjectURL(href);
       }
 
+      const canNativeShare = typeof (navigator as Navigator & { share?: (data: ShareData) => Promise<void> }).share === 'function';
       if (action === 'share') {
-        if (!navigator.share) throw new Error('Native share is not available in this browser.');
-        await navigator.share({ text: payload.shareText, title: 'Camel Courtship Calculator' });
+        if (canNativeShare) {
+          await navigator.share({ text: payload.shareText, title: 'Camel Courtship Calculator' });
+        } else {
+          await navigator.clipboard.writeText(payload.shareText);
+          setExportToast('Web Share unavailable. Copied text export instead.');
+        }
       }
 
       dispatchForm({
@@ -460,8 +468,8 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         },
       });
 
-      const actionLabel = action === 'copy' ? 'Copied' : action === 'download' ? 'Downloaded' : 'Shared';
-      setExportToast(`${actionLabel} ${exportTab.toUpperCase()} export.`);
+      const actionLabel = action === 'copy' ? 'Copied' : action === 'download' ? 'Downloaded' : canNativeShare ? 'Shared' : 'Copied';
+      if (action !== 'share' || canNativeShare) setExportToast(`${actionLabel} ${activeTab.toUpperCase()} export.`);
     } catch (error) {
       dispatch({ type: 'setShare', text: '', selectedProxyId: '', qrPreview: '', error: error instanceof Error ? error.message : uxCopy.errors.exportFailed });
       setExportToast('');
@@ -489,6 +497,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
     dispatch({ type: 'setFlowStep', value: 'phase3-instrument' });
   }
 
+
+
+  useEffect(() => {
+    if (state.flowStep !== 'phase3-instrument') return;
+    if (!state.calculation || state.formalizer.message) return;
+    generateMessage();
+  }, [state.flowStep, state.calculation, state.formalizer.template]);
 
   useEffect(() => {
     const fromPath = pathPhaseMap[location.pathname];
@@ -591,6 +606,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
           setExportTab={setExportTab}
           generateMessage={generateMessage}
           runExportAction={runExportAction}
+          onCompleteInstrument={() => dispatch({ type: 'setFlowStep', value: 'phase4-docket' })}
           exportToast={exportToast}
           dispatch={dispatch}
           templates={listTemplates()}

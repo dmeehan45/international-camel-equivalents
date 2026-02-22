@@ -17,6 +17,8 @@ export function validateExportInput(input) {
   const proxyQuantity = Number(input?.proxyQuantity);
   const proxyName = input?.proxyName?.trim();
   const message = input?.message?.trim();
+  const qrLabel = input?.qrLabel?.trim() ?? '';
+  const barcodeLabel = input?.barcodeLabel?.trim() ?? '';
 
   if (!Number.isFinite(camelValue) || camelValue <= 0) {
     throw new Error('Camel value must be a positive number for export.');
@@ -31,6 +33,8 @@ export function validateExportInput(input) {
     proxyQuantity,
     proxyName,
     message: message ?? '',
+    qrLabel,
+    barcodeLabel,
   };
 }
 
@@ -43,6 +47,14 @@ export function buildImageExportDataUrl(input) {
 
   if (normalized.message) {
     lines.push(normalized.message);
+  }
+
+  if (normalized.qrLabel) {
+    lines.push(`QR: ${normalized.qrLabel}`);
+  }
+
+  if (normalized.barcodeLabel) {
+    lines.push(`BARCODE: ${normalized.barcodeLabel}`);
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="100%" height="100%" fill="#0f172a"/><text x="60" y="140" fill="#f8fafc" font-size="48" font-family="Arial, sans-serif">${sanitizeText(lines[0])}</text><text x="60" y="240" fill="#e2e8f0" font-size="38" font-family="Arial, sans-serif">${sanitizeText(lines[1])}</text><text x="60" y="330" fill="#cbd5e1" font-size="30" font-family="Arial, sans-serif">${sanitizeText(lines[2] ?? '')}</text></svg>`;
@@ -60,6 +72,14 @@ export function buildPdfExportBlob(input) {
     lines.push(normalized.message);
   }
 
+  if (normalized.qrLabel) {
+    lines.push(`QR Label: ${normalized.qrLabel}`);
+  }
+
+  if (normalized.barcodeLabel) {
+    lines.push(`Barcode Label: ${normalized.barcodeLabel}`);
+  }
+
   const content = lines
     .map((line, index) => `BT /F1 16 Tf 72 ${720 - index * 28} Td (${escapePdfText(line)}) Tj ET`)
     .join('\n');
@@ -74,6 +94,8 @@ export function buildHtmlExportDocument(input) {
   const heading = 'Camel Courtship Calculator';
   const summary = `${normalized.camelValue} camels equals ${normalized.proxyQuantity} ${normalized.proxyName}.`;
   const message = normalized.message ? `<p>${sanitizeText(normalized.message)}</p>` : '';
+  const qrLabel = normalized.qrLabel ? `<p><strong>QR Label:</strong> ${sanitizeText(normalized.qrLabel)}</p>` : '';
+  const barcodeLabel = normalized.barcodeLabel ? `<p><strong>Barcode Label:</strong> ${sanitizeText(normalized.barcodeLabel)}</p>` : '';
 
   return `<!doctype html>
 <html lang="en">
@@ -87,6 +109,8 @@ export function buildHtmlExportDocument(input) {
     <h1>${heading}</h1>
     <p>${sanitizeText(summary)}</p>
     ${message}
+    ${qrLabel}
+    ${barcodeLabel}
   </main>
 </body>
 </html>`;
