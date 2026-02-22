@@ -36,7 +36,7 @@ type State = {
   toolsOpen: boolean;
   celebrateOpen: boolean;
   sideQuest: string;
-  calcInput: { rawBid: string; amount: string; unit: 'CAMEL' | 'PROXY'; proxyId: string; camelUsdRate: string; parseNote: string; parseSource: string };
+  calcInput: { rawBid: string; amount: string; unit: 'CAMEL' | 'PROXY'; proxyId: string; parseNote: string; parseSource: string };
   dashboardQuery: string;
   dashboardSort: 'quantity-desc' | 'quantity-asc' | 'name-asc' | 'name-desc';
   topTab: TopTab;
@@ -90,6 +90,27 @@ function readDraft() {
   }
 }
 
+
+function normalizeDraftUnit(unit: unknown): 'CAMEL' | 'PROXY' {
+  return unit === 'PROXY' ? 'PROXY' : 'CAMEL';
+}
+
+function normalizeDraftCalcInput(draft: Partial<State> | null, mergedProxies: ProxyDefinition[]) {
+  const draftCalcInput = draft?.calcInput;
+  const proxyId = typeof draftCalcInput?.proxyId === 'string' && draftCalcInput.proxyId
+    ? draftCalcInput.proxyId
+    : mergedProxies[0]?.id ?? '';
+
+  return {
+    rawBid: typeof draftCalcInput?.rawBid === 'string' && draftCalcInput.rawBid ? draftCalcInput.rawBid : '2 camels',
+    amount: typeof draftCalcInput?.amount === 'string' && draftCalcInput.amount ? draftCalcInput.amount : '2',
+    unit: normalizeDraftUnit(draftCalcInput?.unit),
+    proxyId,
+    parseNote: '',
+    parseSource: '',
+  };
+}
+
 function buildInitialState(): State {
   const extensionProxies = readStoredExtensions() as ProxyDefinition[];
   const mergedProxies = mergeWithExtensions(referenceProxies, extensionProxies);
@@ -108,15 +129,7 @@ function buildInitialState(): State {
     toolsOpen: false,
     celebrateOpen: false,
     sideQuest: '',
-    calcInput: {
-      rawBid: draft?.calcInput?.rawBid ?? '2 camels',
-      amount: draft?.calcInput?.amount ?? '2',
-      unit: (draft?.calcInput?.unit as 'CAMEL' | 'PROXY') ?? 'CAMEL',
-      proxyId: draft?.calcInput?.proxyId ?? mergedProxies[0]?.id ?? '',
-      camelUsdRate: draft?.calcInput?.camelUsdRate ?? '500',
-      parseNote: '',
-      parseSource: '',
-    },
+    calcInput: normalizeDraftCalcInput(draft, mergedProxies),
     dashboardQuery: '',
     dashboardSort: 'quantity-desc',
     topTab: 'top',
@@ -221,7 +234,7 @@ function runCalculation(state: State, dispatch: Dispatch<Action>) {
   try {
     validateDashboardInput({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, proxyId: state.calcInput.proxyId });
     const camelMultiplier = resolveCamelMultiplier({ locationKey: state.customizer.locationKey, manualMultiplier: Number(state.customizer.manualMultiplier) });
-    const result = calculateIceWithModifiers({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, proxyId: state.calcInput.proxyId, camelUsdRate: Number(state.calcInput.camelUsdRate) }, state.mergedProxies, { camelMultiplier });
+    const result = calculateIceWithModifiers({ amount: Number(state.calcInput.amount), unit: state.calcInput.unit, proxyId: state.calcInput.proxyId }, state.mergedProxies, { camelMultiplier });
     dispatch({ type: 'setCalculation', value: result });
     dispatch({ type: 'setError', value: '' });
     dispatch({ type: 'setFlowStep', value: 'context' });
@@ -397,14 +410,13 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
   return (
     <section className="view-card ccc-card flow-surface">
       <Stepper step={state.flowStep} onChange={(value) => dispatch({ type: 'setFlowStep', value })} canNavigateTo={canOpenFlowStep} />
-      <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · baseline rate: {state.calcInput.camelUsdRate} · {draftSaved ? 'Saved' : 'Saving…'}</div>
+      <div className="sticky-chip">Bid summary: {state.calcInput.rawBid} · {draftSaved ? 'Saved' : 'Saving…'}</div>
 
       {state.flowStep === 'bid' && (
         <>
           <h2>Step 1: Enter camel bid</h2>
           <label>What&apos;s the bid?<input className="ccc-input" value={state.calcInput.rawBid} onChange={(e) => dispatch({ type: 'setCalcField', field: 'rawBid', value: e.target.value })} placeholder="2 camels, 5 yaks, 3 cows" /></label>
           <p className="helper">Examples: 2 camels, 5 yaks, 2 cows. ICE is the camel amount that matches your bid value.</p>
-          <label>Reference base rate (Affects calculation)<input className="ccc-input" value={state.calcInput.camelUsdRate} onChange={(e) => dispatch({ type: 'setCalcField', field: 'camelUsdRate', value: e.target.value })} /></label>
           <button className="ccc-button-primary cta-primary" onClick={() => runCalculation(state, dispatch)}>Calculate ICE</button>
           {state.calcInput.parseSource && <p className="result">{state.calcInput.parseSource}</p>}
         </>
@@ -450,7 +462,7 @@ function FlowView({ state, dispatch, draftSaved }: { state: State; dispatch: Dis
         <>
           <h2>Step 3: Results</h2>
           {state.calculation ? <p className="hero">{state.calculation.camelValue.toFixed(2)} camels</p> : <p>Run a bid to see results.</p>}
-          <p className="helper">Detection: {state.calcInput.rawBid} · Baseline rate reference: {state.calcInput.camelUsdRate} · Affects message/export: templates and share format only.</p>
+          <p className="helper">Detection: {state.calcInput.rawBid} · Affects message/export: templates and share format only.</p>
 
           <div className="stepper">
             <button className={state.topTab === 'top' ? 'step active' : 'step'} onClick={() => dispatch({ type: 'setTopTab', value: 'top' })}>Top picks</button>
@@ -626,7 +638,7 @@ export function App() {
       flowStep: state.flowStep,
       guidedMode: state.guidedMode,
       chaosMode: state.chaosMode,
-      calcInput: { rawBid: state.calcInput.rawBid, amount: state.calcInput.amount, unit: state.calcInput.unit, proxyId: state.calcInput.proxyId, camelUsdRate: state.calcInput.camelUsdRate },
+      calcInput: { rawBid: state.calcInput.rawBid, amount: state.calcInput.amount, unit: state.calcInput.unit, proxyId: state.calcInput.proxyId },
     }));
     const timeoutId = globalThis.setTimeout(() => setDraftSaved(true), 200);
     return () => globalThis.clearTimeout(timeoutId);
