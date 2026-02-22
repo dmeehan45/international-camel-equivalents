@@ -26,6 +26,13 @@ Use this checklist before cutting an MVP release.
 - [ ] Verify key text remains understandable and visible at normal zoom.
 - [ ] Confirm no release change removed semantic labels in core flows.
 
+
+## Performance sanity check
+
+- [ ] Confirm each phase route lazy-loads without blocking interaction (target: visible fallback under 200ms locally).
+- [ ] In Phase II, verify results filtering and sorting stay responsive while typing with 100+ equivalent rows.
+- [ ] In Phase IV, verify docket queue expand/collapse remains instant with 25+ archived items.
+
 ## Localization sanity check
 
 - [ ] Confirm no hard-coded locale formatting assumptions were introduced.

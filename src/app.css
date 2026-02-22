@@ -508,3 +508,47 @@ pre {
     top: 12.6rem;
   }
 }
+
+:root.reduced-motion-enabled * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root.high-contrast-enabled {
+  --surface-0: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: #f2f2f2;
+  --border-muted: #111111;
+  --text-main: #000000;
+  --text-subtle: #1a1a1a;
+  --accent-primary: #000000;
+  --accent-secondary: #0038a8;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-muted: #111111;
+    --text-main: #000000;
+    --text-subtle: #1a1a1a;
+  }
+
+  .view-card,
+  .context-card,
+  button,
+  input,
+  select,
+  textarea {
+    border-width: 2px;
+  }
+}
