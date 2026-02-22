@@ -2,85 +2,18 @@
   --ccc-ivory-mist: #ffffff;
   --ccc-pearl-white: #ffffff;
   --ccc-sage-mist: #f8fafc;
-  --ccc-stone-border: #9ca3af;
-  --ccc-eucalyptus-ink: #0f172a;
-  --ccc-charcoal-vow: #1e3a8a;
-  --ccc-champagne: #eab308;
-  --ccc-muted-rose: #6b7280;
+  --ccc-stone-border: #d1d5db;
+  --ccc-eucalyptus-ink: #1f2937;
+  --ccc-charcoal-vow: #1E3A8A;
+  --ccc-champagne: #D4AF37;
+  --ccc-muted-rose: #6B7280;
   --ccc-success-leaf: #1d4ed8;
-  --ccc-error-berry: #ef4444;
+  --ccc-error-berry: #dc2626;
   --ccc-card-radius: 12px;
   --ccc-pill-radius: 999px;
-  --ccc-button-radius: 8px;
-  --ccc-transition-standard: 200ms;
+  --ccc-button-radius: 10px;
+  --ccc-transition-standard: 180ms;
   --ccc-soft-floral-fade: #ffffff;
-  --ccc-font-heading: Inter, Arial, sans-serif;
-  --ccc-font-body: Inter, Arial, sans-serif;
-}
-
-.ccc-app {
-  background: var(--ccc-soft-floral-fade);
-  color: var(--ccc-eucalyptus-ink);
-  font-family: var(--ccc-font-body);
-  min-height: 100vh;
-}
-
-.ccc-card {
-  background: var(--ccc-pearl-white);
-  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 40%, transparent);
-  border-radius: var(--ccc-card-radius);
-  padding: 16px;
-}
-
-.ccc-heading {
-  color: var(--ccc-charcoal-vow);
-  font-family: var(--ccc-font-heading);
-  letter-spacing: 0.02em;
-}
-
-.ccc-button-primary {
-  align-items: center;
-  background: var(--ccc-charcoal-vow);
-  border: 1px solid color-mix(in srgb, var(--ccc-charcoal-vow) 70%, black);
-  border-radius: var(--ccc-button-radius);
-  color: var(--ccc-pearl-white);
-  cursor: pointer;
-  display: inline-flex;
-  font-weight: 700;
-  justify-content: center;
-  min-height: 48px;
-  min-width: 48px;
-  padding: 10px 20px;
-  transition: background var(--ccc-transition-standard) ease, box-shadow var(--ccc-transition-standard) ease;
-}
-
-.ccc-button-primary:hover {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ccc-champagne) 60%, transparent);
-}
-
-.ccc-button-primary:disabled {
-  background: color-mix(in srgb, var(--ccc-charcoal-vow) 45%, var(--ccc-pearl-white));
-  border-color: color-mix(in srgb, var(--ccc-stone-border) 55%, var(--ccc-pearl-white));
-  color: color-mix(in srgb, var(--ccc-pearl-white) 70%, var(--ccc-eucalyptus-ink));
-  cursor: not-allowed;
-}
-
-.cta-secondary {
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 50%, transparent);
-  color: var(--ccc-charcoal-vow);
-}
-
-.ccc-input {
-  border: 1px solid color-mix(in srgb, var(--ccc-stone-border) 45%, transparent);
-  border-radius: 8px;
-  color: var(--ccc-eucalyptus-ink);
-  min-height: 48px;
-  padding: 8px 12px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ccc-button-primary {
-    transition: none;
-  }
+  --ccc-font-heading: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  --ccc-font-body: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
 }

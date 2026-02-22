@@ -1,71 +1,51 @@
 export type FlowStepId =
-  | 'card1-basics'
-  | 'card2-adjudication'
-  | 'card3-review'
-  | 'card4-tune'
-  | 'card5-instrument'
-  | 'card6-queue';
+  | 'page1-landing'
+  | 'page2-basics'
+  | 'page3-offer'
+  | 'page4-proposal'
+  | 'page5-drafts';
 
 export type FlowStepContext = {
   currentStep: FlowStepId;
-  hasCalculation: boolean;
-  hasShareDraft: boolean;
-  includeTuneStep: boolean;
+  hasBasics: boolean;
+  hasOffer: boolean;
+  hasProposal: boolean;
 };
 
-const BASE_STEPS: FlowStepId[] = [
-  'card1-basics',
-  'card2-adjudication',
-  'card3-review',
-  'card5-instrument',
-  'card6-queue',
-];
+const FLOW_STEPS: FlowStepId[] = ['page1-landing', 'page2-basics', 'page3-offer', 'page4-proposal', 'page5-drafts'];
 
 export const FLOW_STEP_LABELS: Record<FlowStepId, string> = {
-  'card1-basics': 'Card 1 · Basics',
-  'card2-adjudication': 'Card 2 · Equivalent',
-  'card3-review': 'Card 3 · Confirm',
-  'card4-tune': 'Card 4 · Tune (optional)',
-  'card5-instrument': 'Card 5 · Proposal',
-  'card6-queue': 'Card 6 · Queue',
+  'page1-landing': 'Intro',
+  'page2-basics': 'Basics',
+  'page3-offer': 'Offer',
+  'page4-proposal': 'Text',
+  'page5-drafts': 'Drafts',
 };
 
-export function getFlowSteps(includeTuneStep: boolean): FlowStepId[] {
-  if (!includeTuneStep) return BASE_STEPS;
-  return ['card1-basics', 'card2-adjudication', 'card3-review', 'card4-tune', 'card5-instrument', 'card6-queue'];
-}
-
-export function isFlowStepComplete(step: FlowStepId, context: FlowStepContext): boolean {
-  if (step === 'card1-basics') return context.hasCalculation;
-  if (step === 'card2-adjudication') return context.hasCalculation;
-  if (step === 'card3-review') return context.hasCalculation;
-  if (step === 'card4-tune') return !context.includeTuneStep || context.hasCalculation;
-  if (step === 'card5-instrument') return context.hasShareDraft;
-  if (step === 'card6-queue') return context.hasShareDraft;
-  return false;
+export function getFlowSteps(): FlowStepId[] {
+  return FLOW_STEPS;
 }
 
 export function canOpenFlowStep(target: FlowStepId, context: FlowStepContext): boolean {
-  const flowSteps = getFlowSteps(context.includeTuneStep);
-  const currentIndex = flowSteps.indexOf(context.currentStep);
-  const targetIndex = flowSteps.indexOf(target);
+  const targetIndex = FLOW_STEPS.indexOf(target);
+  const currentIndex = FLOW_STEPS.indexOf(context.currentStep);
   if (targetIndex === -1 || currentIndex === -1) return false;
   if (targetIndex <= currentIndex) return true;
-
-  const stepsBeforeTarget = flowSteps.slice(0, targetIndex);
-  return stepsBeforeTarget.every((step) => isFlowStepComplete(step, context));
+  if (target === 'page2-basics') return true;
+  if (target === 'page3-offer') return context.hasBasics;
+  if (target === 'page4-proposal') return context.hasBasics && context.hasOffer;
+  if (target === 'page5-drafts') return context.hasProposal;
+  return false;
 }
 
 export function getNextFlowStep(context: FlowStepContext): FlowStepId | null {
-  const flowSteps = getFlowSteps(context.includeTuneStep);
-  const currentIndex = flowSteps.indexOf(context.currentStep);
-  if (currentIndex === -1 || currentIndex >= flowSteps.length - 1) return null;
-  return flowSteps[currentIndex + 1];
+  const index = FLOW_STEPS.indexOf(context.currentStep);
+  if (index === -1 || index >= FLOW_STEPS.length - 1) return null;
+  return FLOW_STEPS[index + 1];
 }
 
 export function getPreviousFlowStep(context: FlowStepContext): FlowStepId | null {
-  const flowSteps = getFlowSteps(context.includeTuneStep);
-  const currentIndex = flowSteps.indexOf(context.currentStep);
-  if (currentIndex <= 0) return null;
-  return flowSteps[currentIndex - 1];
+  const index = FLOW_STEPS.indexOf(context.currentStep);
+  if (index <= 0) return null;
+  return FLOW_STEPS[index - 1];
 }
