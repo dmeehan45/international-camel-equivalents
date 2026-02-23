@@ -149,6 +149,43 @@ function Shell() {
   const [advisoryToolNotice, setAdvisoryToolNotice] = useState('');
   const [isPersistentDisclaimerVisible, setPersistentDisclaimerVisible] = useState(() => !sessionStorage.getItem(uxCopy.disclaimer.sessionKey));
   const [isStepCertifying, setIsStepCertifying] = useState(false);
+  const [isBooting, setIsBooting] = useState(true);
+  const [activeLegalModal, setActiveLegalModal] = useState<string | null>(null);
+
+  const legalModalCopy: Record<string, { title: string; body: string }> = {
+    'how-it-works': {
+      title: 'How It Works',
+      body: 'The advisory workflow captures proposal particulars, applies DBT-indexed proxy benchmarking, generates an indenture draft, and retains artifacts in local storage for later review. No remote transmission is required for core document generation.',
+    },
+    'dbt-rate-disclaimer': {
+      title: 'DBT Rate Disclaimer',
+      body: 'All DBT values are advisory benchmarks intended for ceremonial valuation exercises. Rates may adjust with volatility inputs, category multipliers, and Bureau recertification windows.',
+    },
+    'advisory-scope': {
+      title: 'Advisory Scope',
+      body: 'Outputs from this interface are non-binding advisory drafts and should not be interpreted as enforceable legal instruments in any sensible jurisdiction.',
+    },
+    'terms-of-advisory-use': {
+      title: 'Terms of Advisory Use',
+      body: 'By using this service, you acknowledge that contract text is generated for advisory review, not legal execution. You assume all responsibility for interpretation, adaptation, and any ceremonial misunderstandings.',
+    },
+    'privacy-notice': {
+      title: 'Privacy Notice',
+      body: 'We collect no personal data because we have no backend. Your proposals remain gloriously ephemeral unless you intentionally save drafts to local device storage.',
+    },
+    'cookie-policy-none-used': {
+      title: 'Cookie Policy (None Used)',
+      body: 'This application does not issue tracking cookies, analytics cookies, or preference cookies. Session behaviors rely on local browser storage only.',
+    },
+    'contact-support': {
+      title: 'Support Contact',
+      body: 'For assistance, message support@dowryadvisory.invalid with a description of the issue, browser version, and any relevant proxy identifiers.',
+    },
+    'report-rate-anomalies': {
+      title: 'Report Rate Anomalies',
+      body: 'If a proxy benchmark appears inconsistent, submit a rate anomaly report with timestamp, selected proxy, and displayed DBT rate for review by advisory operations.',
+    },
+  };
 
   const advisoryNow = new Date();
   const advisoryDate = formatAdvisoryDate(advisoryNow);
@@ -170,6 +207,11 @@ function Shell() {
     const timer = window.setTimeout(() => setIsStepCertifying(false), 360);
     return () => window.clearTimeout(timer);
   }, [step]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsBooting(false), 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const flowContext = {
     currentStep: step,
@@ -400,9 +442,11 @@ function Shell() {
       </header>
 
       <nav className="phase-progress" aria-label="Progress">
+        <p className="phase-progress-meta">Step {getFlowSteps().indexOf(step) + 1} of {getFlowSteps().length}</p>
         {getFlowSteps().map((item) => (
           <button key={item} className={item === step ? 'step active' : 'step'} disabled={!canOpenFlowStep(item, flowContext)} onClick={() => setStep(item)}>
-            {FLOW_STEP_LABELS[item]}
+            <span className="step-indicator">{canOpenFlowStep(item, flowContext) && item !== step ? '✓' : getFlowSteps().indexOf(item) + 1}</span>
+            <span>{FLOW_STEP_LABELS[item]}</span>
           </button>
         ))}
       </nav>
@@ -410,6 +454,12 @@ function Shell() {
       {step !== 'page1-landing' && <button className="text-only-link" onClick={startOver}>{uxCopy.global.startOver}</button>}
 
       <section className="view-card">
+        {isBooting && (
+          <div className="boot-loader" role="status" aria-live="polite">
+            <div className="boot-loader-shimmer" aria-hidden="true" />
+            <p>Initializing DBT connection…</p>
+          </div>
+        )}
         {isStepCertifying && <p className="helper dbt-certifying">Certifying with DBT...</p>}
         {step === 'page1-landing' && <Page1Landing copy={uxCopy} howOpen={howOpen} onToggleHow={() => setHowOpen((v) => !v)} onBegin={() => setStep('page2-basics')} />}
 
@@ -545,18 +595,35 @@ function Shell() {
       </section>
 
       <footer className="legal-footer">
-        <p>{uxCopy.global.footer.brandLine}</p>
-        <p className="legal-footer-links">
-          {uxCopy.global.footer.links.map((link, index) => (
-            <span key={link.label}>
-              {index > 0 ? ' • ' : ''}
-              <a href={link.href}>{link.label}</a>
-            </span>
-          ))}
-        </p>
-        <p>{uxCopy.global.footer.ratesLine}</p>
-        <p>{uxCopy.global.footer.advisoryLine}</p>
+        <div>
+          <h3>Service</h3>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('how-it-works')}>How It Works</button>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('dbt-rate-disclaimer')}>DBT Rate Disclaimer</button>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('advisory-scope')}>Advisory Scope</button>
+        </div>
+        <div>
+          <h3>Legal</h3>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('terms-of-advisory-use')}>Terms of Advisory Use</button>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('privacy-notice')}>Privacy Notice</button>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('cookie-policy-none-used')}>Cookie Policy (none used)</button>
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('contact-support')}>support@dowryadvisory.invalid</button>
+          <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('report-rate-anomalies')}>Report Rate Anomalies</button>
+        </div>
+        <p className="footer-rates-line">Rates as of February 23, 2026.</p>
       </footer>
+
+      {activeLegalModal && (
+        <div className="legal-modal-overlay" role="dialog" aria-modal="true" aria-label={legalModalCopy[activeLegalModal].title}>
+          <article className="legal-modal-card">
+            <h3>{legalModalCopy[activeLegalModal].title}</h3>
+            <p>{legalModalCopy[activeLegalModal].body}</p>
+            <button type="button" className="ccc-button-primary" onClick={() => setActiveLegalModal(null)}>Close</button>
+          </article>
+        </div>
+      )}
 
       {isPersistentDisclaimerVisible && (
         <div className="persistent-disclaimer" role="status">

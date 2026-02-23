@@ -8,27 +8,58 @@ type Props = {
 };
 
 export function Page1Landing({ copy, howOpen, onToggleHow, onBegin }: Props) {
+  const benefits = [
+    {
+      title: 'Fast & Simple',
+      detail: 'One-click proxy selection and contract generation',
+    },
+    {
+      title: 'DBT-Indexed Rates',
+      detail: 'Live benchmarking across 100+ certified alternatives',
+    },
+    {
+      title: 'Secure Advisory',
+      detail: 'Documents stored locally • No data collection',
+    },
+  ];
+
+  const trustLines = [
+    'DBT v2.026 Certified',
+    'Bureau of Absurd Exchanges Compliant',
+    'Advisory Use Only',
+    'Not Legal Advice',
+    '256-bit Local Encryption',
+    'GDPR-Style Privacy (No Data Processed)',
+    'SOC 2 Inspired Controls',
+  ];
+
   return (
     <div className="intro-landing">
       <header className="intro-hero" aria-label="Advisory service introduction">
         <p className="intro-kicker">Advisory Workflow Platform</p>
         <h2>{copy.page1.title}</h2>
-        <p className="intro-tagline">{copy.page1.tagline}</p>
-        {copy.page1.body.map((line) => <p key={line}>{line}</p>)}
+        <p className="intro-tagline">Securely formalize marriage proposals with DBT-certified proxy valuation.</p>
+        <div className="intro-microcopy" aria-label="Service highlights">
+          <p>Generate compliant indentures in under three minutes.</p>
+          <p>No login required. Instant advisory documents. Auditable rate history.</p>
+        </div>
       </header>
 
-      <section className="trust-rail" aria-label="Advisory trust markers">
-        <div className="trust-badge-grid">
-          {copy.page1.trustBadges.map((badge) => (
-            <p className="trust-badge" key={badge}>
-              <span className="trust-badge-dot" aria-hidden="true" />
-              {badge}
+      <section className="benefits-grid" aria-label="Service benefits">
+        {benefits.map((benefit) => (
+          <article className="benefit-card" key={benefit.title}>
+            <h3>{benefit.title}</h3>
+            <p>{benefit.detail}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="trust-bar" aria-label="Trust and compliance markers">
+        <div className="trust-line-items">
+          {trustLines.map((line) => (
+            <p className="trust-line" key={line}>
+              <span aria-hidden="true">•</span> {line}
             </p>
-          ))}
-        </div>
-        <div className="trust-mentions" aria-label="Advisory endorsements">
-          {copy.page1.trustMentions.map((mention) => (
-            <p key={mention}>{mention}</p>
           ))}
         </div>
       </section>
@@ -48,17 +79,16 @@ export function Page1Landing({ copy, howOpen, onToggleHow, onBegin }: Props) {
         </summary>
 
         <ol>
-          {copy.page1.howItWorksSteps.map((step) => (
-            <li key={step.title}>
-              <strong>{step.title}</strong> — {step.detail}
-            </li>
-          ))}
+          <li>Enter basic proposal particulars.</li>
+          <li>Select a certified proxy and quantity.</li>
+          <li>Review and customize the generated indenture.</li>
+          <li>Export or transmit the advisory document.</li>
+          <li>Manage drafts in your secure local docket.</li>
         </ol>
 
-        <p className="helper">{copy.page1.howItWorksText}</p>
+        <p className="helper">{copy.page1.footnotes[0]}</p>
+        <p className="helper">{copy.page1.footnotes[1]}</p>
       </details>
-
-      {copy.page1.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
     </div>
   );
 }
