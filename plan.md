@@ -1,238 +1,321 @@
-# Parallel Plan: Absurdity UX Compliance Sweep
+# Parallel Plan: Page 5 Post-Bid Section — Further Advisory Tools
 
 ## Executive overview
-We are running a focused UX compliance sweep to align the 5-page Dowry Proposal app with the **Absurdity UX Checklist**: a polished legal-SaaS shell that treats absurd proxy bidding with deadpan seriousness.
+We are expanding **Page 5 (Advisory Docket)** with a gated “Further Advisory Tools” section that unlocks only after a user records their first successful bid. The feature targets users who have completed the core journey and are ready for optional, high-flavor add-ons that maintain a polished legal-SaaS tone while delivering absurd proxy humor.
 
-Audience: first-time mobile users who should complete the core flow in under 3 minutes without confusion, while discovering layered humor.
+Who this is for:
+- Returning users who already understand the base flow and can handle optional complexity.
+- Mobile-first users who need modal/sheet interactions that preserve docket context.
 
 How we will prove it works:
-- A checklist-to-implementation trace shows every High-priority UX standard mapped to specific files and UI behavior.
-- Automated build + targeted tests pass.
-- Manual UX walkthrough verifies visual/copy/interaction standards on Pages 1–5.
-- Export/share artifacts preserve the “official absurd” presentation.
+- Unlock logic is binary and testable: hidden before first successful bid, visible after.
+- Exactly 4 advisory tiles render in a horizontal strip (desktop) and mobile-friendly layout.
+- Each tool opens in modal/full-screen sheet with close/back affordances and retains docket context after closing.
+- Each tool emits output that can influence future bids/contracts through local persistence and/or explicit “Apply” actions.
+- Quiz prototype ships first and fully works end-to-end.
 
-## Current-state review (from repo inspection)
-Observed strengths:
-- Proxy-first selection flow, search drawer, slider, and formula preview already exist on Page 3.
-- Page 4 already supports editable contract text with personalization controls and export/share actions.
-- Centralized copy dictionary exists (`uxCopy`) for consistent legalese updates.
+## Contracts first (shared interfaces and stubs)
 
-Observed gaps relative to checklist:
-- No explicit faux-legal seal/watermark requirement enforcement in contract/PDF surfaces.
-- No explicit contract-only serif typography contract in page/component plan.
-- No explicit tooltip standard for proxy blurbs/ARIA treatment in the sweep contract.
-- No explicit global footnote coverage target (1–2 per page) and DBT reference count target in acceptance checks.
-- No explicit post-bid unlock verification contract tied to Page 5 side tools messaging.
+These contracts are fixed before implementation so all agents can work independently.
 
-## Contracts first
-These contracts make all workstreams independent and prevent drift.
+### 1) Shared TypeScript contracts
+Create/update shared types in `src/domain/types.ts` (or a new `src/domain/advisoryTools.ts` if cleaner):
 
-### UX compliance contract (shared checklist schema)
-Each checklist item tracked as:
-- `id`: stable key (e.g., `visual.seal`, `copy.footnotes`, `flow.post_bid_unlock`)
-- `priority`: `high | medium | low`
-- `status`: `pass | fail | partial | n/a`
-- `evidence`: file path(s) + UI action
-- `ownerWorkstream`: WS1..WS5
-- `fixPath`: exact file path(s) to change (if failing)
+```ts
+export type AdvisoryToolKey =
+  | 'proxy_personality_assessment'
+  | 'bid_volatility_simulator'
+  | 'maiden_response_estimator'
+  | 'full_dbt_archive';
 
-Source-of-truth artifact:
-- `docs/ux-absurdity-compliance-matrix.md`
+export interface AdvisoryToolTile {
+  key: AdvisoryToolKey;
+  title: string;
+  subtitle: string; // e.g. DBT-certified subtitle
+  teaser: string;
+  icon: 'quiz' | 'simulator' | 'estimator' | 'archive';
+  unlockRequirement: 'first_successful_bid';
+}
 
-### Shared UI/copy contracts
-- All pages must contain at least one pseudo-legal phrase.
-- Every page must expose 1–2 fine-print/footnote elements.
-- Page 3 proxy cards/library must support tooltip text (hover/tap) and accessible labels.
-- Page 4 contract preview/export must render serif legal text and include seal/watermark treatment.
-- Page 5 side tools must remain hidden until first bid is saved, then display unlock messaging.
+export interface AdvisoryUnlockState {
+  hasUnlockedFurtherAdvisoryTools: boolean;
+  unlockedAtISO?: string;
+}
 
-### Shared test contract
-- Contract tests remain in:
-  - `test/workflow-ui.contract.test.js`
-- E2E path remains in:
-  - `cypress/e2e/master-spec-flow.cy.js`
-- Visual/manual evidence checklist added in:
-  - `docs/final-qa-signoff-checklist.md` (append UX sweep section)
+export interface ProxyAffinityResult {
+  proxyId: string;
+  proxyName: string;
+  rate: number;
+  rationale: string;
+  snippet: string;
+  assessedAtISO: string;
+}
+```
 
-### Stub file map
-- `docs/ux-absurdity-compliance-matrix.md` (new)
-- `plan.md` (this file)
-- `src/design/legal-theme.css`
-- `src/app.css`
-- `src/content/uxCopy.ts`
-- `src/pages/Page3Offer.tsx`
-- `src/pages/Page4Proposal.tsx`
+### 2) localStorage key contract
+Centralize constants in `src/core/customizer-settings.js` or `src/core/advisory-tools-storage.ts`:
+- `dbt.advisory.unlock.v1` → `AdvisoryUnlockState`
+- `dbt.advisory.quiz.lastResult.v1` → `ProxyAffinityResult`
+- `dbt.advisory.quiz.applyNextBid.v1` → `{ proxyId: string; source: 'quiz' }`
+- `dbt.advisory.forecast.applied.v1` → `{ proposalId: string; rateDeltaDisplay: number; expiresAtISO: string }`
+
+### 3) UI component contracts
+New components and props (exact paths):
+- `src/components/advisory/AdvisoryToolsStrip.tsx`
+  - Props: `{ tiles: AdvisoryToolTile[]; isUnlocked: boolean; onOpenTool: (key: AdvisoryToolKey) => void; }`
+- `src/components/advisory/AdvisoryToolShell.tsx`
+  - Props: `{ title: string; onClose: () => void; children: ReactNode; mobileFullScreen?: boolean; }`
+- `src/components/advisory/tools/ProxyPersonalityAssessmentModal.tsx`
+  - Props: `{ isOpen: boolean; onClose: () => void; proxyLibrary: ProxyRecord[]; onApplyToNextBid: (result: ProxyAffinityResult) => void; }`
+
+### 4) Tool behavior contracts
+- **Quiz first** is MVP-complete in this iteration.
+- Other three tools may launch with contract-complete scaffold + deterministic placeholder logic, but must:
+  - Open/close correctly.
+  - Show title/header and advisory framing.
+  - Emit structured output object and “Apply” action hook.
+- No API/network calls; all logic local and deterministic/randomized from local pools.
+
+### 5) Stub file map with exact paths
+- `src/phases/Phase4Docket.tsx`
 - `src/pages/Page5Drafts.tsx`
-- `src/components/LegalCard.tsx`
+- `src/domain/types.ts`
+- `src/content/uxCopy.ts`
+- `src/components/advisory/AdvisoryToolsStrip.tsx` (new)
+- `src/components/advisory/AdvisoryToolShell.tsx` (new)
+- `src/components/advisory/tools/ProxyPersonalityAssessmentModal.tsx` (new)
+- `src/components/advisory/tools/BidVolatilitySimulatorModal.tsx` (new)
+- `src/components/advisory/tools/MaidenResponseEstimatorModal.tsx` (new)
+- `src/components/advisory/tools/FullDbtArchiveModal.tsx` (new)
+- `src/core/advisory-tools-storage.ts` (new)
+- `src/core/advisory-tools-engine.ts` (new)
 - `test/workflow-ui.contract.test.js`
 - `cypress/e2e/master-spec-flow.cy.js`
-- `docs/final-qa-signoff-checklist.md`
-
-## Parallel workstreams
-
-### Workstream 1 — Compliance matrix + audit baseline
-**Agent role:** UX standards auditor  
-**File ownership:** `docs/ux-absurdity-compliance-matrix.md` (new), `docs/final-qa-signoff-checklist.md` (UX section only)  
-**Inputs:** Absurdity UX Checklist text + shared contracts above  
-**Outputs:** explicit pass/fail baseline with evidence and remediation targets.
-
-**Step-by-step tasks**
-1. Create matrix with every checklist item (High/Medium/Low) and stable IDs.
-2. Record baseline status from current implementation with evidence links.
-3. Mark each failing item with `fixPath` and mapped workstream owner.
-4. Add signoff checklist entries that mirror only High-priority IDs.
-
-**Success criteria**
-- Matrix includes 100% of checklist items.
-- Every High-priority item has status + evidence + owner.
-- No ambiguous entries (“looks good”, “maybe” disallowed).
-
-**Validation steps**
-- `npm run build` (must still pass; docs-only changes should not break build).
-- Manual read-through: all High-priority IDs present in both matrix and signoff list.
-
-**Edge cases + negative tests**
-- If an item is not applicable, mark `n/a` with reason and reviewer action.
-- If evidence is missing, item must remain `fail`, not `partial`.
 
 ---
 
-### Workstream 2 — Visual shell compliance (legal SaaS styling)
-**Agent role:** Design-system implementer  
-**File ownership:** `src/design/legal-theme.css`, `src/app.css`, `src/components/LegalCard.tsx`  
-**Inputs:** WS1 matrix IDs for visual category + shared UI contracts  
-**Outputs:** legal shell styling updates (seal, border, serif scoping, spacing/grid consistency).
+## Parallel workstreams (independent, no waiting)
 
-**Step-by-step tasks**
-1. Add faux-legal border/seal/watermark classes for contract and card surfaces.
-2. Scope serif typography to contract preview/export containers only.
-3. Ensure mobile spacing/grid rules hit 16–24px rhythm and prevent horizontal overflow.
-4. Add/confirm visual token hooks for subtle gold accents and high-contrast fallback behavior.
+## Workstream 1 — Unlock gating + tile host
+**Agent role:** Docket flow engineer
 
-**Success criteria**
-- Contract area visually differs with serif + official seal treatment.
-- Non-contract UI remains sans-serif.
-- Mobile view has no horizontal scroll on all 5 pages.
+**File ownership (exclusive):**
+- `src/phases/Phase4Docket.tsx`
+- `src/pages/Page5Drafts.tsx`
 
-**Validation steps**
-- `npm run build`
-- `npm run test -- test/workflow-ui.contract.test.js`
-- Manual responsive check in browser devtools at 375px width.
+**Inputs:** Contracts in this `plan.md` only.
 
-**Edge cases + negative tests**
-- High-contrast mode must remain readable when gold accents are suppressed.
-- Very long contract content must not clip watermark/seal.
+**Outputs:**
+- Unlock gate wired to first successful bid signal.
+- Tile strip mounted with 4 tools and proper desktop/mobile placement.
 
----
+**Step-by-step tasks:**
+1. Add read-only unlock-state selector based on storage key contract.
+2. Render locked placeholder text when not unlocked.
+3. Render `AdvisoryToolsStrip` with exactly 4 tiles when unlocked.
+4. Wire `onOpenTool` state in Page 5 and keep docket list mounted beneath/behind overlays.
+5. Ensure close/back returns user to same scroll position/context.
 
-### Workstream 3 — Copy, legalese, and footnote coverage
-**Agent role:** Content systems editor  
-**File ownership:** `src/content/uxCopy.ts`  
-**Inputs:** WS1 matrix IDs for copy/language + page contracts  
-**Outputs:** checklist-compliant pompous legalese, advisory errors, placeholders, and footnotes.
+**Success criteria (binary):**
+- Before first successful bid: no advisory tiles shown.
+- After first successful bid: 4 advisory tiles shown.
+- Opening/closing any tool does not navigate away from Page 5.
 
-**Step-by-step tasks**
-1. Add/normalize pseudo-legal phrasing on each page header/subtitle set.
-2. Ensure 1–2 dry-ironic footnotes per page in copy model.
-3. Add/verify absurd advisory error copy and dynamic placeholders.
-4. Ensure DBT/Bureau references hit target count across flow.
+**Validation steps:**
+- `npm run build` (passes)
+- `npm run test -- test/workflow-ui.contract.test.js` (passes unlock assertions)
+- Manual UI: save first successful bid → revisit Page 5 → tools appear.
 
-**Success criteria**
-- Every page has at least one legalese phrase and one footnote.
-- Error messages remain helpful while preserving tone.
-- Copy references DBT/Bureau in at least 5 flow locations.
-
-**Validation steps**
-- `npm run build`
-- `npm run test -- test/workflow-ui.contract.test.js`
-- Grep check: `rg "DBT|Bureau of Absurd Exchanges" src/content/uxCopy.ts` returns >=5 matches.
-
-**Edge cases + negative tests**
-- Required-field messaging remains clear (no joke-only errors).
-- Footnotes do not overflow small screens.
+**Edge cases + negative tests:**
+- Corrupt unlock storage payload falls back to locked state without crash.
+- Duplicate successful-bid writes do not duplicate UI state.
 
 ---
 
-### Workstream 4 — Interaction delight + guardrails
-**Agent role:** Interaction engineer  
-**File ownership:** `src/pages/Page3Offer.tsx`, `src/pages/Page4Proposal.tsx`, `src/pages/Page5Drafts.tsx`  
-**Inputs:** WS1 matrix IDs for interactions/flow + existing props contracts  
-**Outputs:** tooltip discoverability, volatility feedback, editable contract guard toasts, post-bid unlock behavior.
+## Workstream 2 — Shared advisory shell, visual style, and responsive behavior
+**Agent role:** UI systems engineer
 
-**Step-by-step tasks**
-1. Add proxy tooltip behavior for hover/tap/long-press with accessible semantics.
-2. Ensure Page 3 volatility updates/alerts are surfaced subtly on load/refresh.
-3. Add advisory warning toast when contract edits could affect certification.
-4. Confirm Page 5 side tools are gated pre-bid and unlock with explicit “new tools” message post-bid.
+**File ownership (exclusive):**
+- `src/components/advisory/AdvisoryToolsStrip.tsx`
+- `src/components/advisory/AdvisoryToolShell.tsx`
+- (If needed) scoped styles in `src/app.css` only under `.advisory-tools-*` namespace
 
-**Success criteria**
-- Tooltips work via mouse and touch interaction.
-- Contract edit warning appears on first edit in session.
-- Side tools hidden before first saved bid and visible after.
+**Inputs:** Contracts and tile metadata shape from `plan.md`.
 
-**Validation steps**
-- `npm run build`
-- `npm run test -- test/workflow-ui.contract.test.js`
-- Manual flow: complete first bid, verify unlock transition text.
+**Outputs:**
+- Professional SaaS tile strip with navy border, gold accent, serif subtitle.
+- Modal/sheet shell component with subtle fades only.
 
-**Edge cases + negative tests**
-- Empty library search still shows clear empty-state copy.
-- Re-editing contract should not spam repeated toasts.
+**Step-by-step tasks:**
+1. Implement horizontal scrollable tile row with max 4 cards rendered.
+2. Add icon slot + teaser + subtitle styling per card.
+3. Implement reusable shell with desktop modal + mobile full-screen sheet fallback.
+4. Add back/close affordance always visible and keyboard-accessible.
+5. Enforce no animation beyond subtle opacity fade.
+
+**Success criteria (binary):**
+- Desktop: tools appear as strip/right-drawer-compatible block.
+- Mobile: tools open full-screen sheet and are fully usable.
+- Visual style includes navy/gold/serif treatment and remains readable.
+
+**Validation steps:**
+- `npm run build` (passes)
+- Manual responsive check at 375px and 1280px widths.
+
+**Edge cases + negative tests:**
+- Long teaser text truncates gracefully.
+- Reduced-motion settings do not break transitions.
 
 ---
 
-### Workstream 5 — QA automation + integration evidence
-**Agent role:** Integrator/QA lead  
-**File ownership:** `test/workflow-ui.contract.test.js`, `cypress/e2e/master-spec-flow.cy.js`, `docs/final-qa-signoff-checklist.md` (execution results only)  
-**Inputs:** contracts + completed artifacts from WS1–WS4  
-**Outputs:** automated checks and manual QA record mapped 1:1 to checklist IDs.
+## Workstream 3 — Proxy Personality Assessment (quiz-first complete)
+**Agent role:** Feature implementer (MVP priority)
 
-**Step-by-step tasks**
-1. Extend tests for: serif contract scope, tooltip availability, post-bid unlock gate, legalese/footnote presence.
-2. Update Cypress happy path with checks for DBT volatility and contract clause coverage.
-3. Run and record pass/fail with known environment limitations.
-4. Mark final statuses in signoff checklist referencing matrix IDs.
+**File ownership (exclusive):**
+- `src/components/advisory/tools/ProxyPersonalityAssessmentModal.tsx`
+- `src/core/advisory-tools-engine.ts`
+- `src/core/advisory-tools-storage.ts`
+- `src/content/uxCopy.ts` (quiz copy keys only)
 
-**Success criteria**
-- All new assertions map directly to matrix IDs.
-- Test failures identify exact violated standard.
-- Signoff checklist has no unowned High-priority failures.
+**Inputs:** Shared contracts + existing proxy library data.
 
-**Validation steps**
+**Outputs:**
+- End-to-end 5–7 question quiz with progress, auto-advance, result, and apply-to-next-bid behavior.
+
+**Step-by-step tasks:**
+1. Define question pool with category mapping and slight per-run randomization.
+2. Implement 5–7 step quiz state machine (single-select, auto-advance).
+3. Compute spirit proxy match and generate certified result copy + snippet.
+4. Persist result and apply flag using storage contract keys.
+5. Add retake/re-certification path that resets quiz state.
+
+**Success criteria (binary):**
+- Quiz completes without reload and shows result card.
+- “Apply to Next Bid” writes storage payload with selected proxy.
+- Retake produces a fresh question order and new assessment timestamp.
+
+**Validation steps:**
+- `npm run build` (passes)
+- `npm run test -- test/workflow-ui.contract.test.js` (quiz flow assertions pass)
+- Manual: complete quiz twice, verify re-certification updates timestamp.
+
+**Edge cases + negative tests:**
+- Missing proxy library entries degrade gracefully with fallback proxy.
+- User closes modal mid-quiz and reopens: resume policy explicitly enforced (either restart or resume, documented in copy).
+
+---
+
+## Workstream 4 — Remaining three tool scaffolds with output hooks
+**Agent role:** Tool scaffolding engineer
+
+**File ownership (exclusive):**
+- `src/components/advisory/tools/BidVolatilitySimulatorModal.tsx`
+- `src/components/advisory/tools/MaidenResponseEstimatorModal.tsx`
+- `src/components/advisory/tools/FullDbtArchiveModal.tsx`
+- `src/content/uxCopy.ts` (non-quiz advisory keys only)
+
+**Inputs:** Contracts in `plan.md` only.
+
+**Outputs:**
+- Functional modal scaffolds for simulator, estimator, archive.
+- Rule-based placeholder engines with structured output and “Apply” hooks.
+
+**Step-by-step tasks:**
+1. Implement simulator with 3–5 turns, scenario cards, and simple chart placeholder.
+2. Implement estimator with proposal selector + sliders + deterministic percentage result.
+3. Implement archive with generated timeline, filter controls, and insight summary.
+4. Ensure each tool has “Apply Forecast/Clause/Trend” button wired to no-op callback or storage hook.
+5. Ensure headers and outputs match bureaucratic deadpan tone.
+
+**Success criteria (binary):**
+- Each tool opens/closes and renders required flow elements.
+- Each tool emits structured output object when user taps apply.
+- No tool blocks core docket interactions after closing.
+
+**Validation steps:**
+- `npm run build` (passes)
+- Manual click-through of all three tools.
+
+**Edge cases + negative tests:**
+- Empty proposal list path shows non-crashing empty state with guidance.
+- Scenario/archive generation does not produce undefined labels.
+
+---
+
+## Workstream 5 — Integration tests, e2e flow, and screenshot evidence
+**Agent role:** QA + integration verifier
+
+**File ownership (exclusive):**
+- `test/workflow-ui.contract.test.js`
+- `cypress/e2e/master-spec-flow.cy.js`
+- `docs/final-qa-signoff-checklist.md` (new section only)
+
+**Inputs:** Contracts and behavior defined in this plan.
+
+**Outputs:**
+- Automated coverage for unlock gate + quiz MVP.
+- Manual signoff checklist + screenshot references.
+
+**Step-by-step tasks:**
+1. Add contract tests for locked/unlocked rendering and tile count=4.
+2. Add test for quiz completion and apply-to-next-bid storage write.
+3. Add e2e path from first successful bid to tool unlock and quiz run.
+4. Record manual checks for mobile modal behavior and context retention.
+5. Attach screenshot artifacts for Page 5 unlocked strip and quiz result screen.
+
+**Success criteria (binary):**
+- All added tests pass locally.
+- Screenshot evidence exists for unlocked strip and quiz output.
+- Signoff checklist maps each check to a concrete action.
+
+**Validation steps:**
 - `npm run build`
 - `npm run test -- test/workflow-ui.contract.test.js`
-- `npm run test:e2e -- --spec cypress/e2e/master-spec-flow.cy.js` (if environment supports browser runtime)
+- `npm run test:e2e -- --spec cypress/e2e/master-spec-flow.cy.js`
 
-**Edge cases + negative tests**
-- E2E should assert no horizontal scrolling on mobile viewport.
-- Export/share paths must not drop absurd clauses.
+**Edge cases + negative tests:**
+- Verify tools remain hidden after failed/incomplete bid.
+- Verify mobile close button always returns to same docket context.
 
-## Integration plan (dependency-free execution)
-- WS1 defines matrix IDs first, but WS2–WS5 can start immediately using provisional IDs listed in this plan and reconcile by stable keys.
-- Conflict prevention:
-  - Copy-only changes isolated to `uxCopy.ts` (WS3).
-  - Interaction logic isolated to page files (WS4).
-  - Visual tokens/styles isolated to CSS + `LegalCard` (WS2).
-  - Tests isolated to test directories (WS5).
-- Merge order (recommended, not blocking): WS1 → WS2/WS3/WS4 in parallel → WS5 final assertion pass.
-- If shared file collision occurs, resolve by moving additions into new scoped helper blocks/classes rather than editing existing lines broadly.
+---
 
-## Acceptance checklist (1:1 with workstream success criteria)
-- [x] AC1: Compliance matrix includes every checklist item with evidence and owner.
-- [x] AC2: All High-priority visual standards pass (seal, serif scoping, spacing, no mobile overflow).
-- [x] AC3: All High-priority copy standards pass (legalese per page, footnotes per page, clause quality).
-- [x] AC4: All High-priority interaction standards pass (live volatility cues, proxy sync, drawer discoverability, post-bid unlock).
-- [x] AC5: Automated tests assert key standards and pass in CI-compatible environment.
-- [x] AC6: Manual walkthrough confirms <3 minute happy path and zero confusion blockers.
+## Integration plan that avoids dependencies
+- All workstreams can start immediately because contracts, file ownership, and stubs are fixed in this plan.
+- Shared-file conflict prevention:
+  - `uxCopy.ts` split by namespace ownership: WS3 edits `advisory.quiz.*`; WS4 edits `advisory.simulator.*`, `advisory.estimator.*`, `advisory.archive.*`.
+  - No other shared files overlap.
+- Use adapter pattern to avoid cross-editing:
+  - WS3/WS4 both call stable helpers from `advisory-tools-engine.ts`; if helper missing, tool component can include temporary local adapter and later switch import in same file only.
+- Merge order (no blocking required):
+  1. WS2 (shared shell + visuals)
+  2. WS1 (host + gating)
+  3. WS3 and WS4 in parallel
+  4. WS5 final verification pass
+- Feature flag optional fallback (if needed): `advisoryToolsV1Enabled` local constant in Page 5 defaults true in dev.
 
-## Risks + mitigations (parallel-specific)
-- **Risk: Contract drift between checklist IDs and tests.**  
-  **Mitigation:** WS1 owns stable IDs; WS5 must reference IDs directly in test names/comments.
-- **Risk: Style regressions from shared CSS edits.**  
-  **Mitigation:** WS2 uses prefixed classes (`legal-shell-*`) and avoids global element selectors.
-- **Risk: Humor over-rotation hurting clarity.**  
-  **Mitigation:** WS3 keeps required-field and error copy plain-first, joke-second.
-- **Risk: Hidden coupling in page state for unlock logic.**  
-  **Mitigation:** WS4 gates by existing saved-bid signal only; no new global state unless contract is amended.
-- **Risk: E2E environment instability.**  
-  **Mitigation:** WS5 treats E2E as best-effort, records limitation, and preserves deterministic contract tests as required gate.
+## Acceptance checklist (mapped 1:1 to success criteria)
+- [ ] AC1: Advisory tools hidden pre-first-successful-bid.
+- [ ] AC2: Advisory tools visible post-first-successful-bid.
+- [ ] AC3: Exactly 4 tiles render with official styling.
+- [ ] AC4: Tools open in modal/sheet and close back to same docket context.
+- [ ] AC5: Quiz runs 5–7 questions with step progress and auto-advance.
+- [ ] AC6: Quiz result provides certified proxy output + shareable snippet.
+- [ ] AC7: “Apply to Next Bid” persists proxy suggestion payload.
+- [ ] AC8: Volatility simulator scaffold emits forecast output + apply action.
+- [ ] AC9: Maiden estimator scaffold emits probability output + clause action.
+- [ ] AC10: Archive scaffold emits trend insight + apply action.
+- [ ] AC11: Contract tests cover unlock gate + quiz apply path.
+- [ ] AC12: E2E verifies first-bid unlock and quiz completion.
+- [ ] AC13: Screenshot artifacts captured for unlocked strip + quiz output.
+
+## Risks and mitigations (parallel-work specific)
+- **Risk: contract drift across tool payloads.**
+  - Mitigation: strict shared interfaces in `types.ts`; PR checks fail if tool outputs are `any`.
+- **Risk: hidden coupling to existing docket state shape.**
+  - Mitigation: WS1 introduces an adapter function at boundary (`mapDocketToAdvisoryInputs`) and keeps internals local.
+- **Risk: merge conflicts in `uxCopy.ts`.**
+  - Mitigation: namespaced key ownership per workstream and alphabetical insertion blocks.
+- **Risk: modal behavior differs on mobile vs desktop.**
+  - Mitigation: single reusable `AdvisoryToolShell` with breakpoint prop; test both 375px and desktop widths.
+- **Risk: over-scoping beyond MVP.**
+  - Mitigation: enforce “quiz-first complete, others scaffolded but functional” in acceptance criteria.

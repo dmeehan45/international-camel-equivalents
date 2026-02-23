@@ -92,3 +92,32 @@ export interface DocketBidMeta {
   camelEquivalent: number;
   rateLabel: string;
 }
+
+export type AdvisoryToolKey =
+  | 'proxy_personality_assessment'
+  | 'bid_volatility_simulator'
+  | 'maiden_response_estimator'
+  | 'full_dbt_archive';
+
+export interface AdvisoryToolTile {
+  key: AdvisoryToolKey;
+  title: string;
+  subtitle: string;
+  teaser: string;
+  icon: 'quiz' | 'simulator' | 'estimator' | 'archive';
+  unlockRequirement: 'first_successful_bid';
+}
+
+export interface AdvisoryUnlockState {
+  hasUnlockedFurtherAdvisoryTools: boolean;
+  unlockedAtISO?: string;
+}
+
+export interface ProxyAffinityResult {
+  proxyId: string;
+  proxyName: string;
+  rate: number;
+  rationale: string;
+  snippet: string;
+  assessedAtISO: string;
+}
