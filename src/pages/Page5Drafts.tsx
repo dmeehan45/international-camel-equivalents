@@ -52,7 +52,10 @@ export function Page5Drafts(props: Props) {
         <div>
           <h3>{props.copy.page5.extras}</h3>
           <p className="helper badge-volatility">{props.copy.page5.unlock}</p>
-          <AdvisoryToolsStrip tiles={props.tools} isUnlocked={props.toolsUnlocked} onOpenTool={props.onSelectTool} />
+          <details className="advisory-tools-mobile-accordion" open>
+            <summary>Side quests & tools</summary>
+            <AdvisoryToolsStrip tiles={props.tools} isUnlocked={props.toolsUnlocked} onOpenTool={props.onSelectTool} />
+          </details>
           <p className="helper">{props.copy.page5.localNote}</p>
         </div>
       )}

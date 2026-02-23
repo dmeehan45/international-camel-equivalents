@@ -61,7 +61,8 @@ export function Page3Offer(props: Props) {
 
       <button className="cta-secondary" onClick={props.onToggleLibrary}>{props.copy.page3.browse}</button>
       {props.isLibraryOpen && (
-        <div className="drawer">
+        <div className="drawer drawer--library">
+          <button className="cta-secondary drawer-mobile-close" onClick={props.onToggleLibrary}>Close library</button>
           <input value={query} placeholder={props.copy.page3.searchPlaceholder} onChange={(e) => setQuery(e.target.value)} />
           <div className="cards proxy-library-list">
             {filteredLibrary.map((card) => (

@@ -31,6 +31,7 @@ export function Page4Proposal(props: Props) {
   const previousCountRef = useRef(props.selectedClauses.length);
   const previewRef = useRef<HTMLTextAreaElement | null>(null);
   const reachedCap = props.selectedClauses.length >= 5;
+  const [mobilePreviewHeight, setMobilePreviewHeight] = useState<string | undefined>(undefined);
 
   const previewSnippet = useMemo(() => {
     const activeClause = props.clauseOptions.find((option) => option.name === previewClause);
@@ -43,6 +44,36 @@ export function Page4Proposal(props: Props) {
     }
     previousCountRef.current = props.selectedClauses.length;
   }, [props.selectedClauses.length]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updatePreviewHeight = () => {
+      if (window.innerWidth >= 768) {
+        setMobilePreviewHeight(undefined);
+        return;
+      }
+
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      setMobilePreviewHeight(`${Math.max(220, viewportHeight - 280)}px`);
+    };
+
+    updatePreviewHeight();
+
+    const viewport = window.visualViewport;
+    viewport?.addEventListener('resize', updatePreviewHeight);
+    window.addEventListener('orientationchange', updatePreviewHeight);
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updatePreviewHeight) : null;
+    if (observer) observer.observe(document.documentElement);
+
+    return () => {
+      viewport?.removeEventListener('resize', updatePreviewHeight);
+      window.removeEventListener('orientationchange', updatePreviewHeight);
+      observer?.disconnect();
+    };
+  }, []);
 
   return (
     <div className="proposal-layout-root">
@@ -60,6 +91,7 @@ export function Page4Proposal(props: Props) {
               props.onFirstEditWarning();
               props.onSetProposalText(e.target.value);
             }}
+            style={mobilePreviewHeight ? { maxHeight: mobilePreviewHeight } : undefined}
           />
         </div>
 
