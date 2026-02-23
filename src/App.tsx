@@ -595,24 +595,26 @@ function Shell() {
       </section>
 
       <footer className="legal-footer">
-        <div>
-          <h3>Service</h3>
+        <details className="footer-section" open>
+          <summary><span className="footer-title">Service</span></summary>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('how-it-works')}>How It Works</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('dbt-rate-disclaimer')}>DBT Rate Disclaimer</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('advisory-scope')}>Advisory Scope</button>
-        </div>
-        <div>
-          <h3>Legal</h3>
+        </details>
+        <details className="footer-section" open>
+          <summary><span className="footer-title">Legal</span></summary>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('terms-of-advisory-use')}>Terms of Advisory Use</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('privacy-notice')}>Privacy Notice</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('cookie-policy-none-used')}>Cookie Policy (none used)</button>
-        </div>
-        <div>
-          <h3>Contact</h3>
+        </details>
+        <details className="footer-section" open>
+          <summary><span className="footer-title">Contact</span></summary>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('contact-support')}>support@dowryadvisory.invalid</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('report-rate-anomalies')}>Report Rate Anomalies</button>
-        </div>
-        <p className="footer-rates-line">Rates as of February 23, 2026.</p>
+        </details>
+        <p className="footer-rates-line">{uxCopy.global.footer.ratesLine}</p>
+        <p className="footer-rates-line">{uxCopy.global.footer.brandLine}</p>
+        <p className="footer-rates-line">{uxCopy.global.footer.advisoryLine}</p>
       </footer>
 
       {activeLegalModal && (
