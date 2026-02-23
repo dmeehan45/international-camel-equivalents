@@ -355,3 +355,29 @@ pre {
     border: 0;
   }
 }
+
+
+.clause-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.clause-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid #c8d4ea;
+  border-radius: 10px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.clause-pill.is-active {
+  border-color: var(--ccc-gold);
+  background: #fffaf0;
+}
+
+.clause-snippet {
+  margin-top: 6px;
+}

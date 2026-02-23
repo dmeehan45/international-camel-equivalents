@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { uxCopy } from '../content/uxCopy';
 
 type Tone = 'Formal' | 'Ironic' | 'Pedantic';
@@ -10,12 +11,12 @@ type Props = {
   onTogglePersonalize: () => void;
   customSentence: string;
   onSetCustomSentence: (value: string) => void;
-  selectedClause: string;
-  onSetSelectedClause: (value: string) => void;
+  selectedClauses: string[];
+  onToggleClause: (value: string) => void;
   tone: Tone;
   tones: readonly Tone[];
   onSetTone: (value: Tone) => void;
-  clauseOptions: readonly string[];
+  clauseOptions: readonly { name: string; text: string }[];
   onGenerate: () => void;
   onCopy: () => void;
   onDownloadTxt: () => void;
@@ -26,6 +27,23 @@ type Props = {
 };
 
 export function Page4Proposal(props: Props) {
+  const [previewClause, setPreviewClause] = useState<string>('');
+  const previousCountRef = useRef(props.selectedClauses.length);
+  const previewRef = useRef<HTMLTextAreaElement | null>(null);
+  const reachedCap = props.selectedClauses.length >= 5;
+
+  const previewSnippet = useMemo(() => {
+    const activeClause = props.clauseOptions.find((option) => option.name === previewClause);
+    return activeClause?.text.split('\n').find((line) => line.trim() && !line.startsWith('Addendum')) || '';
+  }, [props.clauseOptions, previewClause]);
+
+  useEffect(() => {
+    if (props.selectedClauses.length > previousCountRef.current && previewRef.current) {
+      previewRef.current.scrollTop = previewRef.current.scrollHeight;
+    }
+    previousCountRef.current = props.selectedClauses.length;
+  }, [props.selectedClauses.length]);
+
   return (
     <div className="proposal-layout-root">
       <h2>{props.copy.page4.title}</h2>
@@ -34,6 +52,7 @@ export function Page4Proposal(props: Props) {
         <div className="legal-shell-contract">
           <span className="dbt-seal-badge">DBT CERTIFIED SEAL</span>
           <textarea
+            ref={previewRef}
             className="contract-text"
             rows={20}
             value={props.proposalText}
@@ -55,9 +74,29 @@ export function Page4Proposal(props: Props) {
       {props.personalizeOpen && (
         <div className="drawer">
           <label>{props.copy.page4.clauseLabel}
-            <select value={props.selectedClause} onChange={(e) => props.onSetSelectedClause(e.target.value)}>
-              {props.clauseOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
+            <div className="clause-grid" role="group" aria-label={props.copy.page4.clauseLabel}>
+              {props.clauseOptions.map((option) => {
+                const checked = props.selectedClauses.includes(option.name);
+                return (
+                  <label
+                    key={option.name}
+                    className={checked ? 'clause-pill is-active' : 'clause-pill'}
+                    onMouseEnter={() => setPreviewClause(option.name)}
+                    onFocus={() => setPreviewClause(option.name)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => props.onToggleClause(option.name)}
+                      disabled={!checked && reachedCap}
+                    />
+                    <span>{option.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <small className="helper">Select up to 5 addendum clauses.</small>
+            {previewClause && <p className="helper clause-snippet"><strong>Preview:</strong> {previewSnippet}</p>}
           </label>
           <label>{props.copy.page4.customSentence}
             <input value={props.customSentence} onChange={(e) => props.onSetCustomSentence(e.target.value)} />

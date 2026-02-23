@@ -19,7 +19,40 @@ import { readAdvisoryUnlockState, readApplyNextBidProxyId, writeAdvisoryUnlockSt
 const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
 const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
 const tones = ['Formal', 'Ironic', 'Pedantic'] as const;
-const clauseOptions = ['None', 'Proxy Maintenance Waiver', 'Absurdity Escalation Rider', 'No Take-Backs Covenant'] as const;
+const clauseOptions = [
+  {
+    name: 'No Take-Backs Covenant',
+    text: `Addendum [X]: No Take-Backs Covenant
+
+The Parties hereby covenant and agree that, upon execution of this Indenture, the dowry bid comprising [Quantity] [Proxy] shall be irrevocable and non-withdrawable in perpetuity, notwithstanding any subsequent change in sentiment, discovery of hidden defects in the proxy (including but not limited to latent hypnotic tendencies in hyenas or unexpected venomous properties in mantis shrimp), or intervention by celestial or terrestrial authorities.
+
+In the event the Proposer attempts to retract the bid after acceptance, the Acceptor shall be entitled to immediate enforcement of the full [Quantity] [Proxy] plus compound interest calculated at the DBT Volatility Index rate prevailing on the date of attempted retraction, compounded daily until delivery. Such interest shall accrue in the form of additional proxies of equivalent absurdity, to be selected by the Acceptor from the current DBT library.
+
+This covenant survives termination of the marriage, annulment, or dissolution by any court of competent jurisdiction (including courts of public opinion). Any attempt to invoke "changed circumstances" shall be deemed frivolous and subject to a penalty of one (1) barrel of monkeys (chaotic variant) per day of delay.`,
+  },
+  {
+    name: 'Marital Discord Covenant',
+    text: `Addendum [X]: Marital Discord Covenant
+
+In anticipation of potential discord arising during the term of the proposed union, the Parties agree to an automatic escalation mechanism for the dowry bid. Should any dispute, whether verbal, silent, or expressed through interpretive dance, exceed three (3) consecutive days without amicable resolution, the original bid of [Quantity] [Proxy] shall escalate by five percent (5%) per week in equivalent units of the same proxy class, or—if escalation in-kind is impractical—by substitution of a proxy one tier higher in DBT absurdity ranking.
+
+Escalation shall continue until either (a) reconciliation is certified by a mutually agreed-upon neutral third party (e.g., a parliament of owls or a sufficiently wise sentient cheese wheel), or (b) the bid reaches a quantity sufficient to trigger a "catastrophic absurdity threshold" as defined in DBT Annex Z-13, at which point the Acceptor may elect to convert the entire dowry into a single, uncontainable herd of cats (1 herd = 10 cats, chaotic and independent).
+
+The Proposer waives any defense based on "I didn't mean it that way" or "it was just a misunderstanding about the exploding toads." All escalation proceeds shall be held in escrow by the Bureau of Absurd Exchanges until final disposition.`,
+  },
+  {
+    name: 'Dimensional Spud Safeguard',
+    text: `Addendum [X]: Dimensional Spud Safeguard
+
+Recognizing the inherent risks associated with bids involving portal potatoes or any proxy capable of dimensional translocation, the Parties expressly agree to the following protective provisions. Should the selected proxy ([Proxy]) exhibit unexpected portal-opening behavior during delivery, storage, or marital cohabitation—resulting in the unintentional relocation of either Party, household furnishings, or the entire dowry consignment to an alternate dimension—the Proposer shall be obligated to mount a good-faith rescue expedition within seventy-two (72) hours.
+
+Rescue shall include, at minimum: (i) procurement of a reverse-portal spud (DBT rate: 5.43 per unit), (ii) deployment of a qualified potato navigator (certified by the Bureau of Dimensional Tuber Logistics), and (iii) payment of any applicable interdimensional tolls in equivalent units of invisible pink unicorns (rate: 0.03).
+
+In the event rescue is unsuccessful after ninety (90) days, the Acceptor may declare the Indenture null and retain a consolation prize of one (1) holographic hippo (projected variant) plus accrued late fees calculated at the DBT "lost-in-the-multiverse" surcharge rate. The Proposer shall further indemnify the Acceptor against any existential dread, alternate-timeline doppelgänger lawsuits, or unsolicited visits from time-traveling squirrels arising from said translocation event.
+
+This safeguard survives the termination of the Indenture and extends to any progeny, whether born, adopted, or spontaneously manifested via quantum quokka entanglement.`,
+  },
+] as const;
 type Tone = (typeof tones)[number];
 const proxyLibrary = proxies as ProxyDefinition[];
 
@@ -41,7 +74,7 @@ function buildAdvisoryContract(input: {
   volatilityPercent: number;
   advisoryDate: string;
   particulars: string;
-  selectedClause: string;
+  selectedClauses: string[];
   customClause: string;
   tone: Tone;
 }) {
@@ -51,10 +84,27 @@ function buildAdvisoryContract(input: {
       ? 'This instrument is tendered with measured dignity and unmeasured confidence.'
       : 'This instrument is submitted pursuant to precision language and excessive footnote energy.';
 
-  const clauseLine = input.selectedClause !== 'None' ? input.selectedClause : 'Standard Advisory Compliance';
-  const addendum = input.customClause.trim() || 'No additional custom clauses entered.';
+  const safeProxy = input.proxyName.trim() || 'the selected proxy';
+  const safeQuantity = input.quantity > 0 ? String(input.quantity) : 'an unspecified quantity of';
+  const addendumClauses = input.selectedClauses
+    .map((clauseName, idx) => {
+      const clauseTemplate = clauseOptions.find((item) => item.name === clauseName)?.text;
+      if (!clauseTemplate) return '';
+      return clauseTemplate
+        .split('[X]').join(String(idx + 1))
+        .split('[Quantity]').join(safeQuantity)
+        .split('[Proxy]').join(safeProxy)
+        .split('[Name]').join(input.name || 'Unnamed Subject');
+    })
+    .filter(Boolean);
 
-  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${input.quantity} ${input.proxyName} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${input.proxyName}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${input.proxyName} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n5. Supplemental Clause: ${clauseLine}.\n6. Addendum: ${addendum}.\n\nSignatories:\n_______________________________ (Proposer)\n_______________________________ (Acceptor)\nDate: February 22, 2026\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
+  if (input.customClause.trim()) {
+    addendumClauses.push(`Addendum ${addendumClauses.length + 1}: Custom Clause\n\n${input.customClause.trim()}`);
+  }
+
+  const addendumBlock = addendumClauses.length ? addendumClauses.join('\n\n') : 'No addendum clauses were selected.';
+
+  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${safeQuantity} ${safeProxy} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${safeProxy}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${safeProxy} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n\nAddendum:\n${addendumBlock}\n\nSignatories:\n_______________________________ (Proposer)\n_______________________________ (Acceptor)\nDate: February 22, 2026\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
 }
 
 function contractTextToHtml(text: string) {
@@ -68,8 +118,9 @@ function contractTextToHtml(text: string) {
     .map((line) => {
       if (!line.trim()) return '<div class="pdf-spacer"></div>';
       if (/^DOWRY PROPOSAL INDENTURE/.test(line)) return `<h1>${line}</h1>`;
-      if (/^Clauses:/.test(line) || /^Signatories:/.test(line)) return `<h2>${line}</h2>`;
+      if (/^Clauses:/.test(line) || /^Addendum:/.test(line) || /^Signatories:/.test(line)) return `<h2>${line}</h2>`;
       if (/^\d+\./.test(line)) return `<p class="pdf-clause">${line}</p>`;
+      if (/^Addendum\s\d+:/.test(line)) return `<p class="pdf-clause pdf-addendum">${line}</p>`;
       if (/^[_]{10,}/.test(line) || /^Date:/.test(line)) return `<p class="pdf-signature">${line}</p>`;
       return `<p>${line}</p>`;
     })
@@ -85,7 +136,7 @@ function Shell() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [error, setError] = useState('');
   const [tone, setTone] = useState<Tone>('Formal');
-  const [selectedClause, setSelectedClause] = useState<string>('None');
+  const [selectedClauses, setSelectedClauses] = useState<string[]>([]);
   const [customSentence, setCustomSentence] = useState('');
   const [proposalText, setProposalText] = useState('');
   const [drafts, setDrafts] = useState<SavedDraft[]>([]);
@@ -129,7 +180,7 @@ function Shell() {
       volatilityPercent,
       advisoryDate,
       particulars: [form.ageRange, form.occupation, form.quirkyFact].filter(Boolean).join('; ') || 'No additional particulars supplied',
-      selectedClause,
+      selectedClauses,
       customClause: customSentence,
       tone,
     });
@@ -140,7 +191,7 @@ function Shell() {
     setProposalText('');
     setCustomSentence('');
     setTone('Formal');
-    setSelectedClause('None');
+    setSelectedClauses([]);
     setError('');
     setSelectedProxyId('');
     setHasShownEditWarning(false);
@@ -316,6 +367,11 @@ function Shell() {
   ];
 
   useEffect(() => {
+    if (step !== 'page4-proposal') return;
+    setProposalText(generatedProposal());
+  }, [selectedClauses, customSentence, tone]);
+
+  useEffect(() => {
     if (!selectedProxyId) {
       const suggestedProxyId = readApplyNextBidProxyId();
       if (suggestedProxyId) setSelectedProxyId(suggestedProxyId);
@@ -398,15 +454,21 @@ function Shell() {
             onTogglePersonalize={() => setPersonalizeOpen((v) => !v)}
             customSentence={customSentence}
             onSetCustomSentence={setCustomSentence}
-            selectedClause={selectedClause}
-            onSetSelectedClause={setSelectedClause}
+            selectedClauses={selectedClauses}
+            onToggleClause={(value) => {
+              setSelectedClauses((current) => {
+                if (current.includes(value)) return current.filter((item) => item !== value);
+                if (current.length >= 5) return current;
+                return [...current, value];
+              });
+            }}
             tone={tone}
             tones={tones}
             onSetTone={setTone}
             clauseOptions={clauseOptions}
             onGenerate={() => {
               setHasShownEditWarning(false);
-    setAdvisoryToolNotice('');
+              setAdvisoryToolNotice('');
               setProposalText(generatedProposal());
             }}
             onCopy={() => copyText(proposalText || generatedProposal())}
