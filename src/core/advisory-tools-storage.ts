@@ -1,9 +1,17 @@
-import type { AdvisoryUnlockState, ProxyAffinityResult } from '../domain/types';
+import type {
+  AdvisoryUnlockState,
+  ArchiveTrendInsightResult,
+  MaidenResponseEstimateResult,
+  ProxyAffinityResult,
+  VolatilityForecastResult,
+} from '../domain/types';
 
 export const ADVISORY_UNLOCK_KEY = 'dbt.advisory.unlock.v1';
 export const ADVISORY_QUIZ_LAST_RESULT_KEY = 'dbt.advisory.quiz.lastResult.v1';
 export const ADVISORY_QUIZ_APPLY_NEXT_BID_KEY = 'dbt.advisory.quiz.applyNextBid.v1';
 export const ADVISORY_FORECAST_APPLIED_KEY = 'dbt.advisory.forecast.applied.v1';
+export const ADVISORY_ESTIMATE_APPLIED_KEY = 'dbt.advisory.estimate.applied.v1';
+export const ADVISORY_ARCHIVE_APPLIED_KEY = 'dbt.advisory.archive.applied.v1';
 
 function safeRead<T>(key: string): T | null {
   try {
@@ -39,4 +47,16 @@ export function readApplyNextBidProxyId() {
 export function writeApplyNextBid(result: ProxyAffinityResult) {
   safeWrite(ADVISORY_QUIZ_LAST_RESULT_KEY, result);
   safeWrite(ADVISORY_QUIZ_APPLY_NEXT_BID_KEY, { proxyId: result.proxyId, source: 'quiz' });
+}
+
+export function writeAppliedForecast(result: VolatilityForecastResult) {
+  safeWrite(ADVISORY_FORECAST_APPLIED_KEY, result);
+}
+
+export function writeAppliedEstimate(result: MaidenResponseEstimateResult) {
+  safeWrite(ADVISORY_ESTIMATE_APPLIED_KEY, result);
+}
+
+export function writeAppliedArchiveInsight(result: ArchiveTrendInsightResult) {
+  safeWrite(ADVISORY_ARCHIVE_APPLIED_KEY, result);
 }

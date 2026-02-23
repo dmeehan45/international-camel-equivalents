@@ -13,8 +13,8 @@ import { MaidenResponseEstimatorModal } from './components/advisory/tools/Maiden
 import { FullDbtArchiveModal } from './components/advisory/tools/FullDbtArchiveModal';
 import proxies from './data/proxies.json';
 import { buildCuratedSuggestions, formatAdvisoryDate, getLiveRate, getVolatilityPercent, toCamelBenchmark } from './core/dbt-rates';
-import type { AdvisoryToolKey, AdvisoryToolTile, ProxyDefinition } from './domain/types';
-import { readAdvisoryUnlockState, readApplyNextBidProxyId, writeAdvisoryUnlockState, writeApplyNextBid } from './core/advisory-tools-storage';
+import type { AdvisoryToolKey, AdvisoryToolTile, ArchiveTrendInsightResult, MaidenResponseEstimateResult, ProxyDefinition, VolatilityForecastResult } from './domain/types';
+import { readAdvisoryUnlockState, readApplyNextBidProxyId, writeAdvisoryUnlockState, writeApplyNextBid, writeAppliedArchiveInsight, writeAppliedEstimate, writeAppliedForecast } from './core/advisory-tools-storage';
 
 const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
 const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
@@ -76,6 +76,7 @@ function Shell() {
   const [hasShownEditWarning, setHasShownEditWarning] = useState(false);
   const [activeToolId, setActiveToolId] = useState<AdvisoryToolKey | null>(null);
   const [toolsUnlocked, setToolsUnlocked] = useState(() => readAdvisoryUnlockState().hasUnlockedFurtherAdvisoryTools);
+  const [advisoryToolNotice, setAdvisoryToolNotice] = useState('');
 
   const advisoryNow = new Date();
   const advisoryDate = formatAdvisoryDate(advisoryNow);
@@ -124,6 +125,7 @@ function Shell() {
     setError('');
     setSelectedProxyId('');
     setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -195,6 +197,7 @@ function Shell() {
       return;
     }
     setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
     const nextText = generatedProposal();
     setProposalText(nextText);
     setStep('page4-proposal');
@@ -212,6 +215,25 @@ function Shell() {
   useEffect(() => {
     setVolatilityToast(uxCopy.page3.volatilityAlert(volatilityPercent));
   }, [volatilityPercent]);
+
+
+  function handleApplyForecast(result: VolatilityForecastResult) {
+    writeAppliedForecast(result);
+    setAdvisoryToolNotice(`Forecast Applied: ${result.proxyName} now displays at ${result.projectedRate.toFixed(2)} (±${result.volatilityPercent.toFixed(1)}%).`);
+    setActiveToolId(null);
+  }
+
+  function handleGenerateContingencyClause(result: MaidenResponseEstimateResult) {
+    writeAppliedEstimate(result);
+    setAdvisoryToolNotice(`Clause Generated: ${result.contingencyClause}`);
+    setActiveToolId(null);
+  }
+
+  function handleApplyArchiveTrend(result: ArchiveTrendInsightResult) {
+    writeAppliedArchiveInsight(result);
+    setAdvisoryToolNotice(`Trend Applied: ${result.proxyName} marked ${result.trend} at avg ${result.averageRate.toFixed(2)}.`);
+    setActiveToolId(null);
+  }
 
   const tools: AdvisoryToolTile[] = [
     { key: 'proxy_personality_assessment', title: 'Proxy Personality Assessment', subtitle: 'DBT-Certified Module', teaser: 'Assess Proxy Affinity', icon: 'quiz', unlockRequirement: 'first_successful_bid' },
@@ -311,6 +333,7 @@ function Shell() {
             clauseOptions={clauseOptions}
             onGenerate={() => {
               setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
               setProposalText(generatedProposal());
             }}
             onCopy={() => copyText(proposalText || generatedProposal())}
@@ -344,6 +367,7 @@ function Shell() {
         )}
 
       {error && <p className="error">{error}</p>}
+      {advisoryToolNotice && <p className="helper badge-volatility">{advisoryToolNotice}</p>}
 
       <ProxyPersonalityAssessmentModal
         isOpen={activeToolId === 'proxy_personality_assessment'}
@@ -355,9 +379,24 @@ function Shell() {
           setActiveToolId(null);
         }}
       />
-      <BidVolatilitySimulatorModal isOpen={activeToolId === 'bid_volatility_simulator'} onClose={() => setActiveToolId(null)} />
-      <MaidenResponseEstimatorModal isOpen={activeToolId === 'maiden_response_estimator'} onClose={() => setActiveToolId(null)} />
-      <FullDbtArchiveModal isOpen={activeToolId === 'full_dbt_archive'} onClose={() => setActiveToolId(null)} />
+      <BidVolatilitySimulatorModal
+        isOpen={activeToolId === 'bid_volatility_simulator'}
+        onClose={() => setActiveToolId(null)}
+        proxyLibrary={proxyLibrary}
+        onApplyForecast={handleApplyForecast}
+      />
+      <MaidenResponseEstimatorModal
+        isOpen={activeToolId === 'maiden_response_estimator'}
+        onClose={() => setActiveToolId(null)}
+        drafts={drafts.map((draft) => ({ id: draft.id, summary: draft.summary }))}
+        onGenerateClause={handleGenerateContingencyClause}
+      />
+      <FullDbtArchiveModal
+        isOpen={activeToolId === 'full_dbt_archive'}
+        onClose={() => setActiveToolId(null)}
+        proxyLibrary={proxyLibrary}
+        onApplyTrend={handleApplyArchiveTrend}
+      />
       </section>
 
       <footer className="legal-footer">

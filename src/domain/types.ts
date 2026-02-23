@@ -121,3 +121,30 @@ export interface ProxyAffinityResult {
   snippet: string;
   assessedAtISO: string;
 }
+
+
+export interface VolatilityForecastResult {
+  proxyId: string;
+  proxyName: string;
+  projectedRate: number;
+  volatilityPercent: number;
+  advisoryNote: string;
+  turnsRun: number;
+  appliedAtISO: string;
+}
+
+export interface MaidenResponseEstimateResult {
+  draftId: string;
+  probabilityPercent: number;
+  confidenceBand: string;
+  contingencyClause: string;
+  appliedAtISO: string;
+}
+
+export interface ArchiveTrendInsightResult {
+  proxyName: string;
+  averageRate: number;
+  trend: 'upward' | 'downward' | 'flat';
+  advisoryNote: string;
+  appliedAtISO: string;
+}

@@ -303,6 +303,26 @@ pre {
 }
 
 
+.advisory-mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 70px;
+  margin: 10px 0;
+}
+
+.advisory-mini-chart-bar {
+  width: 16px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #c8a869 0%, #0e213f 100%);
+}
+
+.advisory-ledger-list {
+  max-height: 280px;
+  overflow: auto;
+}
+
+
 .legal-footnote {
   font-size: 12px;
   line-height: 1.4;
