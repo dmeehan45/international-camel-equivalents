@@ -21,37 +21,157 @@
   backdrop-filter: blur(6px);
 }
 
+
+
+
+.proposal-layout-root {
+  width: 100%;
+}
+
+.contract-preview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  margin: 10px 0 12px;
+}
+
 .legal-shell-contract {
-  border: 1px dashed rgba(200, 168, 105, 0.95);
-  border-radius: 12px;
-  padding: 10px;
-  background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+  border: 2px dashed rgba(200, 168, 105, 0.95);
+  border-radius: 14px;
+  padding: 16px;
+  background: linear-gradient(180deg, #fffdf8 0%, #fffdfa 100%);
   position: relative;
+  width: 100%;
+  overflow: hidden;
+  min-height: min(70vh, 740px);
+}
+
+.legal-shell-contract::before {
+  content: 'DBT Certified · DBT Certified · DBT Certified';
+  position: absolute;
+  inset: 45% 0 auto;
+  text-align: center;
+  color: rgba(140, 116, 70, 0.1);
+  letter-spacing: 0.25em;
+  font-size: clamp(0.7rem, 2.3vw, 1rem);
+  pointer-events: none;
 }
 
 .legal-shell-contract::after {
-  content: 'DBT CERTIFIED SEAL';
+  content: '';
+}
+
+/* DBT CERTIFIED SEAL */
+.dbt-seal-badge {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  border: 1px solid rgba(140, 116, 70, 0.8);
+  border-radius: 999px;
+  padding: 5px 10px;
   color: #8c7446;
   font-size: 11px;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 251, 240, 0.84);
+  max-width: 100px;
+  text-align: center;
 }
 
 .contract-text {
-  font-family: 'Times New Roman', Times, serif;
+  font-family: Georgia, 'Times New Roman', Times, serif;
   color: var(--ccc-ink);
-  line-height: 1.6;
-  letter-spacing: 0.01em;
+  line-height: 1.72;
+  letter-spacing: 0.005em;
+  width: 100%;
+  min-height: min(63vh, 680px);
+  max-height: 72vh;
+  overflow-y: auto;
+  resize: vertical;
+  padding: 40px 14px 18px;
+  font-size: 15px;
+  text-align: justify;
+  hyphens: auto;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  border: 1px solid #dbc595;
+  background: rgba(255, 255, 255, 0.92);
 }
 
-@media (prefers-contrast: more) {
-  .legal-shell-contract {
-    border-color: #6f6f6f;
+.contract-enhancements {
+  border: 1px solid #d9d1bf;
+  border-radius: 12px;
+  background: #fffef9;
+  padding: 14px;
+  align-self: start;
+}
+
+.contract-enhancements h3 {
+  margin: 0 0 8px;
+  color: var(--ccc-deep-navy);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (min-width: 768px) {
+  .proposal-layout-root {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
   }
 
-  .legal-shell-contract::after {
-    color: #4e4e4e;
+  .contract-preview-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr);
+    gap: 18px;
+  }
+
+  .dbt-seal-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: inline-flex;
+    margin-left: auto;
+    margin-bottom: 8px;
+  }
+
+  .contract-text {
+    padding-top: 14px;
+  }
+}
+
+@media (max-width: 767px) {
+  .proposal-layout-root {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: 0 16px;
+  }
+
+  .contract-preview-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .legal-shell-contract {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .dbt-seal-badge {
+    position: fixed;
+    top: 74px;
+    right: 8px;
+    opacity: 0.75;
+    backdrop-filter: blur(2px);
+  }
+
+  .contract-text {
+    min-height: 64vh;
+    max-height: 74vh;
+    font-size: 16px;
+    line-height: 1.75;
+    padding: 18px 12px;
   }
 }

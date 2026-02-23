@@ -27,18 +27,28 @@ type Props = {
 
 export function Page4Proposal(props: Props) {
   return (
-    <div>
+    <div className="proposal-layout-root">
       <h2>{props.copy.page4.title}</h2>
-      <div className="legal-shell-contract">
-        <textarea
-          className="contract-text"
-          rows={14}
-          value={props.proposalText}
-          onChange={(e) => {
-            props.onFirstEditWarning();
-            props.onSetProposalText(e.target.value);
-          }}
-        />
+
+      <div className="contract-preview-layout">
+        <div className="legal-shell-contract">
+          <span className="dbt-seal-badge">DBT CERTIFIED SEAL</span>
+          <textarea
+            className="contract-text"
+            rows={20}
+            value={props.proposalText}
+            onChange={(e) => {
+              props.onFirstEditWarning();
+              props.onSetProposalText(e.target.value);
+            }}
+          />
+        </div>
+
+        <aside className="contract-enhancements">
+          <h3>Instrument Enhancements</h3>
+          <p className="helper">Structured clauses, legal spacing, and certified docket styling are applied for exports.</p>
+          <p className="helper">Use personalize options below to tune clauses and tone without breaking legal layout.</p>
+        </aside>
       </div>
 
       <button className="cta-secondary text-link" onClick={props.onTogglePersonalize}>{props.copy.page4.personalizeLabel}</button>
