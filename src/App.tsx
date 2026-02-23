@@ -147,6 +147,8 @@ function Shell() {
   const [activeToolId, setActiveToolId] = useState<AdvisoryToolKey | null>(null);
   const [toolsUnlocked, setToolsUnlocked] = useState(() => readAdvisoryUnlockState().hasUnlockedFurtherAdvisoryTools);
   const [advisoryToolNotice, setAdvisoryToolNotice] = useState('');
+  const [isPersistentDisclaimerVisible, setPersistentDisclaimerVisible] = useState(() => !sessionStorage.getItem(uxCopy.disclaimer.sessionKey));
+  const [isStepCertifying, setIsStepCertifying] = useState(false);
 
   const advisoryNow = new Date();
   const advisoryDate = formatAdvisoryDate(advisoryNow);
@@ -161,6 +163,13 @@ function Shell() {
     () => buildCuratedSuggestions(proxyLibrary, form.bidRegion, form.ageRange, form.occupation, form.quirkyFact),
     [form.bidRegion, form.ageRange, form.occupation, form.quirkyFact],
   );
+
+
+  useEffect(() => {
+    setIsStepCertifying(true);
+    const timer = window.setTimeout(() => setIsStepCertifying(false), 360);
+    return () => window.clearTimeout(timer);
+  }, [step]);
 
   const flowContext = {
     currentStep: step,
@@ -401,6 +410,7 @@ function Shell() {
       {step !== 'page1-landing' && <button className="text-only-link" onClick={startOver}>{uxCopy.global.startOver}</button>}
 
       <section className="view-card">
+        {isStepCertifying && <p className="helper dbt-certifying">Certifying with DBT...</p>}
         {step === 'page1-landing' && <Page1Landing copy={uxCopy} howOpen={howOpen} onToggleHow={() => setHowOpen((v) => !v)} onBegin={() => setStep('page2-basics')} />}
 
         {step === 'page2-basics' && (
@@ -535,10 +545,34 @@ function Shell() {
       </section>
 
       <footer className="legal-footer">
-        <p>{uxCopy.global.footer}</p>
+        <p>{uxCopy.global.footer.brandLine}</p>
+        <p className="legal-footer-links">
+          {uxCopy.global.footer.links.map((link, index) => (
+            <span key={link.label}>
+              {index > 0 ? ' • ' : ''}
+              <a href={link.href}>{link.label}</a>
+            </span>
+          ))}
+        </p>
+        <p>{uxCopy.global.footer.ratesLine}</p>
+        <p>{uxCopy.global.footer.advisoryLine}</p>
       </footer>
 
-      <div className="persistent-disclaimer">{uxCopy.global.persistentDisclaimer}</div>
+      {isPersistentDisclaimerVisible && (
+        <div className="persistent-disclaimer" role="status">
+          <span>{uxCopy.global.persistentDisclaimer}</span>
+          <button
+            type="button"
+            className="persistent-disclaimer-dismiss"
+            onClick={() => {
+              sessionStorage.setItem(uxCopy.disclaimer.sessionKey, 'dismissed');
+              setPersistentDisclaimerVisible(false);
+            }}
+          >
+            {uxCopy.disclaimer.dismissCta}
+          </button>
+        </div>
+      )}
     </main>
   );
 }

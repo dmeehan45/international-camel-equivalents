@@ -1,20 +1,45 @@
 export const uxCopy = {
   global: {
     appTitle: 'Dowry Proposal Advisory',
-    persistentDisclaimer: 'DBT advisory instrument. No enforceability implied.',
-    footer: 'DBT Rates as of February 22, 2026. All bids advisory only.',
+    persistentDisclaimer: 'Advisory Only • Not Legal Advice • Proxies May Be Uncontainable',
+    footer: {
+      brandLine: '© 2026 Dowry Proposal Advisory • All Rights Reserved in Perpetuity',
+      links: [
+        { label: 'Privacy Policy', href: '#privacy-policy' },
+        { label: 'Terms of Advisory Use', href: '#terms-of-advisory-use' },
+        { label: 'DBT Rate Disclaimer', href: '#dbt-rate-disclaimer' },
+      ],
+      ratesLine: 'Rates as of February 22, 2026. Fluctuations may occur due to Bureau-approved market events.',
+      advisoryLine: 'This service provides advisory documents only. Consult a licensed professional (or bard) for binding matters.',
+    },
     startOver: 'Start over',
   },
   page1: {
     title: 'Dowry Proposal Advisory Service',
+    tagline: 'Formalize your proposal with DBT-certified proxies in minutes. Secure, auditable, and advisory-only.',
     body: [
-      'Utilize our Definitive Benchmarking Tool to formalize a dowry bid in certified proxies.',
-      'Select from unhinged alternatives to camels for a binding-ish proposal.',
-      'Proceed for advisory computation.',
+      'Our Definitive Benchmarking Tool (DBT v2.026) provides live proxy translation rates for traditional and alternative assets. Generate a customized indenture compliant with Certified Absurd Exchange protocols.',
+      'Trusted by discerning proposers since February 22, 2026.',
+    ],
+    trustBadges: [
+      'DBT Certified',
+      'Bureau of Absurd Exchanges Approved',
+      'Advisory-Only • Non-Binding in Sensible Jurisdictions',
+    ],
+    trustMentions: [
+      'As seen in the Camel Codex',
+      'Endorsed by the International Proxy Standards Board',
     ],
     begin: 'Begin Advisory Process',
     howItWorksLabel: 'How this works',
-    howItWorksText: 'Complete profile basics, lock a proxy bid using DBT live rates, and generate an advisory contract docket entry.',
+    ctaMeta: 'No account required • Instant advisory computation • DBT rates apply',
+    howItWorksText: 'All computations are advisory and for entertainment purposes. No actual assets are transferred.',
+    howItWorksSteps: [
+      { title: 'Enter Proposal Particulars', detail: 'Provide subject details for tailored proxy recommendations.' },
+      { title: 'Select Certified Proxy', detail: 'Choose from DBT-indexed alternatives with live rates.' },
+      { title: 'Generate Indenture', detail: 'Receive a formal, editable proposal contract.' },
+      { title: 'Transmit & Archive', detail: 'Share via secure channels; retain in your advisory docket.' },
+    ],
     footnotes: [
       '*Pursuant to DBT v2.026, all opening statements are ceremonial and non-binding.',
       '*Certified Absurd Exchange protocols prohibit last-minute conversion to sensible assets.',
