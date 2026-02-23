@@ -780,3 +780,37 @@ input[type='range']::-moz-range-thumb {
   width: 32px;
   height: 32px;
 }
+
+.resume-card {
+  border: 1px solid #d3deef;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.compare-select-button {
+  all: unset;
+  display: block;
+  cursor: pointer;
+}
+
+.compare-checkbox {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.compare-col {
+  border: 1px solid #d7dfef;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px;
+}

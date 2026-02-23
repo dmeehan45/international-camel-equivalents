@@ -64,6 +64,17 @@ type SavedDraft = {
   createdAt: string;
 };
 
+type ResumeSnapshot = {
+  form: ReturnType<typeof useDowryForm>['form'];
+  selectedProxyId: string;
+  proposalText: string;
+  step: FlowStepId;
+  drafts: SavedDraft[];
+  lastModifiedISO: string;
+};
+
+const RESUME_STORAGE_KEY = 'icea-resume-snapshot-v1';
+
 function buildAdvisoryContract(input: {
   name: string;
   region: string;
@@ -151,6 +162,7 @@ function Shell() {
   const [isStepCertifying, setIsStepCertifying] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
   const [activeLegalModal, setActiveLegalModal] = useState<string | null>(null);
+  const [resumeSnapshot, setResumeSnapshot] = useState<ResumeSnapshot | null>(null);
 
   const legalModalCopy: Record<string, { title: string; body: string }> = {
     'how-it-works': {
@@ -251,6 +263,8 @@ function Shell() {
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
     dispatchForm({ type: 'resetOptional' });
+    localStorage.removeItem(RESUME_STORAGE_KEY);
+    setResumeSnapshot(null);
   }
 
   function saveDraft() {
@@ -273,6 +287,38 @@ function Shell() {
     }
     setStep('page5-drafts');
     setError('');
+  }
+
+  function saveResumeSnapshot(forceStep?: FlowStepId) {
+    const snapshot: ResumeSnapshot = {
+      form,
+      selectedProxyId,
+      proposalText,
+      step: forceStep ?? step,
+      drafts,
+      lastModifiedISO: new Date().toISOString(),
+    };
+    localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(snapshot));
+    setResumeSnapshot(snapshot);
+  }
+
+  function resumeLastSnapshot() {
+    if (!resumeSnapshot) return;
+    dispatchForm({ type: 'setField', field: 'bidName', value: resumeSnapshot.form.bidName });
+    dispatchForm({ type: 'setField', field: 'bidRegion', value: resumeSnapshot.form.bidRegion });
+    dispatchForm({ type: 'setField', field: 'camelQuantity', value: resumeSnapshot.form.camelQuantity });
+    dispatchForm({ type: 'setField', field: 'ageRange', value: resumeSnapshot.form.ageRange });
+    dispatchForm({ type: 'setField', field: 'occupation', value: resumeSnapshot.form.occupation });
+    dispatchForm({ type: 'setField', field: 'quirkyFact', value: resumeSnapshot.form.quirkyFact });
+    setSelectedProxyId(resumeSnapshot.selectedProxyId);
+    setProposalText(resumeSnapshot.proposalText);
+    setDrafts(resumeSnapshot.drafts);
+    setStep(resumeSnapshot.step);
+  }
+
+  function discardLastSnapshot() {
+    localStorage.removeItem(RESUME_STORAGE_KEY);
+    setResumeSnapshot(null);
   }
 
   async function copyText(text: string) {
@@ -363,6 +409,7 @@ function Shell() {
     if (!form.bidName.trim()) return setError(uxCopy.errors.nameRequired);
     if (!form.bidRegion.trim()) return setError(uxCopy.errors.regionRequired);
     setError('');
+    saveResumeSnapshot('page3-offer');
     setStep('page3-offer');
   }
 
@@ -375,6 +422,7 @@ function Shell() {
     setAdvisoryToolNotice('');
     const nextText = generatedProposal();
     setProposalText(nextText);
+    saveResumeSnapshot('page4-proposal');
     setStep('page4-proposal');
   }
 
@@ -423,6 +471,27 @@ function Shell() {
   }, [selectedClauses, customSentence, tone]);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RESUME_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as ResumeSnapshot;
+      if (!parsed?.lastModifiedISO) return;
+      setResumeSnapshot(parsed);
+      if (Array.isArray(parsed.drafts)) setDrafts(parsed.drafts);
+    } catch {
+      // noop: ignore malformed recovery data
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (step === 'page1-landing') return;
+      saveResumeSnapshot();
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [form, selectedProxyId, proposalText, step, drafts]);
+
+  useEffect(() => {
     if (!selectedProxyId) {
       const suggestedProxyId = readApplyNextBidProxyId();
       if (suggestedProxyId) setSelectedProxyId(suggestedProxyId);
@@ -461,7 +530,17 @@ function Shell() {
           </div>
         )}
         {isStepCertifying && <p className="helper dbt-certifying">Certifying with DBT...</p>}
-        {step === 'page1-landing' && <Page1Landing copy={uxCopy} howOpen={howOpen} onToggleHow={() => setHowOpen((v) => !v)} onBegin={() => setStep('page2-basics')} />}
+        {step === 'page1-landing' && (
+          <Page1Landing
+            copy={uxCopy}
+            howOpen={howOpen}
+            onToggleHow={() => setHowOpen((v) => !v)}
+            onBegin={() => setStep('page2-basics')}
+            resumeSnapshot={resumeSnapshot}
+            onResumeSnapshot={resumeLastSnapshot}
+            onDiscardSnapshot={discardLastSnapshot}
+          />
+        )}
 
         {step === 'page2-basics' && (
           <Page2Basics
@@ -536,6 +615,7 @@ function Shell() {
             onDownloadPdf={downloadPdf}
             onShare={() => shareText(proposalText || generatedProposal())}
             onDone={saveDraft}
+            onTryDifferentProxy={() => setStep('page3-offer')}
             onFirstEditWarning={() => {
               if (!hasShownEditWarning) {
                 setError(uxCopy.page4.editWarning);
