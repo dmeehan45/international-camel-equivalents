@@ -92,3 +92,59 @@ export interface DocketBidMeta {
   camelEquivalent: number;
   rateLabel: string;
 }
+
+export type AdvisoryToolKey =
+  | 'proxy_personality_assessment'
+  | 'bid_volatility_simulator'
+  | 'maiden_response_estimator'
+  | 'full_dbt_archive';
+
+export interface AdvisoryToolTile {
+  key: AdvisoryToolKey;
+  title: string;
+  subtitle: string;
+  teaser: string;
+  icon: 'quiz' | 'simulator' | 'estimator' | 'archive';
+  unlockRequirement: 'first_successful_bid';
+}
+
+export interface AdvisoryUnlockState {
+  hasUnlockedFurtherAdvisoryTools: boolean;
+  unlockedAtISO?: string;
+}
+
+export interface ProxyAffinityResult {
+  proxyId: string;
+  proxyName: string;
+  rate: number;
+  rationale: string;
+  snippet: string;
+  assessedAtISO: string;
+}
+
+
+export interface VolatilityForecastResult {
+  proxyId: string;
+  proxyName: string;
+  projectedRate: number;
+  volatilityPercent: number;
+  advisoryNote: string;
+  turnsRun: number;
+  appliedAtISO: string;
+}
+
+export interface MaidenResponseEstimateResult {
+  draftId: string;
+  probabilityPercent: number;
+  confidenceBand: string;
+  contingencyClause: string;
+  appliedAtISO: string;
+}
+
+export interface ArchiveTrendInsightResult {
+  proxyName: string;
+  averageRate: number;
+  trend: 'upward' | 'downward' | 'flat';
+  advisoryNote: string;
+  appliedAtISO: string;
+}

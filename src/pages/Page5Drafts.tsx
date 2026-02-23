@@ -1,4 +1,6 @@
 import type { uxCopy } from '../content/uxCopy';
+import { AdvisoryToolsStrip } from '../components/advisory/AdvisoryToolsStrip';
+import type { AdvisoryToolTile, AdvisoryToolKey } from '../domain/types';
 
 type SavedDraft = {
   id: string;
@@ -6,12 +8,6 @@ type SavedDraft = {
   summary: string;
   text: string;
   createdAt: string;
-};
-
-type ToolTile = {
-  id: string;
-  title: string;
-  description: string;
 };
 
 type Props = {
@@ -23,9 +19,8 @@ type Props = {
   onShareDraft: (text: string) => void;
   onDeleteDraft: (id: string) => void;
   toolsUnlocked: boolean;
-  tools: ToolTile[];
-  activeToolId: string;
-  onSelectTool: (id: string) => void;
+  tools: AdvisoryToolTile[];
+  onSelectTool: (id: AdvisoryToolKey) => void;
   onStartNew: () => void;
 };
 
@@ -57,14 +52,7 @@ export function Page5Drafts(props: Props) {
         <div>
           <h3>{props.copy.page5.extras}</h3>
           <p className="helper badge-volatility">{props.copy.page5.unlock}</p>
-          <div className="cards tool-grid">
-            {props.tools.map((tool) => (
-              <button key={tool.id} className={`card-button ${props.activeToolId === tool.id ? 'is-selected' : ''}`} onClick={() => props.onSelectTool(tool.id)}>
-                <strong>{tool.title}</strong>
-                <p className="helper">{tool.description}</p>
-              </button>
-            ))}
-          </div>
+          <AdvisoryToolsStrip tiles={props.tools} isUnlocked={props.toolsUnlocked} onOpenTool={props.onSelectTool} />
           <p className="helper">{props.copy.page5.localNote}</p>
         </div>
       )}

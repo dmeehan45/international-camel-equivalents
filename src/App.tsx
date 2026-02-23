@@ -7,9 +7,14 @@ import { Page2Basics } from './pages/Page2Basics';
 import { Page3Offer } from './pages/Page3Offer';
 import { Page4Proposal } from './pages/Page4Proposal';
 import { Page5Drafts } from './pages/Page5Drafts';
+import { ProxyPersonalityAssessmentModal } from './components/advisory/tools/ProxyPersonalityAssessmentModal';
+import { BidVolatilitySimulatorModal } from './components/advisory/tools/BidVolatilitySimulatorModal';
+import { MaidenResponseEstimatorModal } from './components/advisory/tools/MaidenResponseEstimatorModal';
+import { FullDbtArchiveModal } from './components/advisory/tools/FullDbtArchiveModal';
 import proxies from './data/proxies.json';
 import { buildCuratedSuggestions, formatAdvisoryDate, getLiveRate, getVolatilityPercent, toCamelBenchmark } from './core/dbt-rates';
-import type { ProxyDefinition } from './domain/types';
+import type { AdvisoryToolKey, AdvisoryToolTile, ArchiveTrendInsightResult, MaidenResponseEstimateResult, ProxyDefinition, VolatilityForecastResult } from './domain/types';
+import { readAdvisoryUnlockState, readApplyNextBidProxyId, writeAdvisoryUnlockState, writeApplyNextBid, writeAppliedArchiveInsight, writeAppliedEstimate, writeAppliedForecast } from './core/advisory-tools-storage';
 
 const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
 const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
@@ -69,7 +74,9 @@ function Shell() {
   const [selectedProxyId, setSelectedProxyId] = useState('');
   const [volatilityToast, setVolatilityToast] = useState('');
   const [hasShownEditWarning, setHasShownEditWarning] = useState(false);
-  const [activeToolId, setActiveToolId] = useState('tool-1');
+  const [activeToolId, setActiveToolId] = useState<AdvisoryToolKey | null>(null);
+  const [toolsUnlocked, setToolsUnlocked] = useState(() => readAdvisoryUnlockState().hasUnlockedFurtherAdvisoryTools);
+  const [advisoryToolNotice, setAdvisoryToolNotice] = useState('');
 
   const advisoryNow = new Date();
   const advisoryDate = formatAdvisoryDate(advisoryNow);
@@ -118,6 +125,7 @@ function Shell() {
     setError('');
     setSelectedProxyId('');
     setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -138,6 +146,10 @@ function Shell() {
       createdAt: new Date().toISOString(),
     };
     setDrafts((current) => [item, ...current]);
+    if (!toolsUnlocked) {
+      writeAdvisoryUnlockState({ hasUnlockedFurtherAdvisoryTools: true, unlockedAtISO: new Date().toISOString() });
+      setToolsUnlocked(true);
+    }
     setStep('page5-drafts');
     setError('');
   }
@@ -185,6 +197,7 @@ function Shell() {
       return;
     }
     setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
     const nextText = generatedProposal();
     setProposalText(nextText);
     setStep('page4-proposal');
@@ -203,12 +216,38 @@ function Shell() {
     setVolatilityToast(uxCopy.page3.volatilityAlert(volatilityPercent));
   }, [volatilityPercent]);
 
-  const tools = [
-    { id: 'tool-1', title: 'Proxy Personality Assessment', description: 'Match your spirit proxy for future bids.' },
-    { id: 'tool-2', title: 'Bid Volatility Simulator', description: 'Forecast rate swings using absurd scenarios.' },
-    { id: 'tool-3', title: 'Maiden Response Estimator', description: 'Receive pun-heavy response odds and notes.' },
-    { id: 'tool-4', title: 'Full DBT Archive', description: 'Review historical proxy fluctuation logs.' },
+
+  function handleApplyForecast(result: VolatilityForecastResult) {
+    writeAppliedForecast(result);
+    setAdvisoryToolNotice(`Forecast Applied: ${result.proxyName} now displays at ${result.projectedRate.toFixed(2)} (±${result.volatilityPercent.toFixed(1)}%).`);
+    setActiveToolId(null);
+  }
+
+  function handleGenerateContingencyClause(result: MaidenResponseEstimateResult) {
+    writeAppliedEstimate(result);
+    setAdvisoryToolNotice(`Clause Generated: ${result.contingencyClause}`);
+    setActiveToolId(null);
+  }
+
+  function handleApplyArchiveTrend(result: ArchiveTrendInsightResult) {
+    writeAppliedArchiveInsight(result);
+    setAdvisoryToolNotice(`Trend Applied: ${result.proxyName} marked ${result.trend} at avg ${result.averageRate.toFixed(2)}.`);
+    setActiveToolId(null);
+  }
+
+  const tools: AdvisoryToolTile[] = [
+    { key: 'proxy_personality_assessment', title: 'Proxy Personality Assessment', subtitle: 'DBT-Certified Module', teaser: 'Assess Proxy Affinity', icon: 'quiz', unlockRequirement: 'first_successful_bid' },
+    { key: 'bid_volatility_simulator', title: 'Bid Volatility Simulator', subtitle: 'Risk Engine Module', teaser: 'Run proxy scenario forecasts', icon: 'simulator', unlockRequirement: 'first_successful_bid' },
+    { key: 'maiden_response_estimator', title: 'Maiden Response Estimator', subtitle: 'Algorithmic Counsel Unit', teaser: 'Estimate acceptance probability', icon: 'estimator', unlockRequirement: 'first_successful_bid' },
+    { key: 'full_dbt_archive', title: 'Full DBT Archive', subtitle: 'Ledger Access Module', teaser: 'Browse historical rate logs', icon: 'archive', unlockRequirement: 'first_successful_bid' },
   ];
+
+  useEffect(() => {
+    if (!selectedProxyId) {
+      const suggestedProxyId = readApplyNextBidProxyId();
+      if (suggestedProxyId) setSelectedProxyId(suggestedProxyId);
+    }
+  }, [selectedProxyId]);
 
   return (
     <main className="app-shell">
@@ -294,6 +333,7 @@ function Shell() {
             clauseOptions={clauseOptions}
             onGenerate={() => {
               setHasShownEditWarning(false);
+    setAdvisoryToolNotice('');
               setProposalText(generatedProposal());
             }}
             onCopy={() => copyText(proposalText || generatedProposal())}
@@ -319,15 +359,44 @@ function Shell() {
             onCopyDraft={copyText}
             onShareDraft={shareText}
             onDeleteDraft={(id) => setDrafts((current) => current.filter((item) => item.id !== id))}
-            toolsUnlocked={drafts.length > 0}
+            toolsUnlocked={toolsUnlocked}
             tools={tools}
-            activeToolId={activeToolId}
             onSelectTool={setActiveToolId}
             onStartNew={startOver}
           />
         )}
 
-        {error && <p className="error">{error}</p>}
+      {error && <p className="error">{error}</p>}
+      {advisoryToolNotice && <p className="helper badge-volatility">{advisoryToolNotice}</p>}
+
+      <ProxyPersonalityAssessmentModal
+        isOpen={activeToolId === 'proxy_personality_assessment'}
+        onClose={() => setActiveToolId(null)}
+        proxyLibrary={proxyLibrary}
+        onApplyToNextBid={(result) => {
+          writeApplyNextBid(result);
+          setSelectedProxyId(result.proxyId);
+          setActiveToolId(null);
+        }}
+      />
+      <BidVolatilitySimulatorModal
+        isOpen={activeToolId === 'bid_volatility_simulator'}
+        onClose={() => setActiveToolId(null)}
+        proxyLibrary={proxyLibrary}
+        onApplyForecast={handleApplyForecast}
+      />
+      <MaidenResponseEstimatorModal
+        isOpen={activeToolId === 'maiden_response_estimator'}
+        onClose={() => setActiveToolId(null)}
+        drafts={drafts.map((draft) => ({ id: draft.id, summary: draft.summary }))}
+        onGenerateClause={handleGenerateContingencyClause}
+      />
+      <FullDbtArchiveModal
+        isOpen={activeToolId === 'full_dbt_archive'}
+        onClose={() => setActiveToolId(null)}
+        proxyLibrary={proxyLibrary}
+        onApplyTrend={handleApplyArchiveTrend}
+      />
       </section>
 
       <footer className="legal-footer">

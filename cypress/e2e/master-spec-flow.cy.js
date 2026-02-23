@@ -31,5 +31,22 @@ describe('Master spec advisory flow', () => {
     cy.contains('h3', 'Further Advisory Tools');
     cy.contains('New Advisory Tools Available');
     cy.contains('Proxy Personality Assessment');
+
+    cy.contains('button', 'Proxy Personality Assessment').click();
+    cy.contains('DBT Proxy Affinity Assessment');
+    for (let i = 0; i < 6; i += 1) {
+      cy.get('.advisory-tool-shell .card-button').first().click();
+    }
+    cy.contains('Assessment Complete:');
+    cy.contains('button', 'Apply to Next Bid').click();
+
+    cy.contains('button', 'Bid Volatility Simulator').click();
+    cy.contains('button', 'Apply Forecast').click();
+
+    cy.contains('button', 'Maiden Response Estimator').click();
+    cy.contains('button', 'Generate Contingency Clause').click();
+
+    cy.contains('button', 'Full DBT Archive').click();
+    cy.contains('button', 'Apply Trend to Bid').click();
   });
 });
