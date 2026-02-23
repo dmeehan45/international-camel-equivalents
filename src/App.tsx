@@ -54,7 +54,26 @@ function buildAdvisoryContract(input: {
   const clauseLine = input.selectedClause !== 'None' ? input.selectedClause : 'Standard Advisory Compliance';
   const addendum = input.customClause.trim() || 'No additional custom clauses entered.';
 
-  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${input.quantity} ${input.proxyName} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${input.proxyName}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${input.proxyName} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n5. Signatories: Proposer ________________ / Acceptor ________________.\n\nSupplemental Clause: ${clauseLine}.\nAddendum: ${addendum}.\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
+  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${input.quantity} ${input.proxyName} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${input.proxyName}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${input.proxyName} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n5. Supplemental Clause: ${clauseLine}.\n6. Addendum: ${addendum}.\n\nSignatories:\n_______________________________ (Proposer)\n_______________________________ (Acceptor)\nDate: February 22, 2026\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
+}
+
+function contractTextToHtml(text: string) {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  return escaped
+    .split('\n')
+    .map((line) => {
+      if (!line.trim()) return '<div class="pdf-spacer"></div>';
+      if (/^DOWRY PROPOSAL INDENTURE/.test(line)) return `<h1>${line}</h1>`;
+      if (/^Clauses:/.test(line) || /^Signatories:/.test(line)) return `<h2>${line}</h2>`;
+      if (/^\d+\./.test(line)) return `<p class="pdf-clause">${line}</p>`;
+      if (/^[_]{10,}/.test(line) || /^Date:/.test(line)) return `<p class="pdf-signature">${line}</p>`;
+      return `<p>${line}</p>`;
+    })
+    .join('');
 }
 
 function Shell() {
@@ -169,10 +188,64 @@ function Shell() {
   }
 
   function downloadPdf() {
-    const html = `<div style="border:1px dashed #c8a869;padding:14px;position:relative;"><div style="position:absolute;top:8px;right:12px;color:#8c7446;font-size:12px;">DBT CERTIFIED SEAL</div><pre style="font-family:'Times New Roman',serif;white-space:pre-wrap;">${(proposalText || generatedProposal()).replace(/</g, '&lt;')}</pre></div>`;
+    const html = `
+      <style>
+        @page { size: A4 portrait; margin: 16mm; }
+        body { margin: 0; background: #f5f1e8; font-family: Georgia, 'Times New Roman', serif; }
+        .pdf-contract {
+          max-width: 794px;
+          margin: 0 auto;
+          border: 2px dashed #c8a869;
+          background: #fffdf7;
+          color: #2d2414;
+          padding: 22px;
+          position: relative;
+          line-height: 1.7;
+          font-size: 15px;
+          hyphens: auto;
+          text-align: justify;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        .pdf-contract::before {
+          content: 'DBT CERTIFIED • DBT CERTIFIED • DBT CERTIFIED • DBT CERTIFIED';
+          position: absolute;
+          inset: 45% 0 auto;
+          text-align: center;
+          color: rgba(140, 116, 70, 0.12);
+          font-size: 18px;
+          letter-spacing: 0.3em;
+          pointer-events: none;
+        }
+        .pdf-seal {
+          position: absolute;
+          right: 16px;
+          top: 14px;
+          border: 1px solid rgba(140, 116, 70, 0.75);
+          border-radius: 999px;
+          padding: 6px 10px;
+          color: #8c7446;
+          font-size: 11px;
+          font-weight: 700;
+          background: rgba(255, 252, 241, 0.85);
+          max-width: 100px;
+          text-align: center;
+        }
+        h1 { font-size: 1.15rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 14px; text-align: center; }
+        h2 { font-size: 1rem; text-transform: uppercase; margin: 16px 0 8px; letter-spacing: 0.04em; }
+        p { margin: 0 0 10px; text-indent: 1.2rem; }
+        .pdf-clause, .pdf-signature { text-indent: 0; }
+        .pdf-spacer { height: 10px; }
+      </style>
+      <article class="pdf-contract">
+        <div class="pdf-seal">DBT CERTIFIED SEAL</div>
+        ${contractTextToHtml(proposalText || generatedProposal())}
+      </article>
+      <script>window.print();</script>
+    `;
     const win = window.open('', '_blank', 'width=700,height=900');
     if (!win) return;
-    win.document.write(`<html><head><title>Advisory Proposal Contract</title></head><body>${html}<script>window.print();</script></body></html>`);
+    win.document.write(`<html><head><title>Advisory Proposal Contract</title></head><body>${html}</body></html>`);
     win.document.close();
   }
 
