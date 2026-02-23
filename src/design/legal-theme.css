@@ -1,17 +1,25 @@
 .legal-footer {
-  margin: 24px 0 84px;
+  margin: 28px 0 88px;
   color: var(--ccc-steel);
   text-align: center;
-  font-size: 13px;
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  border-top: 1px solid rgba(216, 227, 245, 0.85);
+  padding-top: 12px;
 }
 
 .legal-footer p {
-  margin: 4px 0;
+  margin: 5px 0;
+}
+
+.legal-footer p:first-child {
+  color: #2f456a;
+  font-weight: 600;
 }
 
 .legal-footer-links a {
-  color: var(--ccc-steel);
+  color: #496086;
+  text-underline-offset: 2px;
 }
 
 .persistent-disclaimer {
@@ -20,27 +28,29 @@
   right: 0;
   bottom: 0;
   z-index: 20;
-  background: rgba(9, 19, 40, 0.95);
-  color: #dbe6ff;
-  border-top: 1px solid rgba(232, 220, 197, 0.25);
+  background: rgba(8, 18, 36, 0.96);
+  color: #e5edff;
+  border-top: 1px solid rgba(232, 220, 197, 0.28);
   text-align: center;
   padding: 10px 12px;
   font-size: 12px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  letter-spacing: 0.02em;
 }
 
 .persistent-disclaimer-dismiss {
   min-height: auto;
   border-radius: 999px;
-  border: 1px solid rgba(232, 220, 197, 0.42);
-  background: rgba(14, 33, 63, 0.85);
-  color: #f7f2e6;
-  padding: 4px 10px;
-  font-size: 12px;
+  border: 1px solid rgba(232, 220, 197, 0.45);
+  background: rgba(12, 29, 55, 0.9);
+  color: #fff8e7;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 
