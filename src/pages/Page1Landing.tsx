@@ -1,13 +1,27 @@
 import type { uxCopy } from '../content/uxCopy';
+import type { FlowStepId } from '../domain/flow';
+
+type ResumeSnapshot = {
+  form: {
+    bidName: string;
+  };
+  step: FlowStepId;
+  selectedProxyId: string;
+  drafts: { id: string; name: string; summary: string }[];
+  lastModifiedISO: string;
+};
 
 type Props = {
   copy: typeof uxCopy;
   howOpen: boolean;
   onToggleHow: () => void;
   onBegin: () => void;
+  resumeSnapshot: ResumeSnapshot | null;
+  onResumeSnapshot: () => void;
+  onDiscardSnapshot: () => void;
 };
 
-export function Page1Landing({ copy, howOpen, onToggleHow, onBegin }: Props) {
+export function Page1Landing({ copy, howOpen, onToggleHow, onBegin, resumeSnapshot, onResumeSnapshot, onDiscardSnapshot }: Props) {
   const benefits = [
     {
       title: 'Fast & Simple',
@@ -35,6 +49,22 @@ export function Page1Landing({ copy, howOpen, onToggleHow, onBegin }: Props) {
 
   return (
     <div className="intro-landing">
+      {resumeSnapshot && (
+        <section className="resume-card" aria-label="Continue where you left off">
+          <p>
+            <strong>Continue where you left off</strong><br />
+            Resume Advisory Draft for {resumeSnapshot.form.bidName || 'Unnamed Bid'} • Last modified {new Date(resumeSnapshot.lastModifiedISO).toLocaleString()}
+          </p>
+          {resumeSnapshot.drafts.length > 0 && (
+            <p className="helper">Recent Indenture: {resumeSnapshot.drafts[0].name} — {resumeSnapshot.drafts[0].summary}</p>
+          )}
+          <div className="actions-row actions-row--two">
+            <button className="cta-secondary" onClick={onResumeSnapshot}>Resume</button>
+            <button className="cta-secondary" onClick={onDiscardSnapshot}>Discard</button>
+          </div>
+        </section>
+      )}
+
       <header className="intro-hero" aria-label="Advisory service introduction">
         <p className="intro-kicker">Advisory Workflow Platform</p>
         <h2>{copy.page1.title}</h2>

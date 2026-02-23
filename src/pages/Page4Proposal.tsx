@@ -23,6 +23,7 @@ type Props = {
   onDownloadPdf: () => void;
   onShare: () => void;
   onDone: () => void;
+  onTryDifferentProxy: () => void;
   onFirstEditWarning: () => void;
 };
 
@@ -150,7 +151,10 @@ export function Page4Proposal(props: Props) {
         <button className="cta-secondary" onClick={props.onDownloadTxt}>{props.copy.page4.downloadTxt}</button>
         <button className="cta-secondary" onClick={props.onDownloadPdf}>{props.copy.page4.downloadPdf}</button>
       </div>
-      <button className="ccc-button-primary" onClick={props.onDone}>{props.copy.page4.done}</button>
+      <div className="actions-row actions-row--two">
+        <button className="ccc-button-primary" onClick={props.onDone}>{props.copy.page4.done}</button>
+        <button className="cta-secondary" onClick={props.onTryDifferentProxy}>Try a Different Proxy</button>
+      </div>
       {props.copy.page4.footnotes.map((note) => <p key={note} className="helper legal-footnote">{note}</p>)}
     </div>
   );
