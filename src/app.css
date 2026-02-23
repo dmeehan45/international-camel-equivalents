@@ -51,6 +51,14 @@ body {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   margin: 0 0 16px;
+  align-items: end;
+}
+
+.phase-progress-meta {
+  margin: 0 0 4px;
+  font-size: 0.82rem;
+  color: #b5c4e2;
+  grid-column: 1 / -1;
 }
 
 .step,
@@ -71,6 +79,26 @@ button {
   transition: all var(--ccc-transition-standard) ease;
 }
 
+.step {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 6px;
+  min-height: 62px;
+  border-color: rgba(90, 106, 136, 0.45);
+}
+
+.step-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(213, 224, 244, 0.45);
+  font-size: 0.78rem;
+}
+
 button:hover {
   border-color: rgba(232, 220, 197, 0.7);
 }
@@ -79,6 +107,12 @@ button:hover {
   border-color: var(--ccc-gold);
   color: #fff;
   background: linear-gradient(180deg, rgba(200, 168, 105, 0.32), rgba(200, 168, 105, 0.12));
+}
+
+.step.active .step-indicator {
+  background: linear-gradient(180deg, #ccb27a, #9a7a46);
+  color: #081225;
+  border-color: #d8c18f;
 }
 
 .view-card {
@@ -145,6 +179,8 @@ textarea:focus {
   background: linear-gradient(180deg, #c8a869 0%, #8f7644 100%);
   border-color: #b09159;
   color: #081225;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 1px rgba(200, 168, 105, 0.55), 0 8px 18px rgba(143, 118, 68, 0.32);
 }
 
 .cta-secondary {
@@ -420,53 +456,53 @@ pre {
   line-height: 1.5;
 }
 
-.trust-rail {
-  border: 1px solid #dde5f4;
-  border-radius: 14px;
-  padding: 12px;
-  background: #f9fbff;
+.intro-microcopy p {
+  margin: 4px 0;
 }
 
-.trust-badge-grid {
+.benefits-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin: 0;
 }
 
-.trust-badge {
-  margin: 0;
-  border: 1px solid rgba(200, 168, 105, 0.38);
+.benefit-card {
+  border: 1px solid #dae2f1;
   border-radius: 10px;
-  padding: 9px 11px;
+  padding: 10px;
   background: #fff;
-  color: #20375d;
-  font-size: 0.82rem;
-  text-align: left;
+}
+
+.benefit-card h3 {
+  margin: 0 0 4px;
+  color: #1f3760;
+  font-size: 0.95rem;
+}
+
+.benefit-card p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.trust-bar {
+  border: 1px solid #d4dae6;
+  border-radius: 12px;
+  background: #f3f5f8;
+  padding: 10px;
+}
+
+.trust-line-items {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 12px;
+  row-gap: 6px;
 }
 
-.trust-badge-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #d1b57a 0%, #9b7b44 100%);
-  box-shadow: 0 0 0 2px rgba(209, 181, 122, 0.2);
-  flex: 0 0 auto;
-}
-
-.trust-mentions {
-  margin-top: 8px;
-  border-top: 1px solid #e6ecf7;
-  padding-top: 8px;
-}
-
-.trust-mentions p {
-  margin: 2px 0;
-  font-size: 0.78rem;
-  color: #526586;
+.trust-line {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #4a5b79;
 }
 
 .cta-zone {
@@ -509,7 +545,7 @@ pre {
 }
 
 .how-it-works-chevron {
-  transition: transform 120ms ease;
+  transition: transform 200ms ease;
 }
 
 .how-it-works ol {
@@ -524,7 +560,7 @@ pre {
 }
 
 @media (min-width: 768px) {
-  .trust-badge-grid {
+  .legal-footer {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -533,4 +569,101 @@ pre {
   margin: 0 0 8px;
   font-weight: 600;
   color: #7d5f2e;
+}
+
+.boot-loader {
+  border: 1px solid #d6deed;
+  border-radius: 12px;
+  background: #f5f8fd;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.boot-loader p {
+  margin: 6px 0 0;
+  color: #5a6d90;
+}
+
+.boot-loader-shimmer {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e8eef9 0%, #d7e0f2 50%, #e8eef9 100%);
+  background-size: 180% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 0 0; }
+  to { background-position: 180% 0; }
+}
+
+.legal-footer {
+  margin-top: 14px;
+  border: 1px solid #1d2a46;
+  border-radius: 12px;
+  background: rgba(8, 15, 30, 0.9);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.legal-footer h3 {
+  margin: 0 0 6px;
+  color: #d6b983;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.footer-link-button {
+  min-height: auto;
+  border: 0;
+  padding: 0;
+  margin: 4px 0;
+  background: transparent;
+  color: #d9e2f8;
+  text-align: left;
+  text-decoration: underline;
+}
+
+.footer-rates-line {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: #9baecc;
+  grid-column: 1 / -1;
+}
+
+.legal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 11, 23, 0.75);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  padding: 12px;
+}
+
+.legal-modal-card {
+  width: min(100%, 560px);
+  background: #f9fbff;
+  border: 1px solid #d3deef;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+@media (max-width: 767px) {
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .step {
+    grid-template-columns: 24px 1fr;
+    justify-items: start;
+    align-items: center;
+    min-height: 44px;
+  }
 }
