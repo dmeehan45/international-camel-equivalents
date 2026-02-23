@@ -1,9 +1,17 @@
 .legal-footer {
-  margin: 24px 0 72px;
+  margin: 24px 0 84px;
   color: var(--ccc-steel);
   text-align: center;
   font-size: 13px;
   letter-spacing: 0.03em;
+}
+
+.legal-footer p {
+  margin: 4px 0;
+}
+
+.legal-footer-links a {
+  color: var(--ccc-steel);
 }
 
 .persistent-disclaimer {
@@ -19,6 +27,20 @@
   padding: 10px 12px;
   font-size: 12px;
   backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.persistent-disclaimer-dismiss {
+  min-height: auto;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 220, 197, 0.42);
+  background: rgba(14, 33, 63, 0.85);
+  color: #f7f2e6;
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 

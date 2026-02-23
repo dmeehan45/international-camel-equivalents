@@ -141,6 +141,12 @@ textarea:focus {
   margin-top: 10px;
 }
 
+.ccc-button-primary:hover {
+  background: linear-gradient(180deg, #c8a869 0%, #8f7644 100%);
+  border-color: #b09159;
+  color: #081225;
+}
+
 .cta-secondary {
   background: #fff;
   color: var(--ccc-deep-navy);
@@ -380,4 +386,79 @@ pre {
 
 .clause-snippet {
   margin-top: 6px;
+}
+
+.intro-tagline {
+  font-size: 1.02rem;
+  color: #2f456d;
+  font-weight: 500;
+}
+
+.trust-badge-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+
+.trust-badge {
+  margin: 0;
+  border: 1px solid rgba(200, 168, 105, 0.45);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fffdf8;
+  color: #624f2c;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.trust-mentions p {
+  margin: 2px 0;
+  font-size: 0.8rem;
+  color: #4f6186;
+}
+
+.cta-meta {
+  text-align: center;
+  margin: 8px 0 12px;
+}
+
+.how-it-works {
+  border: 1px solid #d9e2f2;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #f7faff;
+  margin-bottom: 8px;
+}
+
+.how-it-works summary {
+  list-style: none;
+  cursor: pointer;
+  margin: 0;
+}
+
+.how-it-works summary::-webkit-details-marker {
+  display: none;
+}
+
+.how-it-works ol {
+  margin: 8px 0 6px;
+  padding-left: 20px;
+  color: var(--ccc-slate);
+}
+
+.how-it-works li {
+  margin-bottom: 6px;
+}
+
+@media (min-width: 768px) {
+  .trust-badge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dbt-certifying {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: #7d5f2e;
 }
