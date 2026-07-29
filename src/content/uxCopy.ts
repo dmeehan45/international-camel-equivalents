@@ -3,13 +3,13 @@ export const uxCopy = {
     appTitle: 'Dowry Proposal Advisory',
     persistentDisclaimer: 'Advisory Only • Not Legal Advice • Proxies May Be Uncontainable',
     footer: {
-      brandLine: '© 2026 Dowry Proposal Advisory • All Rights Reserved in Perpetuity',
+      brandLine: (year: number) => `© ${year} Dowry Proposal Advisory • All Rights Reserved in Perpetuity`,
       links: [
         { label: 'Privacy Policy', href: '#privacy-policy' },
         { label: 'Terms of Advisory Use', href: '#terms-of-advisory-use' },
         { label: 'DBT Rate Disclaimer', href: '#dbt-rate-disclaimer' },
       ],
-      ratesLine: 'Rates as of February 22, 2026. Fluctuations may occur due to Bureau-approved market events.',
+      ratesLine: (advisoryDate: string) => `Rates as of ${advisoryDate}. Fluctuations may occur due to Bureau-approved market events.`,
       advisoryLine: 'This service provides advisory documents only. Consult a licensed professional (or bard) for binding matters.',
     },
     startOver: 'Start over',
@@ -72,7 +72,7 @@ export const uxCopy = {
     footnote: 'DBT rates sourced from the Bureau of Absurd Exchanges. Non-refundable.',
     browse: 'Browse Full DBT Library',
     searchPlaceholder: 'Search proxies',
-    formula: (qty: number, rate: number, camels: number, vol: number) => `DBT Computation: ${qty} × ${rate} = ${camels} Camel Equivalent (Volatility: +${vol}% today).`,
+    formula: (qty: number, rate: number, camels: number, vol: number) => `DBT Computation: ${qty} ÷ ${rate} = ${camels} Camel Equivalent (Volatility: +${vol}% today).`,
     empty: 'No proxies match this filter.',
     volatilityAlert: (vol: number) => `Volatility Alert: +${vol}% (Yak Futures Dip).`,
     footnotes: [
@@ -125,13 +125,6 @@ export const uxCopy = {
     mobileFootnoteSummary: 'Note',
     mobileFootnote: 'For entertainment purposes only.',
   },
-  phases: {
-    phase1: { heading: '', subtitle: '', cta: '', secondaryCta: '', advancedLabel: '', labels: { bidName: '', bidRegion: '', camelQuantity: '', warriorStatus: '', hobby: '', courtshipYears: '', artifact: '', quirks: '' }, placeholders: { bidName: '', bidRegion: '', hobby: '', quirks: '' }, helper: { requiredFields: '', quantityRange: (_min: number, _max: number) => '', examples: '' } },
-    phase2: { heading: '', subtitle: '', advancedLabel: '', cta: '', secondaryCta: '', noResult: '', compareCta: '' },
-    phase3: { heading: '', subtitle: '', cta: '' },
-    phase4: { heading: '', subtitle: '', cta: '', primaryCta: '', empty: '' },
-  },
-  loadingFacts: [],
   errors: {
     nameRequired: 'Invalid Entry: Per DBT Statute 1.01, please enter a name.',
     regionRequired: 'Invalid Entry: Per DBT Statute 1.02, please select a region.',

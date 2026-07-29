@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { uxCopy } from '../content/uxCopy';
+import { toCamelBenchmark } from '../core/dbt-rates';
 
 type ProxyCard = {
   id: string;
@@ -119,7 +120,7 @@ export function Page3Offer(props: Props) {
               <article key={card.id} className="compare-col">
                 <h4>{card.name}</h4>
                 <p className="helper"><strong>Live DBT Rate:</strong> {card.liveRate}</p>
-                <p className="helper"><strong>Camel Equivalent:</strong> {(props.proxyQuantity * card.liveRate).toFixed(2)}</p>
+                <p className="helper"><strong>Camel Equivalent:</strong> {toCamelBenchmark(props.proxyQuantity, card.liveRate).toFixed(2)}</p>
                 <p className="helper">{card.description}</p>
                 <button className="cta-secondary" onClick={() => props.onSelectProxy(card.id)}>Select this Proxy</button>
               </article>

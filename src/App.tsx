@@ -115,7 +115,7 @@ function buildAdvisoryContract(input: {
 
   const addendumBlock = addendumClauses.length ? addendumClauses.join('\n\n') : 'No addendum clauses were selected.';
 
-  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${safeQuantity} ${safeProxy} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${safeProxy}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${safeProxy} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n\nAddendum:\n${addendumBlock}\n\nSignatories:\n_______________________________ (Proposer)\n_______________________________ (Acceptor)\nDate: February 22, 2026\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
+  return `DOWRY PROPOSAL INDENTURE\n\nParties: The Undersigned Proposer and ${input.name || 'Unnamed Subject'} of ${input.region || 'Unspecified Region'}.\n\nWHEREAS, pursuant to the Definitive Benchmarking Tool (DBT v2.026, rates as of ${input.advisoryDate}), the Proposer offers a dowry bid in the form of ${safeQuantity} ${safeProxy} (live equivalent: ${input.camelEquivalent} camels, volatility-adjusted at +${input.volatilityPercent}%).\n\nDBT Certification: 1 Camel = ${input.rate} ${safeProxy}. Bid excludes ancillary liabilities, including but not limited to feeding schedules, noise mitigation, stacking, relocation, and containment obligations. ${toneLine}\n\nClauses:\n1. Acceptance deems this indenture binding in advisory jurisdictions recognized by the Bureau of Absurd Exchanges.\n2. Proxy specifics: Said ${safeProxy} shall remain transferable in spirit and administratively annoying in practice.\n3. Particulars: ${input.particulars}.\n4. Dispute Resolution: Arbitrated by the Bureau of Absurd Exchanges under expedited no-take-backs procedure.\n\nAddendum:\n${addendumBlock}\n\nSignatories:\n_______________________________ (Proposer)\n_______________________________ (Acceptor)\nDate: ${input.advisoryDate}\n\nThis instrument supersedes prior oral understandings and optimistic hallway negotiations. Executed in good faith (or bad, per DBT discretion).`;
 }
 
 function contractTextToHtml(text: string) {
@@ -692,8 +692,8 @@ function Shell() {
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('contact-support')}>support@dowryadvisory.invalid</button>
           <button className="footer-link-button" type="button" onClick={() => setActiveLegalModal('report-rate-anomalies')}>Report Rate Anomalies</button>
         </details>
-        <p className="footer-rates-line">{uxCopy.global.footer.ratesLine}</p>
-        <p className="footer-rates-line">{uxCopy.global.footer.brandLine}</p>
+        <p className="footer-rates-line">{uxCopy.global.footer.ratesLine(advisoryDate)}</p>
+        <p className="footer-rates-line">{uxCopy.global.footer.brandLine(advisoryNow.getFullYear())}</p>
         <p className="footer-rates-line">{uxCopy.global.footer.advisoryLine}</p>
       </footer>
 
