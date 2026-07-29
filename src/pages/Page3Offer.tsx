@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { uxCopy } from '../content/uxCopy';
 import { toCamelBenchmark } from '../core/dbt-rates';
+import type { ArchiveTrendInsightResult, VolatilityForecastResult } from '../domain/types';
 
 type ProxyCard = {
   id: string;
@@ -26,6 +27,9 @@ type Props = {
   selectedLiveRate: number;
   volatilityToast: string;
   onLockIn: () => void;
+  appliedForecast: VolatilityForecastResult | null;
+  appliedTrend: ArchiveTrendInsightResult | null;
+  onClearAdvisoryOverlays: () => void;
 };
 
 export function Page3Offer(props: Props) {
@@ -58,6 +62,29 @@ export function Page3Offer(props: Props) {
       <p>{props.copy.page3.suggestion(props.selectedProxyName)}</p>
       <p className="helper">{props.copy.page3.helper}</p>
 
+      {(props.appliedForecast || props.appliedTrend) && (
+        <section className="advisory-overlay-card" aria-label="Applied advisory outputs">
+          <strong>Advisory outputs applied to this bid</strong>
+          {props.appliedForecast && (
+            <p className="helper">
+              Volatility Simulator: {props.appliedForecast.proxyName} projected at{' '}
+              {props.appliedForecast.projectedRate.toFixed(2)} per camel (±{props.appliedForecast.volatilityPercent.toFixed(1)}%)
+              {' '}versus the benchmarked live rate of {props.selectedLiveRate}.
+            </p>
+          )}
+          {props.appliedTrend && (
+            <p className="helper">
+              Historical Archive: {props.appliedTrend.proxyName} trending {props.appliedTrend.trend}{' '}
+              at an average of {props.appliedTrend.averageRate.toFixed(2)}.
+            </p>
+          )}
+          <p className="helper legal-footnote">
+            Advisory overlays are commentary only — the DBT computation below still governs the bid.
+          </p>
+          <button className="cta-secondary" onClick={props.onClearAdvisoryOverlays}>Clear advisory overlays</button>
+        </section>
+      )}
+
       <div className="cards proxy-cards">
         {props.curatedCards.map((card) => (
           <button
@@ -80,6 +107,13 @@ export function Page3Offer(props: Props) {
           {isCompareOpen ? 'Hide Comparison' : `Compare Selected (${compareIds.length})`}
         </button>
       </div>
+      {props.isLibraryOpen && (
+        <p className="helper">
+          {compareIds.length >= 4
+            ? 'Comparison tray is full (4 of 4). Deselect a proxy to swap one in.'
+            : `Tick up to 4 proxies to compare them side by side (${compareIds.length} of 4 selected).`}
+        </p>
+      )}
       {props.isLibraryOpen && (
         <div className="drawer drawer--library">
           <button className="cta-secondary drawer-mobile-close" onClick={props.onToggleLibrary}>Close library</button>

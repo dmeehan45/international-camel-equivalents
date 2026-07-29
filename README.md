@@ -119,7 +119,7 @@ via native type stripping) plus Cypress for the end-to-end flow.
 ## Verified
 
 Installs, builds, and completes the full five-page flow on Node 22.22.2 as of
-2026-07-29. Unit suite: 18 passing. E2E suite: 10 passing. Not maintained on a
+2026-07-29. Unit suite: 23 passing. E2E suite: 18 passing. Not maintained on a
 schedule, and not audited for security.
 
 ## License

@@ -814,3 +814,28 @@ input[type='range']::-moz-range-thumb {
   background: #fff;
   padding: 10px;
 }
+
+.advisory-overlay-card {
+  border: 1px solid #d7dfef;
+  border-left: 3px solid var(--ccc-gold, #8c7446);
+  border-radius: 10px;
+  background: #fff;
+  padding: 12px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.advisory-notice-dismiss {
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0 0 0 8px;
+  min-width: 24px;
+  min-height: 24px;
+  cursor: pointer;
+}

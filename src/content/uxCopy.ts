@@ -102,7 +102,7 @@ export const uxCopy = {
     empty: 'No advisory indentures recorded yet.',
     startNew: 'New Advisory Process',
     view: 'View',
-    copy: 'Share',
+    copy: 'Copy',
     share: 'Transmit',
     delete: 'Delete',
     extras: 'Further Advisory Tools',

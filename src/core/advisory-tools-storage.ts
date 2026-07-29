@@ -53,10 +53,28 @@ export function writeAppliedForecast(result: VolatilityForecastResult) {
   safeWrite(ADVISORY_FORECAST_APPLIED_KEY, result);
 }
 
+export function readAppliedForecast() {
+  return safeRead<VolatilityForecastResult>(ADVISORY_FORECAST_APPLIED_KEY);
+}
+
 export function writeAppliedEstimate(result: MaidenResponseEstimateResult) {
   safeWrite(ADVISORY_ESTIMATE_APPLIED_KEY, result);
 }
 
+export function readAppliedEstimate() {
+  return safeRead<MaidenResponseEstimateResult>(ADVISORY_ESTIMATE_APPLIED_KEY);
+}
+
 export function writeAppliedArchiveInsight(result: ArchiveTrendInsightResult) {
   safeWrite(ADVISORY_ARCHIVE_APPLIED_KEY, result);
+}
+
+export function readAppliedArchiveInsight() {
+  return safeRead<ArchiveTrendInsightResult>(ADVISORY_ARCHIVE_APPLIED_KEY);
+}
+
+export function clearAppliedAdvisoryOutputs() {
+  [ADVISORY_FORECAST_APPLIED_KEY, ADVISORY_ESTIMATE_APPLIED_KEY, ADVISORY_ARCHIVE_APPLIED_KEY, ADVISORY_QUIZ_APPLY_NEXT_BID_KEY].forEach((key) => {
+    localStorage.removeItem(key);
+  });
 }

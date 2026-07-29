@@ -38,31 +38,52 @@ export function BidVolatilitySimulatorModal(props: Props) {
     return [...preferred, ...fallback].slice(0, 3);
   }, [selectedProxy]);
 
+  function resetSimulation() {
+    setTurn(0);
+    setRateMultiplier(1);
+    setHistory([1]);
+  }
+
   if (!props.isOpen || !selectedProxy) return null;
 
   const projectedRate = selectedProxy.ratePerCamel * rateMultiplier;
   const volatilityPercent = Math.abs((rateMultiplier - 1) * 100);
+  const isExhausted = turn >= 4;
 
   return (
     <AdvisoryToolShell title="DBT Volatility Forecasting Simulator – Model v1.07" onClose={props.onClose} mobileFullScreen>
       <label>
         Proxy Under Review
-        <select value={selectedProxyId} onChange={(event) => setSelectedProxyId(event.target.value)}>
-          {props.proxyLibrary.slice(0, 100).map((proxy) => (
+        <select
+          value={selectedProxyId}
+          onChange={(event) => {
+            setSelectedProxyId(event.target.value);
+            // A multiplier accrued against a different proxy is meaningless here.
+            resetSimulation();
+          }}
+        >
+          {props.proxyLibrary.map((proxy) => (
             <option key={proxy.id} value={proxy.id}>{proxy.name}</option>
           ))}
         </select>
       </label>
-      <p className="helper">Turn {Math.min(turn + 1, 4)}/4 · Run Simulation to issue a formal report.</p>
+      <div className="actions-row actions-row--two">
+        <p className="helper">
+          {isExhausted
+            ? 'Turn 4/4 · Simulation complete. Apply the forecast or reset to model another scenario.'
+            : `Turn ${turn + 1}/4 · Select an event to advance the simulation.`}
+        </p>
+        <button className="cta-secondary" onClick={resetSimulation} disabled={turn === 0}>Reset Simulation</button>
+      </div>
 
       <div className="cards">
         {scenarioSet.map((scenario) => (
           <button
             key={scenario.id}
             className="card-button"
-            disabled={turn >= 4}
+            disabled={isExhausted}
             onClick={() => {
-              if (turn >= 4) return;
+              if (isExhausted) return;
               const nextMultiplier = Math.max(0.3, rateMultiplier + scenario.impact / 2);
               setRateMultiplier(nextMultiplier);
               setHistory((current) => [...current, nextMultiplier]);
