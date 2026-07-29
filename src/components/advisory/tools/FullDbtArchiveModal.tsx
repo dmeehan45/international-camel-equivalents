@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AdvisoryToolShell } from '../AdvisoryToolShell';
 import type { ArchiveTrendInsightResult, ProxyDefinition } from '../../../domain/types';
+import { buildArchiveEntries } from '../../../core/advisory-tools-engine';
 
 type Props = {
   isOpen: boolean;
@@ -9,41 +10,12 @@ type Props = {
   onApplyTrend: (result: ArchiveTrendInsightResult) => void;
 };
 
-type ArchiveEntry = {
-  id: string;
-  proxyName: string;
-  category: ProxyDefinition['category'];
-  dateLabel: string;
-  rate: number;
-  note: string;
-};
-
-function makeArchive(proxyLibrary: ProxyDefinition[]): ArchiveEntry[] {
-  const source = proxyLibrary.slice(0, 18);
-  return Array.from({ length: 30 }).flatMap((_, dayOffset) => {
-    const day = new Date(Date.now() - dayOffset * 86400000);
-    return source.slice(0, 4).map((proxy, index) => {
-      const wave = Math.sin((dayOffset + index) / 4) * 0.18;
-      const drift = ((dayOffset + index * 3) % 7) * 0.01;
-      const rate = Math.max(0.1, proxy.ratePerCamel + wave - drift);
-      return {
-        id: `${proxy.id}-${dayOffset}-${index}`,
-        proxyName: proxy.name,
-        category: proxy.category,
-        dateLabel: day.toLocaleDateString(),
-        rate,
-        note: `${proxy.name} ${wave >= 0 ? 'rose' : 'dipped'} ${Math.abs(wave).toFixed(2)} after ${dayOffset % 2 ? 'spitty cousin surplus' : 'portal potato activity'}.`,
-      };
-    });
-  });
-}
-
 export function FullDbtArchiveModal(props: Props) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ProxyDefinition['category']>('all');
   const [selectedProxyName, setSelectedProxyName] = useState('');
 
-  const logs = useMemo(() => makeArchive(props.proxyLibrary), [props.proxyLibrary]);
+  const logs = useMemo(() => buildArchiveEntries(props.proxyLibrary, Date.now()), [props.proxyLibrary]);
   const filtered = logs.filter((item) => {
     const matchesQuery = !query.trim() || item.proxyName.toLowerCase().includes(query.toLowerCase()) || item.note.toLowerCase().includes(query.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
@@ -89,6 +61,12 @@ export function FullDbtArchiveModal(props: Props) {
           ))}
         </select>
       </label>
+
+      <p className="helper">
+        {filtered.length === 0
+          ? 'No ledger records in scope.'
+          : `Showing ${Math.min(40, filtered.length)} of ${filtered.length} ledger records in scope.`}
+      </p>
 
       <div className="cards advisory-ledger-list">
         {filtered.slice(0, 40).map((entry) => (

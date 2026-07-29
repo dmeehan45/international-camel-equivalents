@@ -101,3 +101,47 @@ export function resolveProxyAffinity(proxyLibrary: ProxyDefinition[], selectedOp
     assessedAtISO: new Date().toISOString(),
   };
 }
+
+export type ArchiveEntry = {
+  id: string;
+  proxyName: string;
+  category: ProxyDefinition['category'];
+  dateLabel: string;
+  rate: number;
+  note: string;
+};
+
+/**
+ * Sample across the whole library rather than off the front of it. Taking the
+ * first N proxies yields mammals only, which left five of the six archive
+ * categories with no records behind them.
+ */
+export function sampleAcrossCategories(proxyLibrary: ProxyDefinition[], perCategory: number): ProxyDefinition[] {
+  const byCategory = new Map<string, ProxyDefinition[]>();
+  proxyLibrary.forEach((proxy) => {
+    const bucket = byCategory.get(proxy.category) || [];
+    if (bucket.length < perCategory) bucket.push(proxy);
+    byCategory.set(proxy.category, bucket);
+  });
+  return [...byCategory.values()].flat();
+}
+
+export function buildArchiveEntries(proxyLibrary: ProxyDefinition[], now: number, days = 30): ArchiveEntry[] {
+  const source = sampleAcrossCategories(proxyLibrary, 3);
+  return Array.from({ length: days }).flatMap((_, dayOffset) => {
+    const day = new Date(now - dayOffset * 86400000);
+    return source.map((proxy, index) => {
+      const wave = Math.sin((dayOffset + index) / 4) * 0.18;
+      const drift = ((dayOffset + index * 3) % 7) * 0.01;
+      const rate = Math.max(0.1, proxy.ratePerCamel + wave - drift);
+      return {
+        id: `${proxy.id}-${dayOffset}-${index}`,
+        proxyName: proxy.name,
+        category: proxy.category,
+        dateLabel: day.toLocaleDateString(),
+        rate,
+        note: `${proxy.name} ${wave >= 0 ? 'rose' : 'dipped'} ${Math.abs(wave).toFixed(2)} after ${dayOffset % 2 ? 'spitty cousin surplus' : 'portal potato activity'}.`,
+      };
+    });
+  });
+}

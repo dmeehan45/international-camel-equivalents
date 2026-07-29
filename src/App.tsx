@@ -14,7 +14,7 @@ import { FullDbtArchiveModal } from './components/advisory/tools/FullDbtArchiveM
 import proxies from './data/proxies.json';
 import { buildCuratedSuggestions, formatAdvisoryDate, getLiveRate, getVolatilityPercent, toCamelBenchmark } from './core/dbt-rates';
 import type { AdvisoryToolKey, AdvisoryToolTile, ArchiveTrendInsightResult, MaidenResponseEstimateResult, ProxyDefinition, VolatilityForecastResult } from './domain/types';
-import { readAdvisoryUnlockState, readApplyNextBidProxyId, writeAdvisoryUnlockState, writeApplyNextBid, writeAppliedArchiveInsight, writeAppliedEstimate, writeAppliedForecast } from './core/advisory-tools-storage';
+import { clearAppliedAdvisoryOutputs, readAdvisoryUnlockState, readAppliedArchiveInsight, readAppliedEstimate, readAppliedForecast, readApplyNextBidProxyId, writeAdvisoryUnlockState, writeApplyNextBid, writeAppliedArchiveInsight, writeAppliedEstimate, writeAppliedForecast } from './core/advisory-tools-storage';
 
 const regions = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Kenya', 'UAE', 'India', 'Pakistan', 'Other'];
 const ageRanges = ['18–24', '25–34', '35–44', '45–54', '55+'];
@@ -88,6 +88,7 @@ function buildAdvisoryContract(input: {
   selectedClauses: string[];
   customClause: string;
   tone: Tone;
+  contingencyClause: string;
 }) {
   const toneLine = input.tone === 'Formal'
     ? 'This instrument is submitted with procedural seriousness and ceremonial restraint.'
@@ -111,6 +112,11 @@ function buildAdvisoryContract(input: {
 
   if (input.customClause.trim()) {
     addendumClauses.push(`Addendum ${addendumClauses.length + 1}: Custom Clause\n\n${input.customClause.trim()}`);
+  }
+
+  // Emitted by the Maiden Response Estimator's "Generate Contingency Clause".
+  if (input.contingencyClause.trim()) {
+    addendumClauses.push(`Addendum ${addendumClauses.length + 1}: Contingency Protocol (Algorithm 5.13)\n\n${input.contingencyClause.trim()}`);
   }
 
   const addendumBlock = addendumClauses.length ? addendumClauses.join('\n\n') : 'No addendum clauses were selected.';
@@ -158,6 +164,15 @@ function Shell() {
   const [activeToolId, setActiveToolId] = useState<AdvisoryToolKey | null>(null);
   const [toolsUnlocked, setToolsUnlocked] = useState(() => readAdvisoryUnlockState().hasUnlockedFurtherAdvisoryTools);
   const [advisoryToolNotice, setAdvisoryToolNotice] = useState('');
+  // Outputs the Page 5 advisory tools "apply" back into the live bid. These are
+  // rehydrated from storage so an applied result survives a reload.
+  const [appliedForecast, setAppliedForecast] = useState<VolatilityForecastResult | null>(() => readAppliedForecast());
+  const [appliedTrend, setAppliedTrend] = useState<ArchiveTrendInsightResult | null>(() => readAppliedArchiveInsight());
+  const [appliedEstimate, setAppliedEstimate] = useState<MaidenResponseEstimateResult | null>(() => readAppliedEstimate());
+  // The bid the current contract text was drawn against. If the live bid drifts
+  // away from it — by changing proxy on the Offer page, or by an advisory tool
+  // applying a new one — the contract on screen no longer describes the bid.
+  const [contractBidSignature, setContractBidSignature] = useState('');
   const [isPersistentDisclaimerVisible, setPersistentDisclaimerVisible] = useState(() => !sessionStorage.getItem(uxCopy.disclaimer.sessionKey));
   const [isStepCertifying, setIsStepCertifying] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
@@ -232,7 +247,22 @@ function Shell() {
     hasProposal: Boolean(proposalText.trim()),
   };
 
-  function generatedProposal() {
+  const bidSignature = [form.bidName, form.bidRegion, proxyQuantity, selectedProxy.name, liveRate].join('|');
+  const isContractStale = Boolean(proposalText.trim()) && contractBidSignature !== '' && contractBidSignature !== bidSignature;
+
+  // Single place that writes the contract, so the staleness signature can never
+  // drift out of step with the text it describes.
+  function regenerateContract(overrides?: { contingencyClause?: string }) {
+    const text = generatedProposal(overrides);
+    setProposalText(text);
+    setContractBidSignature(bidSignature);
+    return text;
+  }
+
+  // `overrides` lets a caller build the contract with a value that has just been
+  // computed but not yet committed to state (React state updates are not visible
+  // within the handler that sets them).
+  function generatedProposal(overrides?: { contingencyClause?: string }) {
     return buildAdvisoryContract({
       name: form.bidName,
       region: form.bidRegion,
@@ -246,12 +276,14 @@ function Shell() {
       selectedClauses,
       customClause: customSentence,
       tone,
+      contingencyClause: overrides?.contingencyClause ?? (appliedEstimate?.contingencyClause || ''),
     });
   }
 
   function startOver() {
     setStep('page1-landing');
     setProposalText('');
+    setContractBidSignature('');
     setCustomSentence('');
     setTone('Formal');
     setSelectedClauses([]);
@@ -259,6 +291,10 @@ function Shell() {
     setSelectedProxyId('');
     setHasShownEditWarning(false);
     setAdvisoryToolNotice('');
+    clearAppliedAdvisoryOutputs();
+    setAppliedForecast(null);
+    setAppliedTrend(null);
+    setAppliedEstimate(null);
     dispatchForm({ type: 'setField', field: 'bidName', value: '' });
     dispatchForm({ type: 'setField', field: 'bidRegion', value: '' });
     dispatchForm({ type: 'setField', field: 'camelQuantity', value: 18 });
@@ -312,6 +348,7 @@ function Shell() {
     dispatchForm({ type: 'setField', field: 'quirkyFact', value: resumeSnapshot.form.quirkyFact });
     setSelectedProxyId(resumeSnapshot.selectedProxyId);
     setProposalText(resumeSnapshot.proposalText);
+    setContractBidSignature('');
     setDrafts(resumeSnapshot.drafts);
     setStep(resumeSnapshot.step);
   }
@@ -322,7 +359,16 @@ function Shell() {
   }
 
   async function copyText(text: string) {
-    await navigator.clipboard.writeText(text);
+    // Clipboard writes reject on denied permission and in insecure contexts.
+    // Previously this surfaced as an unhandled rejection and the user saw nothing.
+    try {
+      await navigator.clipboard.writeText(text);
+      setAdvisoryToolNotice('Copied to clipboard.');
+      return true;
+    } catch {
+      setAdvisoryToolNotice('Could not reach the clipboard. Use Download .txt, or select the contract text and copy manually.');
+      return false;
+    }
   }
 
   function downloadTxt() {
@@ -399,10 +445,19 @@ function Shell() {
 
   async function shareText(text: string) {
     if (navigator.share) {
-      await navigator.share({ title: uxCopy.global.appTitle, text });
+      try {
+        await navigator.share({ title: uxCopy.global.appTitle, text });
+        setAdvisoryToolNotice('Advisory transmitted.');
+      } catch {
+        // A user dismissing the share sheet also lands here; falling back to the
+        // clipboard is harmless and reports its own outcome.
+        await copyText(text);
+      }
       return;
     }
-    await copyText(text);
+    // No Web Share on this browser, so say what actually happened.
+    const copied = await copyText(text);
+    if (copied) setAdvisoryToolNotice('Sharing is unavailable in this browser — the advisory was copied to your clipboard instead.');
   }
 
   function handleContinueBasics() {
@@ -420,8 +475,7 @@ function Shell() {
     }
     setHasShownEditWarning(false);
     setAdvisoryToolNotice('');
-    const nextText = generatedProposal();
-    setProposalText(nextText);
+    const nextText = regenerateContract();
     saveResumeSnapshot('page4-proposal');
     setStep('page4-proposal');
   }
@@ -442,19 +496,34 @@ function Shell() {
 
   function handleApplyForecast(result: VolatilityForecastResult) {
     writeAppliedForecast(result);
-    setAdvisoryToolNotice(`Forecast Applied: ${result.proxyName} now displays at ${result.projectedRate.toFixed(2)} (±${result.volatilityPercent.toFixed(1)}%).`);
+    setAppliedForecast(result);
+    // Applying a forecast moves the bid onto the forecast proxy, otherwise the
+    // projected rate would describe something the user is not bidding.
+    setSelectedProxyId(result.proxyId);
+    setStep('page3-offer');
+    setAdvisoryToolNotice(`Forecast applied to your bid: ${result.proxyName} projected at ${result.projectedRate.toFixed(2)} (±${result.volatilityPercent.toFixed(1)}%).`);
     setActiveToolId(null);
   }
 
   function handleGenerateContingencyClause(result: MaidenResponseEstimateResult) {
     writeAppliedEstimate(result);
-    setAdvisoryToolNotice(`Clause Generated: ${result.contingencyClause}`);
+    setAppliedEstimate(result);
+    // Rebuild the indenture so the clause is actually in it. Never clear
+    // proposalText here — the Drafts step is gated on it, and an empty contract
+    // would strand the user away from their docket.
+    regenerateContract({ contingencyClause: result.contingencyClause });
+    setStep('page4-proposal');
+    setAdvisoryToolNotice(`Contingency clause added to your indenture addendum (${result.probabilityPercent}% affirmative, ${result.confidenceBand.toLowerCase()} confidence).`);
     setActiveToolId(null);
   }
 
   function handleApplyArchiveTrend(result: ArchiveTrendInsightResult) {
     writeAppliedArchiveInsight(result);
-    setAdvisoryToolNotice(`Trend Applied: ${result.proxyName} marked ${result.trend} at avg ${result.averageRate.toFixed(2)}.`);
+    setAppliedTrend(result);
+    const match = proxyLibrary.find((proxy) => proxy.name === result.proxyName);
+    if (match) setSelectedProxyId(match.id);
+    setStep('page3-offer');
+    setAdvisoryToolNotice(`Trend applied to your bid: ${result.proxyName} trending ${result.trend} at avg ${result.averageRate.toFixed(2)}.`);
     setActiveToolId(null);
   }
 
@@ -467,7 +536,7 @@ function Shell() {
 
   useEffect(() => {
     if (step !== 'page4-proposal') return;
-    setProposalText(generatedProposal());
+    regenerateContract();
   }, [selectedClauses, customSentence, tone]);
 
   useEffect(() => {
@@ -581,6 +650,15 @@ function Shell() {
             selectedLiveRate={liveRate}
             volatilityToast={volatilityToast}
             onLockIn={handleLockOffer}
+            appliedForecast={appliedForecast && appliedForecast.proxyId === selectedProxyId ? appliedForecast : null}
+            appliedTrend={appliedTrend && appliedTrend.proxyName === selectedProxy.name ? appliedTrend : null}
+            onClearAdvisoryOverlays={() => {
+              clearAppliedAdvisoryOutputs();
+              setAppliedForecast(null);
+              setAppliedTrend(null);
+              setAppliedEstimate(null);
+              setAdvisoryToolNotice('');
+            }}
           />
         )}
 
@@ -605,10 +683,11 @@ function Shell() {
             tones={tones}
             onSetTone={setTone}
             clauseOptions={clauseOptions}
+            isContractStale={isContractStale}
             onGenerate={() => {
               setHasShownEditWarning(false);
               setAdvisoryToolNotice('');
-              setProposalText(generatedProposal());
+              regenerateContract();
             }}
             onCopy={() => copyText(proposalText || generatedProposal())}
             onDownloadTxt={downloadTxt}
@@ -642,7 +721,12 @@ function Shell() {
         )}
 
       {error && <p className="error">{error}</p>}
-      {advisoryToolNotice && <p className="helper badge-volatility">{advisoryToolNotice}</p>}
+      {advisoryToolNotice && (
+        <p className="helper badge-volatility" role="status" aria-live="polite">
+          {advisoryToolNotice}
+          <button className="cta-secondary advisory-notice-dismiss" onClick={() => setAdvisoryToolNotice('')} aria-label="Dismiss notice">×</button>
+        </p>
+      )}
 
       <ProxyPersonalityAssessmentModal
         isOpen={activeToolId === 'proxy_personality_assessment'}
@@ -651,6 +735,8 @@ function Shell() {
         onApplyToNextBid={(result) => {
           writeApplyNextBid(result);
           setSelectedProxyId(result.proxyId);
+          setStep('page3-offer');
+          setAdvisoryToolNotice(`Spirit proxy applied to your bid: ${result.proxyName} at ${result.rate.toFixed(2)} per camel.`);
           setActiveToolId(null);
         }}
       />

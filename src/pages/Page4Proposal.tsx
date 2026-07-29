@@ -25,6 +25,7 @@ type Props = {
   onDone: () => void;
   onTryDifferentProxy: () => void;
   onFirstEditWarning: () => void;
+  isContractStale: boolean;
 };
 
 export function Page4Proposal(props: Props) {
@@ -81,6 +82,13 @@ export function Page4Proposal(props: Props) {
       <h2>{props.copy.page4.title}</h2>
 
       <div className="contract-preview-layout">
+        {props.isContractStale && (
+          <p className="helper badge-volatility" role="status">
+            This indenture was drawn against an earlier bid. Regenerate it to match your current proxy and quantity.
+            <button className="cta-secondary" onClick={props.onGenerate}>Regenerate Indenture</button>
+          </p>
+        )}
+
         <div className="legal-shell-contract">
           <span className="dbt-seal-badge">DBT CERTIFIED SEAL</span>
           <textarea
