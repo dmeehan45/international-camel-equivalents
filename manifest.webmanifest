@@ -1,7 +1,7 @@
 {
   "name": "International Camel Equivalents",
   "short_name": "ICE",
-  "description": "Convert between camels and wild proxy equivalents, even when you're offline.",
+  "description": "A parody dowry advisory service that converts absurd proxies into camel equivalents. Runs entirely in your browser.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
@@ -9,13 +9,13 @@
   "lang": "en",
   "icons": [
     {
-      "src": "/public/icons/icon-192.svg",
+      "src": "/icons/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/public/icons/icon-512.svg",
+      "src": "/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

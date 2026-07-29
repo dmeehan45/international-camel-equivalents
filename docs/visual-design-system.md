@@ -1,11 +1,15 @@
-# Legal Editorial Design System (Harvey.ai Transactional Inspired)
+# Legal Editorial Design System
 
-This design system translates the visual language from:
-`https://www.harvey.ai/solutions/transactional`
+The joke only lands if the app looks expensive. This design system chases the
+house style of enterprise legal-tech marketing sites — deep navy foundations,
+restrained gold accents, editorial serif headings, crisp data-first surfaces —
+and applies it to a tool that values fiancées in narwhals.
 
-Goal: keep the existing app behavior, but restyle it with a polished “legal product” look—deep navy foundations, restrained gold accents, editorial serif headings, and crisp data-first UI surfaces.
+Nothing here is copied from anyone: no fonts are bundled, no assets are
+borrowed, and the three SVGs in `public/icons/` are hand-drawn. This is a
+description of an aesthetic, reimplemented from scratch in CSS variables.
 
-## Extracted style signals
+## Style signals being chased
 
 - **Premium legal tone**: dark, confident backgrounds with high-contrast ivory text.
 - **Editorial hierarchy**: serif-forward headings paired with modern sans-serif body copy.
@@ -31,6 +35,11 @@ Implemented via CSS variables in `src/design/theme.css` and consumed in `src/app
 
 - Heading: `"Ivar Text", "Canela", "Times New Roman", Georgia, serif`
 - Body/UI: `"Inter", "Avenir Next", "Segoe UI", Arial, sans-serif`
+
+No webfonts are loaded or bundled. The first names in each stack are commercial
+faces that a few designers will happen to have installed locally; everyone else
+gets the system fallbacks, which is what the app was actually designed against.
+
 - Usage:
   - headings and contract-style output use serif
   - controls, inputs, body copy stay sans-serif for readability

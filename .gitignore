@@ -1,0 +1,20 @@
+node_modules/
+dist/
+
+# TypeScript incremental build output
+*.tsbuildinfo
+
+# Cypress run artifacts
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+# Editor and OS residue
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
